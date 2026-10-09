@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Islamic Light Theme */
+  --emerald-primary: #146B50;
+  --emerald-hover: #0F543E;
+  --deep-green: #0B3D2E;
+  --gold-accent: #D6A84F;
+  --gold-light: #FBF5E8;
+  --cream-bg: #F7F5EF;
+  --surface: #FFFFFF;
+  --surface-subtle: #F2EFE8;
+  --text-primary: #202B26;
+  --text-muted: #68756E;
+  --border-color: #E3DED1;
+
+  --success: #237A4B;
+  --warning: #A96512;
+  --danger: #B42318;
+  --info: #245E9A;
+}
+
+.dark {
+  /* Islamic Emerald Obsidian Dark Theme */
+  --cream-bg: #0B1914;
+  --surface: #122820;
+  --surface-subtle: #19352B;
+  --text-primary: #EEF4F1;
+  --text-muted: #9BB0A6;
+  --border-color: #1F4235;
+
+  --emerald-primary: #198262;
+  --emerald-hover: #146B50;
+  --deep-green: #071510;
+  --gold-accent: #E5BA65;
+  --gold-light: #242D21;
+}
+
+@theme {
+  --color-primary-emerald: #146B50;
+  --color-deep-green: #0B3D2E;
+  --color-gold-accent: #D6A84F;
+  --color-cream-bg: var(--cream-bg);
+  --color-text-main: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+}
+
+body {
+  background-color: var(--cream-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Subtle Islamic geometric pattern background utility */
+.islamic-pattern {
+  background-color: var(--cream-bg);
+  background-image: radial-gradient(#146b50 0.75px, transparent 0.75px), radial-gradient(#d6a84f 0.75px, var(--cream-bg) 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-opacity: 0.05;
+}
+
+.dark .islamic-pattern {
+  background-image: radial-gradient(rgba(25, 130, 98, 0.25) 0.75px, transparent 0.75px), radial-gradient(rgba(214, 168, 79, 0.2) 0.75px, transparent 0.75px);
+}
+
+.islamic-header-pattern {
+  background: linear-gradient(135deg, #0B3D2E 0%, #146B50 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .islamic-header-pattern {
+  background: linear-gradient(135deg, #06130F 0%, #0D261E 100%);
+}
+
+.islamic-header-pattern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(rgba(214, 168, 79, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD2CE;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #146B50;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1F4235;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #D6A84F;
+}
+
+/* Touch targets min 44px for accessibility */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area padding for mobile gesture navigation */
+.safe-area-pb {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+}
