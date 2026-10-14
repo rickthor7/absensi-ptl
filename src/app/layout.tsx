@@ -49,7 +49,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--cream-bg)] text-[var(--text-primary)] dark:bg-[#0B1914] dark:text-[#EEF4F1] antialiased transition-colors duration-200">
+      <body className="min-h-full flex flex-col bg-[var(--cream-bg)] text-[var(--text-primary)] dark:bg-[#080F0C] dark:text-[#E8F0EC] antialiased transition-colors duration-300">
         <StoreProvider>
           <Navbar />
           <main className="flex-1 pb-20 lg:pb-12">{children}</main>

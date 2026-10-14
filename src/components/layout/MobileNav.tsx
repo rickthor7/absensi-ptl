@@ -57,51 +57,84 @@ export default function MobileNav() {
   const items = isMusyrif ? musyrifItems : santriItems;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#122820]/95 backdrop-blur-md border-t border-stone-200 dark:border-[#1F4235] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-2 py-1 safe-area-pb">
-      <div className="flex items-center justify-around max-w-lg mx-auto">
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-pb">
+      {/* Glass backdrop */}
+      <div className="mx-3 mb-2 rounded-2xl bg-white/80 dark:bg-[#0F1E18]/85 backdrop-blur-xl border border-white/50 dark:border-[#1C3A2E]/80 shadow-[0_-4px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_30px_rgba(0,0,0,0.4)] px-1 py-1.5">
+        <div className="flex items-center justify-around">
+          {items.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
 
-          if (item.center) {
+            if (item.center) {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex flex-col items-center -mt-7 group touch-target focus:outline-none"
+                >
+                  <div
+                    className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transform active:scale-90 transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-br from-[#0D7B5F] via-[#0A9E75] to-[#D4A24C] text-white ring-4 ring-white/30 dark:ring-[#0F1E18]/50'
+                        : 'bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#096B52] text-[#D4A24C]'
+                    }`}
+                  >
+                    <Icon className="w-6 h-6 stroke-[2.2] drop-shadow-sm" />
+                    {/* Pulsing ring when active */}
+                    {isActive && (
+                      <span className="absolute inset-0 rounded-2xl border-2 border-[#D4A24C]/40 animate-ping" style={{ animationDuration: '2s' }} />
+                    )}
+                  </div>
+                  <span className={`text-[10px] mt-1.5 font-bold ${
+                    isActive ? 'text-[#0D7B5F] dark:text-[#D4A24C]' : 'text-stone-500 dark:text-stone-400'
+                  }`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center -mt-6 group touch-target focus:outline-none"
+                className={`flex flex-col items-center py-1 px-2 rounded-xl transition-all duration-200 relative touch-target justify-center ${
+                  isActive
+                    ? 'nav-active-pill'
+                    : ''
+                }`}
               >
-                <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#0B3D2E] via-[#146B50] to-[#1E8A68] text-[#D6A84F] p-0.5 shadow-lg border-2 border-white dark:border-[#122820] flex items-center justify-center transform active:scale-95 transition-transform">
-                  <Icon className="w-6 h-6 stroke-[2.2]" />
+                <div className="relative">
+                  <div className={`p-1.5 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[#0D7B5F]/10 dark:bg-[#1AA37A]/15'
+                      : ''
+                  }`}>
+                    <Icon
+                      className={`w-5 h-5 transition-all duration-200 ${
+                        isActive
+                          ? 'text-[#0D7B5F] dark:text-[#D4A24C] stroke-[2.5]'
+                          : 'text-stone-400 dark:text-stone-500 stroke-[1.8]'
+                      }`}
+                    />
+                  </div>
+                  {item.badge && item.badge > 0 ? (
+                    <span className="absolute -top-1 -right-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-lg dot-pulse">
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </div>
-                <span className="text-[10px] font-bold text-[#146B50] dark:text-[#D6A84F] mt-1">
+                <span className={`text-[10px] mt-0.5 transition-all duration-200 ${
+                  isActive
+                    ? 'text-[#0D7B5F] dark:text-[#D4A24C] font-bold'
+                    : 'text-stone-400 dark:text-stone-500 font-medium'
+                }`}>
                   {item.label}
                 </span>
               </Link>
             );
-          }
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center py-1.5 px-3 rounded-xl transition relative touch-target justify-center ${
-                isActive
-                  ? 'text-[#146B50] dark:text-[#D6A84F] font-bold'
-                  : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 font-medium'
-              }`}
-            >
-              <div className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
-                {item.badge && item.badge > 0 ? (
-                  <span className="absolute -top-1.5 -right-2 bg-amber-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </div>
-              <span className="text-[10px] mt-0.5">{item.label}</span>
-            </Link>
-          );
-        })}
+          })}
+        </div>
       </div>
     </nav>
   );

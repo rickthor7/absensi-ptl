@@ -5,45 +5,53 @@
 :root {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Islamic Light Theme */
-  --emerald-primary: #146B50;
-  --emerald-hover: #0F543E;
-  --deep-green: #0B3D2E;
-  --gold-accent: #D6A84F;
-  --gold-light: #FBF5E8;
-  --cream-bg: #F7F5EF;
+  /* Refined Islamic Theme — more contrast, less flat */
+  --emerald-primary: #0D7B5F;
+  --emerald-hover: #096B52;
+  --deep-green: #082F23;
+  --gold-accent: #D4A24C;
+  --gold-light: #FFF9ED;
+  --cream-bg: #F4F1EB;
   --surface: #FFFFFF;
-  --surface-subtle: #F2EFE8;
-  --text-primary: #202B26;
-  --text-muted: #68756E;
-  --border-color: #E3DED1;
+  --surface-subtle: #EDE9E0;
+  --text-primary: #1A2420;
+  --text-muted: #6B7A72;
+  --border-color: #DDD7C9;
 
-  --success: #237A4B;
-  --warning: #A96512;
-  --danger: #B42318;
-  --info: #245E9A;
+  --success: #198754;
+  --warning: #B86E12;
+  --danger: #C0362C;
+  --info: #2563EB;
+
+  /* Glass variables */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-shadow: 0 8px 32px rgba(14, 56, 42, 0.08);
 }
 
 .dark {
-  /* Islamic Emerald Obsidian Dark Theme */
-  --cream-bg: #0B1914;
-  --surface: #122820;
-  --surface-subtle: #19352B;
-  --text-primary: #EEF4F1;
-  --text-muted: #9BB0A6;
-  --border-color: #1F4235;
+  --cream-bg: #080F0C;
+  --surface: #0F1E18;
+  --surface-subtle: #162B22;
+  --text-primary: #E8F0EC;
+  --text-muted: #8BA89A;
+  --border-color: #1C3A2E;
 
-  --emerald-primary: #198262;
-  --emerald-hover: #146B50;
-  --deep-green: #071510;
-  --gold-accent: #E5BA65;
-  --gold-light: #242D21;
+  --emerald-primary: #1AA37A;
+  --emerald-hover: #0D7B5F;
+  --deep-green: #050C09;
+  --gold-accent: #E8C36E;
+  --gold-light: #1D261A;
+
+  --glass-bg: rgba(15, 30, 24, 0.75);
+  --glass-border: rgba(26, 163, 122, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 @theme {
-  --color-primary-emerald: #146B50;
-  --color-deep-green: #0B3D2E;
-  --color-gold-accent: #D6A84F;
+  --color-primary-emerald: #0D7B5F;
+  --color-deep-green: #082F23;
+  --color-gold-accent: #D4A24C;
   --color-cream-bg: var(--cream-bg);
   --color-text-main: var(--text-primary);
   --color-text-muted: var(--text-muted);
@@ -55,65 +63,217 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Subtle Islamic geometric pattern background utility */
+/* ──────── Animated Background Mesh ──────── */
+.mesh-bg {
+  position: relative;
+  overflow: hidden;
+}
+.mesh-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(13,123,95,0.07), transparent),
+    radial-gradient(ellipse 500px 500px at 90% 80%, rgba(212,162,76,0.05), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ──────── Glassmorphism Cards ──────── */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ──────── Premium Card Hover Effect ──────── */
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(14, 56, 42, 0.1), 0 4px 8px rgba(14, 56, 42, 0.06);
+}
+.dark .card-hover:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(26, 163, 122, 0.08);
+}
+
+/* ──────── Gradient Text Utility ──────── */
+.gradient-text {
+  background: linear-gradient(135deg, #0D7B5F 0%, #D4A24C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ──────── Shimmer / Glow Effects ──────── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-border {
+  position: relative;
+}
+.shimmer-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent 0%, rgba(212,162,76,0.3) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  z-index: -1;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 1.5px;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.float-anim {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out forwards;
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in-right 0.35s ease-out forwards;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ──────── Islamic Decorative Pattern (refined) ──────── */
 .islamic-pattern {
   background-color: var(--cream-bg);
-  background-image: radial-gradient(#146b50 0.75px, transparent 0.75px), radial-gradient(#d6a84f 0.75px, var(--cream-bg) 0.75px);
-  background-size: 30px 30px;
-  background-position: 0 0, 15px 15px;
-  background-opacity: 0.05;
-}
-
-.dark .islamic-pattern {
-  background-image: radial-gradient(rgba(25, 130, 98, 0.25) 0.75px, transparent 0.75px), radial-gradient(rgba(214, 168, 79, 0.2) 0.75px, transparent 0.75px);
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(13,123,95,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(212,162,76,0.03) 0%, transparent 50%);
 }
 
 .islamic-header-pattern {
-  background: linear-gradient(135deg, #0B3D2E 0%, #146B50 100%);
+  background: linear-gradient(145deg, #082F23 0%, #0D7B5F 50%, #096B52 100%);
   position: relative;
   overflow: hidden;
 }
 
 .dark .islamic-header-pattern {
-  background: linear-gradient(135deg, #06130F 0%, #0D261E 100%);
+  background: linear-gradient(145deg, #050C09 0%, #0A2E22 50%, #071A13 100%);
 }
 
 .islamic-header-pattern::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(rgba(214, 168, 79, 0.15) 1px, transparent 1px);
-  background-size: 24px 24px;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(212,162,76,0.08) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 28px 28px, 14px 14px;
+  background-position: 0 0, 7px 7px;
   pointer-events: none;
 }
 
-/* Custom scrollbars */
+/* ──────── Stat Card Accent Strips ──────── */
+.stat-accent-emerald {
+  border-left: 3px solid #0D7B5F;
+}
+.stat-accent-gold {
+  border-left: 3px solid #D4A24C;
+}
+.stat-accent-rose {
+  border-left: 3px solid #E54D3D;
+}
+.stat-accent-blue {
+  border-left: 3px solid #2563EB;
+}
+
+/* ──────── Bottom Nav Pill Indicator ──────── */
+.nav-active-pill {
+  position: relative;
+}
+.nav-active-pill::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #0D7B5F, #D4A24C);
+}
+
+/* ──────── Custom Scrollbars ──────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--cream-bg);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD2CE;
+  background: linear-gradient(180deg, #0D7B5F, #D4A24C);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #146B50;
+  background: #0D7B5F;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #1F4235;
+  background: linear-gradient(180deg, #1AA37A, #E8C36E);
 }
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #D6A84F;
+
+/* ──────── Button Interaction ──────── */
+.btn-press {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ──────── Focus Ring ──────── */
+.focus-ring:focus-visible {
+  outline: 2px solid #0D7B5F;
+  outline-offset: 2px;
 }
 
 /* Touch targets min 44px for accessibility */
@@ -125,4 +285,31 @@ body {
 /* Safe area padding for mobile gesture navigation */
 .safe-area-pb {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+}
+
+/* ──────── Progress Bar Animated Fill ──────── */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+.animate-fill-bar {
+  animation: fill-bar 0.8s ease-out forwards;
+}
+
+/* ──────── Notification Dot ──────── */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+.dot-pulse {
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+/* ──────── Mobile-first spacing overrides ──────── */
+@media (max-width: 640px) {
+  .mobile-compact {
+    padding: 1rem !important;
+  }
+  .mobile-text-center {
+    text-align: center;
+  }
 }

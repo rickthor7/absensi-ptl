@@ -14,6 +14,10 @@ import {
   Eye,
   CheckCircle2,
   Calendar,
+  Sparkles,
+  ShieldCheck,
+  AlertCircle,
+  FileQuestion,
 } from 'lucide-react';
 
 export default function SantriRiwayatPage() {
@@ -41,29 +45,41 @@ export default function SantriRiwayatPage() {
     return true;
   });
 
+  const totalHadir = studentRecords.filter((r) => r.status === 'hadir_valid').length;
+  const totalIzin = studentRecords.filter((r) => r.status.startsWith('izin')).length;
+  const totalTinjau = studentRecords.filter((r) => r.status === 'perlu_tinjauan' || r.status === 'ditolak_lokasi').length;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-stone-900 p-5 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#146B50] mb-0.5">
-            <History className="w-4 h-4 text-[#D6A84F]" />
-            <span>Histori Kehadiran</span>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
+      {/* Page Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-stone-900 p-5 sm:p-6 border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-500/10 via-[#D6A84F]/5 to-transparent rounded-full pointer-events-none blur-2xl" />
+
+        <div className="relative z-10 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#146B50] dark:text-[#D6A84F]">
+            <History className="w-4 h-4" />
+            <span>Histori Presensi</span>
           </div>
-          <h1 className="text-xl font-extrabold text-stone-900 dark:text-stone-100">
-            Riwayat Absensi Pribadi
+          <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight">
+            Riwayat Kehadiran Santri
           </h1>
           <p className="text-xs text-stone-500">
-            Daftar lengkap rekaman kehadiran selfie dan geotag milik {currentUser.full_name}
+            Daftar presensi foto selfie dan verifikasi radius: <strong className="text-stone-700 dark:text-stone-300">{currentUser.full_name}</strong>
           </p>
         </div>
 
-        <span className="text-xs bg-emerald-50 dark:bg-emerald-950/40 text-[#146B50] font-bold px-3 py-1.5 rounded-xl border border-emerald-200">
-          Total: {filteredRecords.length} Catatan
-        </span>
+        {/* Quick Stats Pill */}
+        <div className="relative z-10 flex items-center gap-2 self-start sm:self-center">
+          <div className="px-3.5 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800 text-[#146B50] dark:text-emerald-300 text-xs font-extrabold">
+            {totalHadir} Hadir Valid
+          </div>
+          <div className="px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-extrabold">
+            {totalIzin} Izin
+          </div>
+        </div>
       </div>
 
-      {/* Search & Filters */}
+      {/* Filter and Search Bar */}
       <div className="bg-white dark:bg-stone-900 p-4 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
@@ -72,7 +88,7 @@ export default function SantriRiwayatPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Cari kegiatan, tanggal (YYYY-MM-DD), atau alasan..."
-            className="w-full text-xs pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 focus:ring-2 focus:ring-[#146B50] outline-none"
+            className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 focus:ring-2 focus:ring-[#146B50] outline-none text-stone-800 dark:text-stone-200"
           />
         </div>
 
@@ -80,7 +96,7 @@ export default function SantriRiwayatPage() {
           <select
             value={filterActivity}
             onChange={(e) => setFilterActivity(e.target.value)}
-            className="text-xs font-medium p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
+            className="text-xs font-semibold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none"
           >
             <option value="all">Semua Kegiatan</option>
             {activities.map((a) => (
@@ -93,7 +109,7 @@ export default function SantriRiwayatPage() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-xs font-medium p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
+            className="text-xs font-semibold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none"
           >
             <option value="all">Semua Status</option>
             <option value="hadir_valid">Hadir Tervalidasi</option>
@@ -106,11 +122,12 @@ export default function SantriRiwayatPage() {
         </div>
       </div>
 
-      {/* List / Table of Records */}
+      {/* List of Records - Mobile First Card Layout */}
       <div className="space-y-3">
         {filteredRecords.length === 0 ? (
-          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-12 text-center text-stone-400 text-xs">
-            Tidak ada catatan absensi yang sesuai filter.
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-12 text-center text-stone-400 text-xs space-y-2">
+            <History className="w-8 h-8 mx-auto text-stone-300 dark:text-stone-700" />
+            <p className="font-semibold">Belum ada rekaman absensi yang sesuai filter ini.</p>
           </div>
         ) : (
           filteredRecords.map((rec) => {
@@ -119,54 +136,69 @@ export default function SantriRiwayatPage() {
               <div
                 key={rec.id}
                 onClick={() => setSelectedRecord(rec)}
-                className="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-3xl border border-stone-200 dark:border-stone-800 hover:border-[#146B50] shadow-xs hover:shadow-md transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer group"
+                className="group relative bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-3xl border border-stone-200/90 dark:border-stone-800 hover:border-[#146B50] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer active:scale-[0.99]"
               >
-                <div className="flex items-center gap-4">
-                  <img
-                    src={rec.photo_path}
-                    alt="Selfie"
-                    className="w-16 h-16 rounded-2xl object-cover border border-stone-200 dark:border-stone-700 shadow-xs shrink-0 group-hover:scale-105 transition"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#146B50] transition">
+                <div className="flex items-center gap-3.5">
+                  {/* Photo thumbnail */}
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-700 shadow-xs shrink-0 group-hover:scale-105 transition bg-black">
+                    <img
+                      src={rec.photo_path}
+                      alt="Selfie"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                  </div>
+
+                  {/* Record details */}
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#146B50] transition">
                         {rec.activity_name}
                       </h3>
-                      <span className="text-[11px] uppercase font-bold text-stone-400">
+                      <span className="text-[10px] uppercase font-bold text-stone-400 dark:text-stone-500 tracking-wider">
                         • {rec.attendance_type}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-stone-500 mt-1">
-                      <span className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500 dark:text-stone-400">
+                      <span className="flex items-center gap-1 font-medium">
                         <Calendar className="w-3.5 h-3.5 text-stone-400" />
                         {rec.operational_date}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 font-medium">
                         <Clock className="w-3.5 h-3.5 text-stone-400" />
-                        {new Date(rec.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                        {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}{' '}
+                        WIB
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#146B50]" />
-                        Jarak {Math.round(rec.distance_from_site_m)}m
+                      <span className="flex items-center gap-1 font-bold text-[#146B50] dark:text-[#D6A84F]">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {Math.round(rec.distance_from_site_m)}m
                       </span>
                     </div>
 
                     {rec.permission_reason && (
-                      <p className="text-[11px] text-amber-700 dark:text-amber-400 italic mt-1 line-clamp-1">
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 italic line-clamp-1 bg-amber-50/60 dark:bg-amber-950/30 px-2 py-0.5 rounded-lg inline-block border border-amber-200/50">
                         Alasan: {rec.permission_reason}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                {/* Status Badge & Eye Action */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 dark:border-stone-800">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold border ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold border shadow-xs ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
                   >
                     {meta.label}
                   </span>
-                  <button className="p-2 rounded-xl bg-stone-100 text-stone-600 hover:bg-[#146B50] hover:text-white transition">
+                  <button
+                    type="button"
+                    className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 group-hover:bg-[#146B50] group-hover:text-white transition"
+                    title="Lihat detail absensi"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
                 </div>

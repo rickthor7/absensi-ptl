@@ -1,17 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import {
   Compass,
   User,
   Clock,
-  RotateCcw,
   Shield,
   GraduationCap,
-  Sparkles,
   Menu,
   X,
   ChevronDown,
@@ -24,50 +22,42 @@ import {
   History,
   Moon,
   Sun,
+  LogOut,
+  Database,
+  LogIn,
 } from 'lucide-react';
 import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
 
 export default function Navbar() {
   const {
     currentUser,
-    setCurrentUser,
-    profiles,
+    isAuthenticated,
+    isSupabaseConnected,
+    supabaseStatusMessage,
+    logout,
     effectiveTime,
-    simulatedTime,
-    setSimulatedTime,
-    resetToDefaultData,
     theme,
     toggleTheme,
   } = useStore();
 
   const pathname = usePathname();
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
+  const router = useRouter();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // If on login page, hide navbar for clean focus
+  if (pathname === '/login') {
+    return null;
+  }
 
   const isMusyrif = currentUser.role === 'musyrif';
 
-  // Preset times to easily test schedules
-  const testTimePresets = [
-    { label: 'Waktu Nyata Sekarang', time: null },
-    { label: 'Qiyamul Lail (03:30)', hours: 3, minutes: 30 },
-    { label: 'Shubuh Berjamaah (04:30)', hours: 4, minutes: 30 },
-    { label: 'Setoran Pagi (06:00)', hours: 6, minutes: 0 },
-    { label: 'Madin Siang (16:00)', hours: 16, minutes: 0 },
-    { label: 'Maghrib & Dzikir (18:00)', hours: 18, minutes: 0 },
-    { label: 'Isya Berjamaah (19:30)', hours: 19, minutes: 30 },
-    { label: 'Setoran Malam (20:30)', hours: 20, minutes: 30 },
-  ];
-
-  const applyPreset = (preset: (typeof testTimePresets)[0]) => {
-    if (preset.time === null) {
-      setSimulatedTime(null);
-    } else {
-      const now = new Date();
-      now.setHours(preset.hours || 0, preset.minutes || 0, 0, 0);
-      setSimulatedTime(now);
-    }
-    setShowTimeModal(false);
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    router.push('/login');
   };
 
   interface NavItem {
@@ -98,406 +88,245 @@ export default function Navbar() {
   const navLinks = isMusyrif ? musyrifNav : santriNav;
 
   return (
-    <>
-      <header className="sticky top-0 z-40 bg-[#0B3D2E] text-white shadow-md border-b border-[#146B50]">
-        {/* Top Islamic Banner & Hijri Date */}
-        <div className="bg-[#07281E] px-4 py-1 text-xs text-[#D6A84F] border-b border-[#146B50]/40 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#D6A84F]" />
-            <span className="font-medium tracking-wide">
-              {getEstimatedHijriDate(effectiveTime)} • {formatIndonesianDate(effectiveTime)}
+    <header className="sticky top-0 z-40 transition-all duration-300">
+      {/* Slim Info Bar */}
+      <div className="bg-[#051A13] px-4 py-1 text-[10px] text-[#D4A24C]/80 border-b border-[#0D7B5F]/20 flex items-center justify-between gap-2">
+        <span className="font-medium tracking-wide truncate">
+          {getEstimatedHijriDate(effectiveTime)} • {formatIndonesianDate(effectiveTime)}
+        </span>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* DB Status Dot */}
+          <div
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium"
+            title={supabaseStatusMessage}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSupabaseConnected ? 'bg-emerald-400 dot-pulse' : 'bg-amber-400'}`} />
+            <span className={isSupabaseConnected ? 'text-emerald-400/90' : 'text-amber-400/90'}>
+              {isSupabaseConnected ? 'Live' : 'Lokal'}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Time Simulator Trigger */}
-            <button
-              onClick={() => setShowTimeModal(true)}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#146B50]/60 hover:bg-[#146B50] text-emerald-200 hover:text-white transition cursor-pointer"
-              title="Atur simulasi jam untuk menguji jendela jadwal kegiatan"
-            >
-              <Clock className="w-3 h-3 text-[#D6A84F]" />
-              <span>
-                {simulatedTime
-                  ? `Simulasi: ${effectiveTime.toLocaleTimeString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })} WIB`
-                  : `${effectiveTime.toLocaleTimeString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })} WIB`}
-              </span>
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
-
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#146B50]/60 hover:bg-[#146B50] text-[#D6A84F] hover:text-white transition cursor-pointer text-[11px] font-semibold"
-              title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
-            >
-              {theme === 'dark' ? (
-                <>
-                  <Sun className="w-3 h-3 text-[#D6A84F]" />
-                  <span>Terang</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3 h-3 text-emerald-200" />
-                  <span>Gelap</span>
-                </>
-              )}
-            </button>
-
-            {/* Reset Demo State Button */}
-            <button
-              onClick={resetToDefaultData}
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-stone-300 hover:text-white hover:bg-white/10 transition text-[11px] cursor-pointer"
-              title="Reset data demo ke awal"
-            >
-              <RotateCcw className="w-2.5 h-2.5" />
-              <span className="hidden sm:inline">Reset Demo</span>
-            </button>
-          </div>
+          {/* Live Clock */}
+          <span className="font-mono text-[10px] text-white/60 tabular-nums">
+            {effectiveTime.toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
+          </span>
         </div>
+      </div>
 
-        {/* Main Navbar */}
+      {/* Main Navbar — Glass Effect */}
+      <div className="bg-[#082F23]/95 backdrop-blur-xl border-b border-[#0D7B5F]/25 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Brand Logo & Name */}
-            <div className="flex items-center gap-3">
-              <Link
-                href={isMusyrif ? '/musyrif' : '/santri'}
-                className="flex items-center gap-3 group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#146B50] to-[#0B3D2E] p-0.5 border border-[#D6A84F]/60 flex items-center justify-center shadow-sm">
-                  <div className="w-full h-full rounded-[10px] bg-[#0B3D2E] flex items-center justify-center text-[#D6A84F]">
-                    <span className="text-xl font-bold font-serif leading-none">ن</span>
-                  </div>
+          <div className="flex items-center justify-between h-14">
+            {/* Brand Logo */}
+            <Link
+              href={isAuthenticated ? (isMusyrif ? '/musyrif' : '/santri') : '/'}
+              className="flex items-center gap-2.5 group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[2px] shadow-lg shadow-emerald-900/30">
+                <div className="w-full h-full rounded-[10px] bg-[#051A13] flex items-center justify-center text-[#D4A24C] group-hover:bg-[#082F23] transition-colors">
+                  <span className="text-lg font-bold font-serif leading-none">ن</span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-base text-white tracking-tight">
-                      ABSENSI SANTRI
-                    </span>
-                    <span className="px-1.5 py-0.2 text-[10px] font-semibold bg-[#D6A84F] text-[#0B3D2E] rounded">
-                      GPS & Selfie
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-emerald-200/80 -mt-0.5">
-                    PP. Nurul Falah Ketintang
-                  </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-sm text-white tracking-tight">
+                    ABSENSI
+                  </span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#D4A24C]/15 text-[#D4A24C] border border-[#D4A24C]/25">
+                    v2.0
+                  </span>
                 </div>
-              </Link>
-            </div>
+                <p className="text-[10px] text-emerald-300/60 -mt-0.5 hidden sm:block">
+                  PP. Nurul Falah Ketintang
+                </p>
+              </div>
+            </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1">
-              {navLinks.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition ${
-                      item.highlight
-                        ? 'bg-[#D6A84F] text-[#0B3D2E] font-bold hover:bg-[#c4953c] shadow-sm'
-                        : isActive
-                        ? 'bg-[#146B50] text-white shadow-inner font-semibold'
-                        : 'text-emerald-100/90 hover:bg-[#146B50]/60 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+            {isAuthenticated && (
+              <nav className="hidden lg:flex items-center gap-0.5">
+                {navLinks.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                        item.highlight
+                          ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm shadow-amber-900/20 hover:shadow-md'
+                          : isActive
+                          ? 'bg-white/10 text-white font-semibold shadow-inner'
+                          : 'text-emerald-200/70 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
-            {/* Right side: Role Switcher, Dark Mode & Profile Card */}
+            {/* Right side */}
             <div className="flex items-center gap-2">
-              {/* Theme Toggle Icon Button */}
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-xl bg-[#07281E]/80 hover:bg-[#146B50] border border-[#146B50] text-[#D6A84F] transition flex items-center justify-center cursor-pointer shadow-xs"
-                title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#D4A24C] transition cursor-pointer"
+                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
                 aria-label="Toggle Dark Mode"
               >
                 {theme === 'dark' ? (
-                  <Sun className="w-4 h-4 text-[#D6A84F]" />
+                  <Sun className="w-4 h-4" />
                 ) : (
-                  <Moon className="w-4 h-4 text-emerald-200" />
+                  <Moon className="w-4 h-4 text-emerald-200/80" />
                 )}
               </button>
 
-              <button
-                onClick={() => setShowUserModal(true)}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#07281E]/80 hover:bg-[#146B50]/80 border border-[#146B50] transition cursor-pointer text-left"
-              >
-                <div className="w-8 h-8 rounded-lg bg-emerald-800/80 flex items-center justify-center text-[#D6A84F] border border-[#D6A84F]/40 font-semibold text-xs">
-                  {currentUser.role === 'musyrif' ? (
-                    <Shield className="w-4 h-4 text-[#D6A84F]" />
-                  ) : (
-                    <GraduationCap className="w-4 h-4 text-[#D6A84F]" />
+              {isAuthenticated ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition cursor-pointer"
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[10px] ${
+                      isMusyrif
+                        ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23]'
+                        : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white'
+                    }`}>
+                      {currentUser.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <span className="text-[11px] font-semibold text-white max-w-[100px] truncate block">
+                        {currentUser.full_name.split(' ')[0]}
+                      </span>
+                    </div>
+                    <ChevronDown className={`w-3 h-3 text-emerald-300/60 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* User Profile Dropdown */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200 dark:border-[#1C3A2E] shadow-2xl p-2.5 space-y-2 z-50 animate-fade-up">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-stone-50 to-emerald-50/30 dark:from-[#162B22] dark:to-[#0F1E18] border border-stone-200/60 dark:border-[#1C3A2E]">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                            isMusyrif
+                              ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23]'
+                              : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white'
+                          }`}>
+                            {currentUser.full_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-stone-900 dark:text-white truncate">
+                              {currentUser.full_name}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded-md font-bold ${
+                                isMusyrif
+                                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                                  : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                              }`}>
+                                {currentUser.role}
+                              </span>
+                              <span className="text-[10px] text-stone-400 truncate">
+                                {currentUser.group_name || 'Santri'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={isMusyrif ? '/musyrif' : '/santri/profil'}
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition"
+                      >
+                        <User className="w-3.5 h-3.5 text-[#0D7B5F]" />
+                        <span>Profil Pengguna</span>
+                      </Link>
+
+                      <div className="pt-1 border-t border-stone-200 dark:border-[#1C3A2E]">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-xs font-bold transition cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Keluar</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div className="hidden sm:block">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white max-w-[130px] truncate">
-                      {currentUser.full_name}
-                    </span>
-                    <span
-                      className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-semibold ${
-                        currentUser.role === 'musyrif'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      }`}
-                    >
-                      {currentUser.role}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-emerald-200/70">
-                    {currentUser.group_name || 'Santri Pondok'}
-                  </p>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-emerald-300" />
-              </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] text-[11px] font-bold transition shadow-sm hover:shadow-md cursor-pointer btn-press"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Masuk</span>
+                </Link>
+              )}
 
               {/* Mobile menu hamburger */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl text-emerald-200 hover:text-white hover:bg-[#146B50]"
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-[#146B50] bg-[#0B3D2E] px-4 pt-2 pb-4 space-y-1">
-            {navLinks.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                    item.highlight
-                      ? 'bg-[#D6A84F] text-[#0B3D2E] font-bold'
-                      : isActive
-                      ? 'bg-[#146B50] text-white font-semibold'
-                      : 'text-emerald-100 hover:bg-[#146B50]/60'
-                  }`}
+              {isAuthenticated && (
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="lg:hidden p-2 rounded-lg text-emerald-200/70 hover:text-white hover:bg-white/10 transition"
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-
-            {/* Mobile Theme Toggle Button */}
-            <div className="pt-2 border-t border-[#146B50]/60 mt-2">
-              <button
-                onClick={toggleTheme}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-emerald-100 hover:bg-[#146B50]/60 transition"
-              >
-                <div className="flex items-center gap-2">
-                  {theme === 'dark' ? (
-                    <Sun className="w-4 h-4 text-[#D6A84F]" />
-                  ) : (
-                    <Moon className="w-4 h-4 text-emerald-200" />
-                  )}
-                  <span>Pilihan Tema Tampilan</span>
-                </div>
-                <span className="text-[11px] font-bold text-[#D6A84F]">
-                  {theme === 'dark' ? 'Mode Gelap 🌙' : 'Mode Terang ☀️'}
-                </span>
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Role & Profile Switcher Modal */}
-      {showUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900 rounded-2xl max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="bg-[#0B3D2E] text-white p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-base flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#D6A84F]" />
-                  Ganti Pengguna & Peran
-                </h3>
-                <p className="text-xs text-emerald-200/80">
-                  Uji alur aplikasi sebagai Santri atau Musyrif
-                </p>
-              </div>
-              <button
-                onClick={() => setShowUserModal(false)}
-                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
-              <div>
-                <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">
-                  Peran Musyrif (Pengelola & Peninjau)
-                </p>
-                <div className="space-y-1.5">
-                  {profiles
-                    .filter((p) => p.role === 'musyrif')
-                    .map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setCurrentUser(p);
-                          setShowUserModal(false);
-                        }}
-                        className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition cursor-pointer ${
-                          currentUser.id === p.id
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-[#146B50] shadow-xs'
-                            : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 hover:border-emerald-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-emerald-700 text-[#D6A84F] flex items-center justify-center font-bold text-sm">
-                            <Shield className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-stone-900 dark:text-stone-100">
-                              {p.full_name}
-                            </p>
-                            <p className="text-xs text-stone-500 dark:text-stone-400">
-                              {p.group_name}
-                            </p>
-                          </div>
-                        </div>
-                        {currentUser.id === p.id && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#146B50] text-white">
-                            Aktif
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">
-                  Peran Santri (Absensi & Riwayat)
-                </p>
-                <div className="space-y-1.5">
-                  {profiles
-                    .filter((p) => p.role === 'santri')
-                    .map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setCurrentUser(p);
-                          setShowUserModal(false);
-                        }}
-                        className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition cursor-pointer ${
-                          currentUser.id === p.id
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-[#146B50] shadow-xs'
-                            : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 hover:border-emerald-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#0B3D2E] text-[#D6A84F] flex items-center justify-center font-bold text-sm">
-                            <GraduationCap className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-stone-900 dark:text-stone-100">
-                              {p.full_name}
-                            </p>
-                            <p className="text-xs text-stone-500 dark:text-stone-400">
-                              NIS: {p.student_number} • {p.group_name}
-                            </p>
-                          </div>
-                        </div>
-                        {currentUser.id === p.id && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#146B50] text-white">
-                            Aktif
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-stone-50 dark:bg-stone-800/50 p-3 text-center border-t border-stone-200 dark:border-stone-800">
-              <button
-                onClick={() => setShowUserModal(false)}
-                className="w-full py-2 bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-semibold hover:bg-stone-300 transition"
-              >
-                Tutup
-              </button>
+                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Time Simulation Modal */}
-      {showTimeModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900 rounded-2xl max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden">
-            <div className="bg-[#0B3D2E] text-white p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-base flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#D6A84F]" />
-                  Simulasi Jadwal Waktu
-                </h3>
-                <p className="text-xs text-emerald-200/80">
-                  Uji kegiatan apa pun tanpa menunggu jam operasional asli
-                </p>
-              </div>
-              <button
-                onClick={() => setShowTimeModal(false)}
-                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10"
+      {/* Mobile Dropdown Menu — Slide down */}
+      {isAuthenticated && mobileMenuOpen && (
+        <div className="lg:hidden bg-[#082F23]/98 backdrop-blur-xl border-b border-[#0D7B5F]/25 px-4 pt-2 pb-3 space-y-0.5 animate-fade-up">
+          {navLinks.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  item.highlight
+                    ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm'
+                    : isActive
+                    ? 'bg-white/10 text-white font-semibold'
+                    : 'text-emerald-200/70 hover:bg-white/5 hover:text-white'
+                }`}
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
 
-            <div className="p-4 space-y-2">
-              <p className="text-xs text-stone-600 dark:text-stone-400 mb-3">
-                Pilih salah satu jadwal di bawah ini untuk melihat bagaimana sistem otomatis mendeteksi kegiatan aktif santri:
-              </p>
-
-              <div className="grid grid-cols-1 gap-2">
-                {testTimePresets.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => applyPreset(preset)}
-                    className="w-full text-left px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-[#146B50] hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-xs font-medium text-stone-800 dark:text-stone-200 flex items-center justify-between transition cursor-pointer"
-                  >
-                    <span>{preset.label}</span>
-                    <span className="text-[11px] text-[#146B50] font-bold">Pilih</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-stone-50 dark:bg-stone-800/50 p-3 text-center border-t border-stone-200 dark:border-stone-800">
-              <button
-                onClick={() => setShowTimeModal(false)}
-                className="w-full py-2 bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-semibold hover:bg-stone-300 transition"
-              >
-                Tutup
-              </button>
-            </div>
+          {/* Mobile Logout Button */}
+          <div className="pt-2 border-t border-[#0D7B5F]/30 mt-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-300 hover:bg-rose-950/30 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Keluar dari Akun</span>
+            </button>
           </div>
         </div>
       )}
-    </>
+    </header>
   );
 }
