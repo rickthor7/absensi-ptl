@@ -9,11 +9,18 @@ import {
   AuditLog,
   Profile,
   Role,
+  SppSettings,
+  SppPayment,
+  SppPaymentStatus,
+  FinancialTransaction,
 } from '@/types';
 import {
   SEED_ACTIVITIES,
   SEED_AUDIT_LOGS,
   SEED_PROFILES,
+  DEFAULT_SPP_SETTINGS,
+  SEED_SPP_PAYMENTS,
+  SEED_FINANCIAL_TRANSACTIONS,
 } from './constants';
 import { validateAttendanceLocation } from './geo';
 import {
@@ -62,6 +69,9 @@ interface StoreContextType {
   activities: Activity[];
   attendanceRecords: AttendanceRecord[];
   auditLogs: AuditLog[];
+  sppSettings: SppSettings;
+  sppPayments: SppPayment[];
+  financialTransactions: FinancialTransaction[];
   effectiveTime: Date;
   submitAttendance: (params: {
     activityId: string;
@@ -91,6 +101,26 @@ interface StoreContextType {
     radiusM?: number;
     activityIds?: string[];
   }) => Promise<{ success: boolean; message: string; updatedCount: number }>;
+  updateSppSettings: (settings: Partial<SppSettings>) => Promise<{ success: boolean; message: string }>;
+  submitSppPayment: (data: {
+    month: number;
+    year: number;
+    amount: number;
+    paymentDate: string;
+    proofDataUrl: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; message: string; payment?: SppPayment }>;
+  reviewSppPayment: (paymentId: string, status: SppPaymentStatus, rejectionReason?: string) => Promise<{ success: boolean; message: string }>;
+  addManualSppPayment: (data: {
+    studentId: string;
+    month: number;
+    year: number;
+    amount: number;
+    paymentDate: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; message: string }>;
+  addFinancialTransaction: (tx: Omit<FinancialTransaction, 'id' | 'created_at' | 'created_by' | 'created_by_name'>) => Promise<{ success: boolean; message: string }>;
+  deleteFinancialTransaction: (id: string) => Promise<{ success: boolean; message: string }>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
@@ -136,6 +166,46 @@ async function uploadSelfieToStorage(photoDataUrl: string, studentId: string): P
   }
 }
 
+// Helper: Upload SPP payment proof image to Supabase Storage bucket
+async function uploadSppProofToStorage(proofDataUrl: string, studentId: string): Promise<string> {
+  const supabase = getSupabase();
+  if (!supabase) return proofDataUrl;
+
+  try {
+    const res = await fetch(proofDataUrl);
+    const blob = await res.blob();
+    const cleanId = studentId.replace(/[^a-zA-Z0-9_-]/g, '') || 'santri';
+    const fileName = `${cleanId}/${Date.now()}-${Math.random().toString(36).substring(2, 7)}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('spp-proofs')
+      .upload(fileName, blob, {
+        contentType: blob.type || 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn('Storage upload error (using dataUrl fallback for SPP):', uploadError.message);
+      return proofDataUrl;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('spp-proofs')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl || proofDataUrl;
+  } catch (err) {
+    console.warn('Upload SPP proof failed, using raw dataUrl:', err);
+    return proofDataUrl;
+  }
+}
+
+const INDO_MONTH_NAMES = [
+  '',
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>(SEED_PROFILES);
   const [currentUser, setCurrentUserState] = useState<Profile>(GUEST_USER);
@@ -147,6 +217,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>(SEED_ACTIVITIES);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [sppSettings, setSppSettings] = useState<SppSettings>(DEFAULT_SPP_SETTINGS);
+  const [sppPayments, setSppPayments] = useState<SppPayment[]>(SEED_SPP_PAYMENTS);
+  const [financialTransactions, setFinancialTransactions] = useState<FinancialTransaction[]>(SEED_FINANCIAL_TRANSACTIONS);
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -218,6 +291,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!audErr && audData) {
         setAuditLogs(audData as AuditLog[]);
       }
+
+      // 5. Fetch SPP Settings
+      const sppSetPromise = supabase
+        .from('spp_settings')
+        .select('*')
+        .eq('id', 'default')
+        .maybeSingle();
+      const { data: sppSetData, error: sppSetErr } = (await Promise.race([sppSetPromise, timeoutPromise])) as any;
+      if (!sppSetErr && sppSetData) {
+        setSppSettings(sppSetData as SppSettings);
+      }
+
+      // 6. Fetch SPP Payments
+      const sppPayPromise = supabase
+        .from('spp_payments')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      const { data: sppPayData, error: sppPayErr } = (await Promise.race([sppPayPromise, timeoutPromise])) as any;
+      if (!sppPayErr && sppPayData) {
+        setSppPayments(sppPayData as SppPayment[]);
+      }
+
+      // 7. Fetch Financial Transactions
+      const finPromise = supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('transaction_date', { ascending: false })
+        .limit(300);
+      const { data: finData, error: finErr } = (await Promise.race([finPromise, timeoutPromise])) as any;
+      if (!finErr && finData) {
+        setFinancialTransactions(finData as FinancialTransaction[]);
+      }
     } catch (err) {
       console.warn('Error syncing data from Supabase:', err);
     }
@@ -258,6 +364,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (data.activities?.length) setActivities(data.activities);
         if (data.attendanceRecords?.length) setAttendanceRecords(data.attendanceRecords);
         if (data.auditLogs?.length) setAuditLogs(data.auditLogs);
+        if (data.sppSettings) setSppSettings(data.sppSettings);
+        if (data.sppPayments?.length) setSppPayments(data.sppPayments);
+        if (data.financialTransactions?.length) setFinancialTransactions(data.financialTransactions);
       }
 
       // Initial check authentic logged-in user in localStorage
@@ -395,12 +504,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           activities,
           attendanceRecords,
           auditLogs,
+          sppSettings,
+          sppPayments,
+          financialTransactions,
         })
       );
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
-  }, [profiles, activities, attendanceRecords, auditLogs, isLoaded]);
+  }, [
+    profiles,
+    activities,
+    attendanceRecords,
+    auditLogs,
+    sppSettings,
+    sppPayments,
+    financialTransactions,
+    isLoaded,
+  ]);
 
   // Current real time ticker (Live Indonesian WIB Clock, ticks every 1 second)
   const [actualTime, setActualTime] = useState<Date>(
@@ -698,6 +819,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActivities(SEED_ACTIVITIES);
     setAttendanceRecords([]);
     setAuditLogs([]);
+    setSppSettings(DEFAULT_SPP_SETTINGS);
+    setSppPayments(SEED_SPP_PAYMENTS);
+    setFinancialTransactions(SEED_FINANCIAL_TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
   };
@@ -1326,6 +1450,391 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // ── SPP & Financial Transactions Management ──
+  const updateSppSettings = async (newSettings: Partial<SppSettings>) => {
+    const updated: SppSettings = {
+      ...sppSettings,
+      ...newSettings,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser.full_name || 'Musyrif',
+    };
+    setSppSettings(updated);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'UPDATE_SPP_SETTINGS',
+      entity_type: 'spp_settings',
+      entity_id: 'default',
+      after_data: {
+        monthly_amount: updated.monthly_amount,
+        bank_name: updated.bank_name,
+        bank_account_number: updated.bank_account_number,
+      },
+      reason: 'Pembaruan nominal atau rekening tujuan SPP',
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('spp_settings').upsert({
+          id: 'default',
+          monthly_amount: updated.monthly_amount,
+          bank_name: updated.bank_name,
+          bank_account_number: updated.bank_account_number,
+          bank_account_holder: updated.bank_account_holder,
+          qris_image_url: updated.qris_image_url,
+          notes: updated.notes,
+          updated_at: updated.updated_at,
+          updated_by: updated.updated_by,
+        });
+      } catch (err) {
+        console.warn('Supabase update spp_settings error:', err);
+      }
+    }
+
+    return { success: true, message: 'Tarif & Pengaturan SPP berhasil diperbarui!' };
+  };
+
+  const submitSppPayment = async ({
+    month,
+    year,
+    amount,
+    paymentDate,
+    proofDataUrl,
+    notes,
+  }: {
+    month: number;
+    year: number;
+    amount: number;
+    paymentDate: string;
+    proofDataUrl: string;
+    notes?: string;
+  }) => {
+    const storedProofUrl = await uploadSppProofToStorage(proofDataUrl, currentUser.id);
+
+    const newPayment: SppPayment = {
+      id: `spp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      student_id: currentUser.id,
+      student_name: currentUser.full_name,
+      student_number: currentUser.student_number,
+      group_name: currentUser.group_name,
+      month,
+      year,
+      amount: amount || sppSettings.monthly_amount,
+      payment_date: paymentDate || new Date().toISOString().split('T')[0],
+      proof_image_url: storedProofUrl,
+      notes: notes || '',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    };
+
+    setSppPayments((prev) => [newPayment, ...prev]);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'SUBMIT_SPP_PAYMENT',
+      entity_type: 'spp_payment',
+      entity_id: newPayment.id,
+      after_data: {
+        month,
+        year,
+        amount: newPayment.amount,
+      },
+      reason: `Santri mengunggah bukti pembayaran SPP bulan ${INDO_MONTH_NAMES[month]} ${year}`,
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('spp_payments').insert([newPayment]);
+      } catch (err) {
+        console.warn('Supabase insert spp_payment error:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Bukti pembayaran SPP berhasil diunggah! Menunggu konfirmasi musyrif.',
+      payment: newPayment,
+    };
+  };
+
+  const reviewSppPayment = async (
+    paymentId: string,
+    status: SppPaymentStatus,
+    rejectionReason?: string
+  ) => {
+    const target = sppPayments.find((p) => p.id === paymentId);
+    if (!target) return { success: false, message: 'Data pembayaran SPP tidak ditemukan' };
+
+    const reviewedAt = new Date().toISOString();
+    const updatedPayments = sppPayments.map((p) => {
+      if (p.id !== paymentId) return p;
+      return {
+        ...p,
+        status,
+        reviewed_by: currentUser.id,
+        reviewed_by_name: currentUser.full_name,
+        reviewed_at: reviewedAt,
+        rejection_reason: status === 'rejected' ? rejectionReason || 'Bukti transfer tidak sesuai' : undefined,
+        updated_at: reviewedAt,
+      };
+    });
+    setSppPayments(updatedPayments);
+
+    const monthLabel = INDO_MONTH_NAMES[target.month] || `Bulan ${target.month}`;
+
+    // Otomatis catat pemasukan kas saat SPP disetujui
+    if (status === 'verified') {
+      const matchingTx = financialTransactions.find((t) => t.spp_payment_id === target.id);
+      if (!matchingTx) {
+        const autoTx: FinancialTransaction = {
+          id: `tx-spp-${target.id}`,
+          type: 'income',
+          category: 'SPP Santri Bulanan',
+          title: `SPP ${monthLabel} ${target.year} — ${target.student_name}`,
+          amount: target.amount,
+          transaction_date: target.payment_date || new Date().toISOString().split('T')[0],
+          description: `Pembayaran SPP ${monthLabel} ${target.year} terverifikasi atas nama ${target.student_name} (${target.student_number || 'Santri'})`,
+          proof_image_url: target.proof_image_url,
+          spp_payment_id: target.id,
+          created_by: currentUser.id,
+          created_by_name: currentUser.full_name,
+          created_at: reviewedAt,
+        };
+        setFinancialTransactions((prev) => [autoTx, ...prev]);
+
+        const supabase = getSupabase();
+        if (supabase && isSupabaseConnected) {
+          try {
+            await supabase.from('financial_transactions').insert([autoTx]);
+          } catch (e) {
+            console.warn('Insert auto financial tx error:', e);
+          }
+        }
+      }
+    } else if (status === 'rejected') {
+      // Hapus transaksi kas otomatis jika sebelumnya pernah verified lalu ditolak
+      setFinancialTransactions((prev) => prev.filter((t) => t.spp_payment_id !== target.id));
+      const supabase = getSupabase();
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase.from('financial_transactions').delete().eq('spp_payment_id', target.id);
+        } catch (e) {
+          console.warn('Delete auto financial tx error:', e);
+        }
+      }
+    }
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'REVIEW_SPP_PAYMENT',
+      entity_type: 'spp_payment',
+      entity_id: paymentId,
+      before_data: { status: target.status },
+      after_data: { status, rejectionReason },
+      reason: status === 'verified' ? 'Musyrif menyetujui bukti SPP' : `Ditolak: ${rejectionReason}`,
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase
+          .from('spp_payments')
+          .update({
+            status,
+            reviewed_by: currentUser.id,
+            reviewed_by_name: currentUser.full_name,
+            reviewed_at: reviewedAt,
+            rejection_reason: status === 'rejected' ? rejectionReason || 'Bukti transfer tidak sesuai' : null,
+            updated_at: reviewedAt,
+          })
+          .eq('id', paymentId);
+      } catch (err) {
+        console.warn('Supabase review spp_payment error:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: status === 'verified' ? 'Pembayaran SPP disetujui & otomatis masuk kas pesantren!' : 'Pembayaran SPP ditolak.',
+    };
+  };
+
+  const addManualSppPayment = async ({
+    studentId,
+    month,
+    year,
+    amount,
+    paymentDate,
+    notes,
+  }: {
+    studentId: string;
+    month: number;
+    year: number;
+    amount: number;
+    paymentDate: string;
+    notes?: string;
+  }) => {
+    const student = profiles.find((p) => p.id === studentId);
+    if (!student) return { success: false, message: 'Santri tidak ditemukan.' };
+
+    const paymentId = `spp-tunai-${Date.now()}`;
+    const now = new Date().toISOString();
+    const monthLabel = INDO_MONTH_NAMES[month] || `Bulan ${month}`;
+
+    const newPayment: SppPayment = {
+      id: paymentId,
+      student_id: student.id,
+      student_name: student.full_name,
+      student_number: student.student_number,
+      group_name: student.group_name,
+      month,
+      year,
+      amount: amount || sppSettings.monthly_amount,
+      payment_date: paymentDate || now.split('T')[0],
+      proof_image_url: '',
+      notes: notes ? `Pembayaran tunai: ${notes}` : 'Pembayaran tunai langsung ke kantor pesantren',
+      status: 'verified',
+      reviewed_by: currentUser.id,
+      reviewed_by_name: currentUser.full_name,
+      reviewed_at: now,
+      created_at: now,
+    };
+
+    const autoTx: FinancialTransaction = {
+      id: `tx-${paymentId}`,
+      type: 'income',
+      category: 'SPP Santri Bulanan',
+      title: `SPP ${monthLabel} ${year} — ${student.full_name} (Tunai)`,
+      amount: newPayment.amount,
+      transaction_date: newPayment.payment_date,
+      description: `Pembayaran tunai SPP ${monthLabel} ${year} diterima langsung oleh ${currentUser.full_name}`,
+      spp_payment_id: paymentId,
+      created_by: currentUser.id,
+      created_by_name: currentUser.full_name,
+      created_at: now,
+    };
+
+    setSppPayments((prev) => [newPayment, ...prev]);
+    setFinancialTransactions((prev) => [autoTx, ...prev]);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'ADD_MANUAL_SPP',
+      entity_type: 'spp_payment',
+      entity_id: paymentId,
+      after_data: { student_name: student.full_name, month, year, amount: newPayment.amount },
+      reason: `Musyrif mencatat pembayaran SPP tunai langsung untuk ${student.full_name}`,
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('spp_payments').insert([newPayment]);
+        await supabase.from('financial_transactions').insert([autoTx]);
+      } catch (err) {
+        console.warn('Supabase manual spp error:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Pembayaran tunai SPP ${monthLabel} untuk ${student.full_name} berhasil dicatat & masuk kas!`,
+    };
+  };
+
+  const addFinancialTransaction = async (
+    txData: Omit<FinancialTransaction, 'id' | 'created_at' | 'created_by' | 'created_by_name'>
+  ) => {
+    const newTx: FinancialTransaction = {
+      ...txData,
+      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      created_by: currentUser.id,
+      created_by_name: currentUser.full_name,
+      created_at: new Date().toISOString(),
+    };
+
+    setFinancialTransactions((prev) => [newTx, ...prev]);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'ADD_FINANCIAL_TRANSACTION',
+      entity_type: 'financial_transaction',
+      entity_id: newTx.id,
+      after_data: {
+        type: newTx.type,
+        category: newTx.category,
+        title: newTx.title,
+        amount: newTx.amount,
+      },
+      reason: `Pencatatan ${newTx.type === 'expense' ? 'pengeluaran' : 'pemasukan'} kas pesantren`,
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('financial_transactions').insert([newTx]);
+      } catch (err) {
+        console.warn('Supabase insert financial_transaction error:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `${newTx.type === 'expense' ? 'Pengeluaran' : 'Pemasukan'} kas berhasil dicatat!`,
+    };
+  };
+
+  const deleteFinancialTransaction = async (id: string) => {
+    const target = financialTransactions.find((t) => t.id === id);
+    setFinancialTransactions((prev) => prev.filter((t) => t.id !== id));
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'DELETE_FINANCIAL_TRANSACTION',
+      entity_type: 'financial_transaction',
+      entity_id: id,
+      before_data: target ? { title: target.title, amount: target.amount } : null,
+      reason: 'Musyrif menghapus catatan transaksi kas',
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('financial_transactions').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase delete financial_transaction error:', err);
+      }
+    }
+
+    return { success: true, message: 'Transaksi kas berhasil dihapus.' };
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1344,6 +1853,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         activities,
         attendanceRecords,
         auditLogs,
+        sppSettings,
+        sppPayments,
+        financialTransactions,
         effectiveTime,
         submitAttendance,
         reviewPermission,
@@ -1355,6 +1867,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addActivity,
         updateActivity,
         updateGeotagLocation,
+        updateSppSettings,
+        submitSppPayment,
+        reviewSppPayment,
+        addManualSppPayment,
+        addFinancialTransaction,
+        deleteFinancialTransaction,
         theme,
         toggleTheme,
         setTheme,

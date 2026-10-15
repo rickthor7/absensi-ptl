@@ -31,6 +31,8 @@ import {
   Crosshair,
   Locate,
   GraduationCap,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
@@ -42,6 +44,8 @@ export default function MusyrifDashboardPage() {
     activities,
     profiles,
     effectiveTime,
+    sppPayments,
+    financialTransactions,
     reviewPermission,
     correctAttendance,
   } = useStore();
@@ -265,6 +269,75 @@ export default function MusyrifDashboardPage() {
             </span>
           </div>
         </div>
+
+        {/* ── Keuangan & SPP Quick Banner ── */}
+        {(() => {
+          const pendingSpp = (sppPayments || []).filter((p) => p.status === 'pending');
+          const totalIn = (financialTransactions || [])
+            .filter((t) => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+          const totalOut = (financialTransactions || [])
+            .filter((t) => t.type === 'expense')
+            .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+          const saldo = totalIn - totalOut;
+
+          const formatRp = (val: number) =>
+            new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              maximumFractionDigits: 0,
+            }).format(val);
+
+          return (
+            <div className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 card-hover">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0D7B5F]/20 to-[#D4A24C]/20 text-[#0D7B5F] dark:text-[#D4A24C] flex items-center justify-center shrink-0 border border-[#0D7B5F]/20">
+                  <Wallet className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                      Kas & Keuangan Pondok
+                    </span>
+                    <span className="text-xs font-mono font-extrabold text-[#0D7B5F] dark:text-[#D4A24C]">
+                      Saldo: {formatRp(saldo)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-stone-600 dark:text-stone-400 mt-0.5 flex flex-wrap items-center gap-2">
+                    <span>Kas Masuk: <strong className="text-emerald-600">{formatRp(totalIn)}</strong></span>
+                    <span>•</span>
+                    <span>Pengeluaran: <strong className="text-rose-600">{formatRp(totalOut)}</strong></span>
+                    {pendingSpp.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 animate-pulse">
+                        {pendingSpp.length} Bukti SPP Menunggu Verifikasi
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                <Link
+                  href="/transparansi"
+                  target="_blank"
+                  className="px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors flex items-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4A24C]" />
+                  <span>Publik</span>
+                </Link>
+
+                <Link
+                  href="/musyrif/keuangan"
+                  className="px-4 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#0a664e] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>Kelola Keuangan & SPP</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Warning Banner ── */}
         {monthlyStats.warningCount > 0 && (

@@ -20,6 +20,8 @@ import {
   Zap,
   Fingerprint,
   Locate,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
 
@@ -184,6 +186,40 @@ export default function HomePage() {
               <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">{f.desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* ── Transparansi Kas & Pengeluaran Terbuka Showcase ── */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-[#D4A24C]/10 border border-[#0D7B5F]/30 p-6 sm:p-8 backdrop-blur-sm shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4A24C]/15 text-[#D4A24C] text-[11px] font-bold border border-[#D4A24C]/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Transparansi Publik & Akuntabilitas Pondok</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight">
+              Pencatatan Keuangan & Alokasi Dana Terbuka
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
+              Masyarakat, wali santri, dan donatur dapat melihat laporan real-time seluruh pemasukan iuran SPP serta peruntukan dana operasional dapur santri, listrik, air, dan perawatan asrama secara terbuka.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <Link
+              href="/transparansi"
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#0D7B5F] to-[#0A6951] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all btn-press"
+            >
+              <Wallet className="w-4 h-4" />
+              <span>Buka Laporan Transparansi</span>
+            </Link>
+
+            <Link
+              href={isAuthenticated ? "/santri/spp" : "/login"}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white dark:bg-[#152922] border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold hover:border-[#0D7B5F] transition-all"
+            >
+              <CreditCard className="w-4 h-4 text-[#D4A24C]" />
+              <span>Portal SPP Santri</span>
+            </Link>
+          </div>
         </div>
 
         {/* ── Two Role Portal Cards ── */}

@@ -26,6 +26,8 @@ import {
   Database,
   LogIn,
   Key,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
@@ -40,6 +42,7 @@ export default function Navbar() {
     effectiveTime,
     theme,
     toggleTheme,
+    sppPayments,
   } = useStore();
 
   const pathname = usePathname();
@@ -77,6 +80,7 @@ export default function Navbar() {
   }
 
   const isMusyrif = currentUser.role === 'musyrif';
+  const pendingSppCount = (sppPayments || []).filter((p) => p.status === 'pending').length;
 
   const handleLogout = async () => {
     await logout();
@@ -89,19 +93,23 @@ export default function Navbar() {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     highlight?: boolean;
+    badge?: number;
   }
 
   const santriNav: NavItem[] = [
     { href: '/santri', label: 'Beranda', icon: Compass },
     { href: '/santri/absensi', label: 'Mulai Absensi', icon: CheckCircle2, highlight: true },
+    { href: '/santri/spp', label: 'SPP Bulanan', icon: CreditCard },
     { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
     { href: '/santri/riwayat', label: 'Riwayat', icon: History },
+    { href: '/transparansi', label: 'Transparansi', icon: Wallet },
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
   const musyrifNav: NavItem[] = [
     { href: '/musyrif', label: 'Ringkasan', icon: Compass },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
+    { href: '/musyrif/keuangan', label: 'Keuangan & SPP', icon: Wallet, badge: pendingSppCount },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },
     { href: '/musyrif/kegiatan', label: 'Kegiatan & Jadwal', icon: Settings },
@@ -172,7 +180,7 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation Links */}
-            {isAuthenticated && (
+            {isAuthenticated ? (
               <nav className="hidden lg:flex items-center gap-0.5">
                 {navLinks.map((item) => {
                   const isActive = pathname === item.href;
@@ -181,7 +189,7 @@ export default function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 relative ${
                         item.highlight
                           ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm shadow-amber-900/20 hover:shadow-md'
                           : isActive
@@ -191,14 +199,37 @@ export default function Navbar() {
                     >
                       <Icon className="w-3.5 h-3.5" />
                       <span>{item.label}</span>
+                      {item.badge && item.badge > 0 ? (
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-sm">
+                          {item.badge}
+                        </span>
+                      ) : null}
                     </Link>
                   );
                 })}
               </nav>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  href="/transparansi"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#D4A24C] border border-[#D4A24C]/30 hover:bg-white/5 transition-colors"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>Transparansi Kas Terbuka</span>
+                </Link>
+              </div>
             )}
 
             {/* Right side */}
             <div className="flex items-center gap-2">
+              {/* Transparansi Quick Icon for Authenticated if not already displayed */}
+              <Link
+                href="/transparansi"
+                title="Buka Halaman Transparansi Kas Publik"
+                className="hidden md:flex p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#D4A24C] transition cursor-pointer"
+              >
+                <Wallet className="w-4 h-4" />
+              </Link>
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}

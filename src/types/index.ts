@@ -87,3 +87,55 @@ export interface AuditLog {
   reason?: string;
   created_at: string;
 }
+
+export interface SppSettings {
+  id: string; // 'default'
+  monthly_amount: number; // e.g. 120000
+  bank_name: string; // e.g. 'Bank Syariah Indonesia (BSI)'
+  bank_account_number: string; // e.g. '7128938475'
+  bank_account_holder: string; // e.g. 'Pondok Pesantren Nurul Falah'
+  qris_image_url?: string;
+  notes?: string;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export type SppPaymentStatus = 'pending' | 'verified' | 'rejected';
+
+export interface SppPayment {
+  id: string;
+  student_id: string;
+  student_name: string;
+  student_number?: string;
+  group_name?: string;
+  month: number; // 1-12
+  year: number; // e.g. 2026
+  amount: number; // e.g. 120000
+  payment_date: string; // YYYY-MM-DD
+  proof_image_url: string; // image url or base64 data url
+  notes?: string;
+  status: SppPaymentStatus;
+  reviewed_by?: string;
+  reviewed_by_name?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type TransactionType = 'income' | 'expense';
+
+export interface FinancialTransaction {
+  id: string;
+  type: TransactionType;
+  category: string;
+  title: string;
+  amount: number;
+  transaction_date: string; // YYYY-MM-DD
+  description?: string;
+  proof_image_url?: string;
+  created_by?: string;
+  created_by_name?: string;
+  spp_payment_id?: string;
+  created_at: string;
+}

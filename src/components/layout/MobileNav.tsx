@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   FileText,
   BarChart3,
+  CreditCard,
+  Wallet,
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,7 +28,7 @@ interface NavItem {
 
 export default function MobileNav() {
   const pathname = usePathname();
-  const { currentUser, attendanceRecords } = useStore();
+  const { currentUser, attendanceRecords, sppPayments } = useStore();
 
   if (pathname === '/' || pathname === '/login') {
     return null;
@@ -38,20 +40,24 @@ export default function MobileNav() {
     (r) => r.status === 'izin_diajukan'
   ).length;
 
+  const pendingSppCount = (sppPayments || []).filter(
+    (p) => p.status === 'pending'
+  ).length;
+
   const santriItems: NavItem[] = [
     { href: '/santri', label: 'Beranda', icon: Compass },
-    { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
+    { href: '/santri/spp', label: 'SPP', icon: CreditCard },
     { href: '/santri/absensi', label: 'Absen', icon: Camera, center: true },
-    { href: '/santri/riwayat', label: 'Riwayat', icon: History },
-    { href: '/santri/profil', label: 'Profil', icon: User },
+    { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
+    { href: '/transparansi', label: 'Kas', icon: Wallet },
   ];
 
   const musyrifItems: NavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
-    { href: '/musyrif/santri', label: 'Santri', icon: Users },
+    { href: '/musyrif/keuangan', label: 'Keuangan', icon: Wallet, badge: pendingSppCount },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2, center: true },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
-    { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
+    { href: '/musyrif/santri', label: 'Santri', icon: Users },
   ];
 
   const items = isMusyrif ? musyrifItems : santriItems;

@@ -20,11 +20,20 @@ import {
   Zap,
   TrendingUp,
   User,
+  CreditCard,
+  Wallet,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
 
 export default function SantriHomePage() {
-  const { currentUser, activities, attendanceRecords, effectiveTime } = useStore();
+  const {
+    currentUser,
+    activities,
+    attendanceRecords,
+    effectiveTime,
+    sppPayments,
+    sppSettings,
+  } = useStore();
 
   const activeResult = determineActiveActivity(activities, effectiveTime);
   const activeActivity = activeResult.activeActivity;
@@ -271,6 +280,79 @@ export default function SantriHomePage() {
             </div>
           </Link>
         </div>
+
+        {/* ── SPP Bulan Ini Card ── */}
+        {(() => {
+          const currentMonth = effectiveTime.getMonth() + 1;
+          const currentYear = effectiveTime.getFullYear();
+          const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+          ];
+          const payment = (sppPayments || []).find(
+            (p) => p.student_id === currentUser.id && p.month === currentMonth && p.year === currentYear
+          );
+
+          const formatRupiah = (val: number) =>
+            new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              maximumFractionDigits: 0,
+            }).format(val);
+
+          return (
+            <div className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-hover">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                  payment?.status === 'verified'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                    : payment?.status === 'pending'
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                    : 'bg-[#D4A24C]/15 text-[#D4A24C]'
+                }`}>
+                  <CreditCard className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                      SPP {monthNames[currentMonth - 1]} {currentYear}
+                    </span>
+                    {payment?.status === 'verified' && (
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Lunas
+                      </span>
+                    )}
+                    {payment?.status === 'pending' && (
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Menunggu Verifikasi
+                      </span>
+                    )}
+                    {(!payment || payment.status === 'rejected') && (
+                      <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/60 px-2 py-0.5 rounded-full">
+                        Belum Bayar
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm font-extrabold text-stone-900 dark:text-stone-100 mt-0.5">
+                    Tagihan: {formatRupiah(payment ? payment.amount : sppSettings.monthly_amount)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <Link
+                  href="/santri/spp"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#0D7B5F] hover:bg-[#0a664e] text-white shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <span>{payment?.status === 'verified' ? 'Lihat Bukti SPP' : 'Upload Bukti SPP'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Monthly Stats ── */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
