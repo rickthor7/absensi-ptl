@@ -28,7 +28,10 @@ import {
   TrendingUp,
   AlertOctagon,
   FileSpreadsheet,
+  Crosshair,
+  Locate,
 } from 'lucide-react';
+import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
 
 export default function MusyrifDashboardPage() {
   const {
@@ -44,6 +47,7 @@ export default function MusyrifDashboardPage() {
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [reviewRecord, setReviewRecord] = useState<AttendanceRecord | null>(null);
   const [correctRecord, setCorrectRecord] = useState<AttendanceRecord | null>(null);
+  const [isGeotagModalOpen, setIsGeotagModalOpen] = useState(false);
 
   const todayStr = effectiveTime.toISOString().split('T')[0];
   const santriList = profiles.filter((p) => p.role === 'santri' && p.is_active);
@@ -161,7 +165,18 @@ export default function MusyrifDashboardPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 bg-black/20 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/8">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsGeotagModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D6A84F] to-[#E8C36E] text-[#082F23] text-xs font-black transition shadow-md hover:brightness-105 active:scale-95 cursor-pointer"
+                title="Perbarui titik lokasi GPS presensi santri"
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span>Geotag GPS</span>
+              </button>
+
+              <div className="flex items-center gap-3 bg-black/20 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/8">
               <Clock className="w-4 h-4 text-[#D4A24C]" />
               <div>
                 <span className="text-lg font-bold font-mono text-white tabular-nums">
@@ -172,6 +187,7 @@ export default function MusyrifDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
         {/* ── 4 Metric Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -570,6 +586,12 @@ export default function MusyrifDashboardPage() {
             onSave={(id, newStatus, reason) => correctAttendance(id, newStatus, reason)}
           />
         )}
+
+        {/* Geotag Calibration Modal */}
+        <GeotagLocationModal
+          isOpen={isGeotagModalOpen}
+          onClose={() => setIsGeotagModalOpen(false)}
+        />
       </div>
     </div>
   );

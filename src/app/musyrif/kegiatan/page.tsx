@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Activity } from '@/types';
 import ActivityModal from '@/components/schedule/ActivityModal';
+import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
+import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
 import {
   Calendar,
   Clock,
@@ -13,6 +15,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
+  Locate,
+  Crosshair,
+  ExternalLink,
+  Radio,
 } from 'lucide-react';
 
 export default function MusyrifKegiatanPage() {
@@ -20,8 +26,15 @@ export default function MusyrifKegiatanPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [isGeotagModalOpen, setIsGeotagModalOpen] = useState(false);
 
   const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Ahad'];
+
+  // Current active reference coordinates
+  const refActivity = activities[0];
+  const currentLat = refActivity ? refActivity.location_lat : PONDOK_DEFAULT_COORDINATES.latitude;
+  const currentLng = refActivity ? refActivity.location_lng : PONDOK_DEFAULT_COORDINATES.longitude;
+  const currentRadius = refActivity ? refActivity.radius_m : 75;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -30,26 +43,90 @@ export default function MusyrifKegiatanPage() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#146B50] mb-0.5">
             <Calendar className="w-4 h-4 text-[#D6A84F]" />
-            <span>Manajemen Jadwal Kegiatan</span>
+            <span>Manajemen Jadwal Kegiatan & Lokasi</span>
           </div>
           <h1 className="text-xl font-extrabold text-stone-900 dark:text-stone-100">
             Kegiatan, Jadwal & Radius Geofence
           </h1>
           <p className="text-xs text-stone-500">
-            Atur jam buka/tutup, hari pelaksanaan, radius batas lokasi, dan kegiatan lintas tengah malam
+            Atur jam buka/tutup, hari pelaksanaan, dan perbarui koordinat geotag lokasi presensi
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingActivity(null);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#146B50] hover:bg-[#0B3D2E] text-white text-xs font-bold transition shadow-md cursor-pointer border border-[#D6A84F]/40"
-        >
-          <Plus className="w-4 h-4 text-[#D6A84F]" />
-          <span>Tambah Kegiatan</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setIsGeotagModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-[#D6A84F] to-[#E8C36E] text-[#082F23] text-xs font-extrabold transition shadow-md hover:brightness-105 cursor-pointer active:scale-95"
+          >
+            <Crosshair className="w-4 h-4" />
+            <span>Perbarui Titik Geotag (GPS)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setEditingActivity(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#146B50] hover:bg-[#0B3D2E] text-white text-xs font-bold transition shadow-md cursor-pointer border border-[#D6A84F]/40"
+          >
+            <Plus className="w-4 h-4 text-[#D6A84F]" />
+            <span>Tambah Kegiatan</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Geotag GPS Calibration Banner Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#051A13] p-5 sm:p-6 text-white shadow-xl border border-[#D6A84F]/40">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#D6A84F]/10 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/25 text-[11px] font-bold text-[#D6A84F] border border-[#D6A84F]/30 backdrop-blur-xs">
+              <Radio className="w-3.5 h-3.5 animate-pulse text-[#D6A84F]" />
+              <span>Titik Pusat Presensi Santri (Aktif)</span>
+            </div>
+
+            <h2 className="text-lg sm:text-xl font-extrabold text-white">
+              {PONDOK_DEFAULT_COORDINATES.name}
+            </h2>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-emerald-100/90 font-mono">
+              <span className="bg-black/20 px-2.5 py-1 rounded-lg border border-white/10">
+                Lat: {currentLat.toFixed(6)}
+              </span>
+              <span className="bg-black/20 px-2.5 py-1 rounded-lg border border-white/10">
+                Lng: {currentLng.toFixed(6)}
+              </span>
+              <span className="bg-[#D6A84F]/20 text-[#D6A84F] px-2.5 py-1 rounded-lg border border-[#D6A84F]/30 font-sans font-bold">
+                Radius: {currentRadius}m
+              </span>
+            </div>
+
+            <p className="text-xs text-emerald-100/70 pt-0.5">
+              Seluruh presensi santri divalidasi berdasarkan titik ini. Musyrif dapat memperbarui titik lokasi kapan pun dengan GPS perangkat secara instan.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0">
+            <button
+              onClick={() => setIsGeotagModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#D6A84F] via-[#F3D78A] to-[#D6A84F] hover:brightness-105 text-[#082F23] text-xs font-black transition shadow-lg shadow-black/30 active:scale-95 cursor-pointer"
+            >
+              <Locate className="w-4 h-4" />
+              <span>Kalibrasi Titik GPS Sekarang</span>
+            </button>
+
+            <a
+              href={`https://www.google.com/maps?q=${currentLat},${currentLng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/15 backdrop-blur-xs cursor-pointer text-center"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#D6A84F]" />
+              <span>Buka di Google Maps</span>
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* Activities Grid */}
@@ -113,6 +190,20 @@ export default function MusyrifKegiatanPage() {
                 </div>
               </div>
 
+              {/* Geotag Coordinate Info */}
+              <div className="pt-2 flex items-center justify-between text-[10px] text-stone-500 font-mono">
+                <span>Geotag: {act.location_lat.toFixed(6)}, {act.location_lng.toFixed(6)}</span>
+                <a
+                  href={`https://www.google.com/maps?q=${act.location_lat},${act.location_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#0D7B5F] dark:text-[#D6A84F] hover:underline font-sans font-bold inline-flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>Maps</span>
+                </a>
+              </div>
+
               {/* Active Days Pills */}
               <div className="pt-2">
                 <span className="text-[10px] text-stone-500 dark:text-stone-400 block mb-1 font-semibold">Hari Pelaksanaan:</span>
@@ -145,7 +236,13 @@ export default function MusyrifKegiatanPage() {
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Geotag GPS Calibration Modal */}
+      <GeotagLocationModal
+        isOpen={isGeotagModalOpen}
+        onClose={() => setIsGeotagModalOpen(false)}
+      />
+
+      {/* Activity Modal */}
       {isModalOpen && (
         <ActivityModal
           activity={editingActivity}

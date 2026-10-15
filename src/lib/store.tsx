@@ -85,6 +85,12 @@ interface StoreContextType {
   toggleStudentStatus: (id: string) => Promise<void>;
   addActivity: (activity: Omit<Activity, 'id'>) => Promise<void>;
   updateActivity: (activity: Activity) => Promise<void>;
+  updateGeotagLocation: (params: {
+    latitude: number;
+    longitude: number;
+    radiusM?: number;
+    activityIds?: string[];
+  }) => Promise<{ success: boolean; message: string; updatedCount: number }>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
@@ -1254,6 +1260,72 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateGeotagLocation = async (params: {
+    latitude: number;
+    longitude: number;
+    radiusM?: number;
+    activityIds?: string[];
+  }): Promise<{ success: boolean; message: string; updatedCount: number }> => {
+    const targetIds = params.activityIds || activities.map((a) => a.id);
+    const updatedActivities = activities.map((act) => {
+      if (targetIds.includes(act.id)) {
+        return {
+          ...act,
+          location_lat: params.latitude,
+          location_lng: params.longitude,
+          ...(params.radiusM ? { radius_m: params.radiusM } : {}),
+        };
+      }
+      return act;
+    });
+
+    setActivities(updatedActivities);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'UPDATE_GEOTAG',
+      entity_type: 'activity',
+      entity_id: targetIds.join(','),
+      after_data: {
+        latitude: params.latitude,
+        longitude: params.longitude,
+        radius_m: params.radiusM,
+        updatedCount: targetIds.length,
+      },
+      reason: `Musyrif memperbarui titik lokasi geotag presensi GPS (${targetIds.length} kegiatan)`,
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        for (const act of updatedActivities) {
+          if (targetIds.includes(act.id)) {
+            await supabase
+              .from('activities')
+              .update({
+                location_lat: params.latitude,
+                location_lng: params.longitude,
+                ...(params.radiusM ? { radius_m: params.radiusM } : {}),
+              })
+              .eq('id', act.id);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase update geotag failed:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Berhasil memperbarui koordinat geotag presensi untuk ${targetIds.length} kegiatan pondok!`,
+      updatedCount: targetIds.length,
+    };
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1282,6 +1354,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         toggleStudentStatus,
         addActivity,
         updateActivity,
+        updateGeotagLocation,
         theme,
         toggleTheme,
         setTheme,
