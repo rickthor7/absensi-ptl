@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AttendanceRecord, AttendanceStatus } from '@/types';
 import { X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
@@ -13,6 +13,15 @@ interface CorrectionModalProps {
 export default function CorrectionModal({ record, onClose, onSave }: CorrectionModalProps) {
   const [newStatus, setNewStatus] = useState<AttendanceStatus>(record.status);
   const [reason, setReason] = useState('');
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const statusOptions: { value: AttendanceStatus; label: string }[] = [
     { value: 'hadir_valid', label: 'Hadir Tervalidasi' },
@@ -31,7 +40,12 @@ export default function CorrectionModal({ record, onClose, onSave }: CorrectionM
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
       <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="bg-[#0B3D2E] text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -42,8 +56,9 @@ export default function CorrectionModal({ record, onClose, onSave }: CorrectionM
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10"
+            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer transition"
           >
             <X className="w-5 h-5" />
           </button>

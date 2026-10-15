@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity } from '@/types';
 import { X, Calendar, Clock, MapPin, Save, AlertCircle } from 'lucide-react';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
@@ -23,6 +23,32 @@ export default function ActivityModal({ activity, onClose, onSave }: ActivityMod
   const [lateAfterMinutes, setLateAfterMinutes] = useState(activity?.late_after_minutes || 10);
   const [description, setDescription] = useState(activity?.description || '');
   const [isActive, setIsActive] = useState(activity ? activity.is_active : true);
+
+  // Sync state if activity prop changes
+  useEffect(() => {
+    if (activity) {
+      setName(activity.name);
+      setCode(activity.code);
+      setStartTime(activity.start_time);
+      setEndTime(activity.end_time);
+      setCrossesMidnight(activity.crosses_midnight);
+      setActiveDays(activity.active_days);
+      setRadiusM(activity.radius_m ?? 75);
+      setMaxAccuracyM(activity.max_gps_accuracy_m ?? 100);
+      setLateAfterMinutes(activity.late_after_minutes ?? 10);
+      setDescription(activity.description || '');
+      setIsActive(activity.is_active);
+    }
+  }, [activity]);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const daysList = [
     { id: 1, label: 'Sen' },
@@ -62,7 +88,12 @@ export default function ActivityModal({ activity, onClose, onSave }: ActivityMod
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
       <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="bg-[#0B3D2E] text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -72,8 +103,9 @@ export default function ActivityModal({ activity, onClose, onSave }: ActivityMod
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10"
+            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -169,7 +201,7 @@ export default function ActivityModal({ activity, onClose, onSave }: ActivityMod
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       isSelected
                         ? 'bg-[#146B50] text-white shadow-xs'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
                     }`}
                   >
                     {d.label}

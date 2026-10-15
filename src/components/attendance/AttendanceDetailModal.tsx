@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AttendanceRecord } from '@/types';
 import { STATUS_META } from '@/lib/constants';
 import { X, MapPin, Clock, Calendar, ShieldCheck, User } from 'lucide-react';
@@ -13,8 +13,22 @@ interface AttendanceDetailModalProps {
 export default function AttendanceDetailModal({ record, onClose }: AttendanceDetailModalProps) {
   const meta = STATUS_META[record.status];
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
       <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="bg-[#0B3D2E] text-white p-5 flex items-center justify-between">
           <div>
@@ -24,8 +38,9 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10"
+            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer transition"
           >
             <X className="w-5 h-5" />
           </button>

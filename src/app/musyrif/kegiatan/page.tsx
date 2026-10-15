@@ -57,27 +57,27 @@ export default function MusyrifKegiatanPage() {
         {activities.map((act) => (
           <div
             key={act.id}
-            className="bg-white dark:bg-stone-900 p-5 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-[#146B50] transition flex flex-col justify-between gap-4"
+            className="bg-white dark:bg-[#0F1E18] p-5 rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] shadow-xs hover:border-[#0D7B5F] transition flex flex-col justify-between gap-4"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 pb-3 border-b border-stone-100 dark:border-stone-800">
+              <div className="flex items-start justify-between gap-2 pb-3 border-b border-stone-100 dark:border-[#1C3A2E]">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-base text-stone-900 dark:text-stone-100">
                       {act.name}
                     </h3>
-                    <span className="font-mono text-[10px] bg-stone-100 px-2 py-0.5 rounded text-stone-600 font-bold">
+                    <span className="font-mono text-[10px] bg-stone-100 dark:bg-[#162B22] px-2 py-0.5 rounded-md text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-[#1C3A2E] font-bold">
                       {act.code}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">{act.description}</p>
+                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-0.5">{act.description}</p>
                 </div>
 
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     act.is_active
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-stone-100 text-stone-500'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   {act.is_active ? 'Aktif' : 'Nonaktif'}
@@ -87,14 +87,14 @@ export default function MusyrifKegiatanPage() {
               {/* Specs */}
               <div className="grid grid-cols-2 gap-3 py-3 text-xs">
                 <div className="flex items-center gap-2 text-stone-700 dark:text-stone-300">
-                  <Clock className="w-4 h-4 text-[#146B50] shrink-0" />
+                  <Clock className="w-4 h-4 text-[#0D7B5F] dark:text-[#D6A84F] shrink-0" />
                   <div>
-                    <span className="text-[10px] text-stone-400 block">Jendela Absensi</span>
-                    <span className="font-bold">
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400 block">Jendela Absensi</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100">
                       {act.start_time} - {act.end_time} WIB
                     </span>
                     {act.crosses_midnight && (
-                      <span className="block text-[10px] text-amber-600 font-medium">
+                      <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-medium">
                         *Lintas Tengah Malam
                       </span>
                     )}
@@ -104,9 +104,9 @@ export default function MusyrifKegiatanPage() {
                 <div className="flex items-center gap-2 text-stone-700 dark:text-stone-300">
                   <MapPin className="w-4 h-4 text-[#D6A84F] shrink-0" />
                   <div>
-                    <span className="text-[10px] text-stone-400 block">Radius Validasi</span>
-                    <span className="font-bold">{act.radius_m} meter</span>
-                    <span className="block text-[10px] text-stone-400">
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400 block">Radius Validasi</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100">{act.radius_m} meter</span>
+                    <span className="block text-[10px] text-stone-500 dark:text-stone-400">
                       Toleransi GPS: ±{act.max_gps_accuracy_m}m
                     </span>
                   </div>
@@ -115,12 +115,12 @@ export default function MusyrifKegiatanPage() {
 
               {/* Active Days Pills */}
               <div className="pt-2">
-                <span className="text-[10px] text-stone-400 block mb-1">Hari Pelaksanaan:</span>
+                <span className="text-[10px] text-stone-500 dark:text-stone-400 block mb-1 font-semibold">Hari Pelaksanaan:</span>
                 <div className="flex flex-wrap gap-1">
                   {act.active_days.map((d) => (
                     <span
                       key={d}
-                      className="text-[10px] px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-semibold"
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200/80 dark:border-stone-700 font-semibold"
                     >
                       {dayNames[d]}
                     </span>
@@ -129,15 +129,15 @@ export default function MusyrifKegiatanPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end">
+            <div className="pt-3 border-t border-stone-100 dark:border-[#1C3A2E] flex justify-end">
               <button
                 onClick={() => {
                   setEditingActivity(act);
                   setIsModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:text-[#146B50] hover:bg-emerald-50 text-xs font-bold transition cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 hover:text-[#0D7B5F] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-xs font-bold transition cursor-pointer"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Edit2 className="w-3.5 h-3.5 text-[#0D7B5F]" />
                 <span>Ubah Jadwal & Radius</span>
               </button>
             </div>

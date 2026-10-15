@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { X, Key, Lock, Mail, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
+import { X, Key, Lock, Mail, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle, Shield, Phone } from 'lucide-react';
 
 interface AccountSecurityModalProps {
   isOpen: boolean;
@@ -22,6 +22,28 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Sync state whenever modal opens or currentUser changes
+  useEffect(() => {
+    if (isOpen) {
+      setFullName(currentUser.full_name || '');
+      setEmail(currentUser.email || '');
+      setPhone(currentUser.phone || '');
+      setNewPassword('');
+      setConfirmPassword('');
+      setSuccessMsg(null);
+      setErrorMsg(null);
+    }
+  }, [isOpen, currentUser]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -78,17 +100,22 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+    <div
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white dark:bg-[#0F1E18] rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 dark:border-[#1C3A2E] overflow-hidden my-8 animate-in zoom-in-95 duration-150 relative">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#07241B] via-[#0B3D2E] to-[#146B50] text-white p-5 flex items-center justify-between border-b border-[#D6A84F]/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-[#D6A84F]/40 flex items-center justify-center text-[#D6A84F]">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-[#D6A84F]/40 flex items-center justify-center text-[#D6A84F] shadow-sm">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base tracking-tight">Akun & Keamanan Login</h3>
-              <p className="text-[11px] text-emerald-200/80">
+              <h3 className="font-extrabold text-base tracking-tight text-white">Akun & Keamanan Login</h3>
+              <p className="text-[11px] text-emerald-200/90">
                 Ubah username/email dan kata sandi akses akun Anda
               </p>
             </div>
@@ -97,6 +124,7 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
             type="button"
             onClick={onClose}
             className="text-white/70 hover:text-white p-2 rounded-xl hover:bg-white/10 transition cursor-pointer"
+            aria-label="Tutup Modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -118,20 +146,20 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
           )}
 
           {/* Current Role Pill */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-800">
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 dark:bg-[#162B22]/50 border border-stone-200/80 dark:border-[#1C3A2E]">
             <div>
-              <span className="text-[10px] text-stone-400 block font-medium">Peran Akun Aktif:</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-semibold">Peran Akun Aktif:</span>
               <span className="font-extrabold text-stone-900 dark:text-stone-100 capitalize">
                 {currentUser.role} {currentUser.group_name ? `• ${currentUser.group_name}` : ''}
               </span>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#146B50]/10 text-[#146B50] dark:text-[#D6A84F] font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#0D7B5F]/10 dark:bg-[#0D7B5F]/20 text-[#0D7B5F] dark:text-[#D6A84F] font-bold">
               ID: {currentUser.id.slice(0, 10)}
             </span>
           </div>
 
           <div>
-            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
               Nama Lengkap <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -142,13 +170,13 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Nama Anda"
-                className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#146B50] outline-none"
+                className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
               Email / Username Login <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -159,16 +187,16 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alamat.email@nurulfalah.ac.id"
-                className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#146B50] outline-none font-mono"
+                className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
               />
             </div>
-            <p className="text-[10px] text-stone-400 mt-1">
+            <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1">
               Alamat email ini digunakan untuk masuk / login ke aplikasi.
             </p>
           </div>
 
           <div>
-            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
               Nomor Telepon / WhatsApp
             </label>
             <input
@@ -176,20 +204,20 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="0812-3456-7890"
-              className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#146B50] outline-none font-mono"
+              className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
             />
           </div>
 
           {/* Change Password Section */}
-          <div className="pt-3 border-t border-stone-100 dark:border-stone-800 space-y-3">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#146B50] dark:text-[#D6A84F] flex items-center gap-1.5">
+          <div className="pt-3 border-t border-stone-100 dark:border-[#1C3A2E] space-y-3">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#0D7B5F] dark:text-[#D6A84F] flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5" />
               <span>Ganti Kata Sandi (Opsional)</span>
             </span>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block font-bold text-stone-700 dark:text-stone-300">
+                <label className="block font-bold text-stone-800 dark:text-stone-200">
                   Kata Sandi Baru
                 </label>
                 <span className="text-[10px] text-stone-400 italic">
@@ -203,12 +231,13 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimal 6 karakter..."
-                  className="w-full text-xs pl-10 pr-10 py-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#146B50] outline-none font-mono"
+                  className="w-full text-xs pl-10 pr-10 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
+                  aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -217,7 +246,7 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
 
             {newPassword && (
               <div className="animate-in fade-in duration-150">
-                <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
                   Ulangi Kata Sandi Baru <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -227,7 +256,7 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ketik ulang kata sandi baru..."
-                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#146B50] outline-none font-mono"
+                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
                   />
                 </div>
               </div>
@@ -235,7 +264,7 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
           </div>
 
           {/* Action buttons */}
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-stone-100 dark:border-stone-800">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-stone-100 dark:border-[#1C3A2E]">
             <button
               type="button"
               disabled={isLoading}
@@ -247,7 +276,7 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white font-bold transition shadow-md active:scale-95 cursor-pointer border border-[#D6A84F]/30 disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#0D7B5F] via-[#096B52] to-[#082F23] hover:from-[#096B52] hover:to-[#051A13] text-white font-bold transition shadow-md active:scale-95 cursor-pointer border border-[#D6A84F]/30 disabled:opacity-50"
             >
               <Save className="w-4 h-4 text-[#D6A84F]" />
               <span>{isLoading ? 'Menyimpan...' : 'Perbarui Kredensial'}</span>

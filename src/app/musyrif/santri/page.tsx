@@ -221,8 +221,8 @@ export default function MusyrifSantriPage() {
                     onClick={() => toggleStudentStatus(s.id)}
                     className={`p-2 rounded-xl border transition active:scale-95 cursor-pointer ${
                       s.is_active
-                        ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                        : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                        ? 'border-rose-200 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                        : 'border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                     }`}
                     title={s.is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun'}
                   >
@@ -336,8 +336,8 @@ export default function MusyrifSantriPage() {
                           onClick={() => toggleStudentStatus(s.id)}
                           className={`p-2 rounded-xl border transition cursor-pointer ${
                             s.is_active
-                              ? 'border-stone-200 dark:border-stone-700 text-stone-500 hover:text-rose-600 hover:bg-rose-50'
-                              : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                              ? 'border-stone-200 dark:border-stone-700 text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                              : 'border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                           }`}
                           title={s.is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun'}
                         >

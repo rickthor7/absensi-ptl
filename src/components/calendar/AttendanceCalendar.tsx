@@ -183,18 +183,18 @@ export default function AttendanceCalendar() {
 
       {/* Calendar Grid View */}
       {viewMode === 'calendar' ? (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-3 sm:p-6 shadow-sm">
+        <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] p-3 sm:p-6 shadow-sm">
           {/* Day of Week Headers */}
-          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-stone-400 mb-2">
+          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-stone-600 dark:text-stone-300 mb-2">
             {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Ahad'].map((d, i) => (
-              <div key={i} className="py-1 sm:py-2 text-[11px] sm:text-xs font-bold">
+              <div key={i} className="py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-stone-700 dark:text-stone-300">
                 {d}
               </div>
             ))}
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
             {Array.from({ length: startingCol }).map((_, i) => (
               <div key={`empty-${i}`} className="aspect-square opacity-0 pointer-events-none" />
             ))}
@@ -214,21 +214,21 @@ export default function AttendanceCalendar() {
                   type="button"
                   key={dateStr}
                   onClick={() => setSelectedDateStr(dateStr)}
-                  className={`aspect-square p-1 sm:p-2 rounded-2xl border transition flex flex-col items-center justify-between cursor-pointer relative active:scale-95 ${
+                  className={`aspect-square p-1.5 sm:p-2 rounded-2xl border transition-all flex flex-col items-center justify-between cursor-pointer relative active:scale-95 ${
                     isSelected
-                      ? 'border-[#146B50] bg-emerald-50 dark:bg-emerald-950/60 ring-2 ring-emerald-600/30 shadow-xs'
+                      ? 'border-[#0D7B5F] bg-emerald-50 dark:bg-emerald-950/60 ring-2 ring-emerald-600/30 shadow-md'
                       : isToday
-                      ? 'border-[#D6A84F] bg-amber-50/50 dark:bg-amber-950/20'
-                      : 'border-stone-100 dark:border-stone-800/80 hover:border-emerald-200 bg-stone-50/40 dark:bg-stone-800/20'
+                      ? 'border-[#D4A24C] bg-amber-50/70 dark:bg-amber-950/30 shadow-xs'
+                      : 'border-stone-200 dark:border-[#1C3A2E] hover:border-[#0D7B5F] bg-white dark:bg-[#162B22]/40 hover:bg-emerald-50/30'
                   }`}
                 >
                   <span
                     className={`text-xs sm:text-sm font-extrabold ${
                       isSelected
-                        ? 'text-[#146B50] dark:text-[#D6A84F]'
+                        ? 'text-[#0D7B5F] dark:text-[#D4A24C]'
                         : isToday
-                        ? 'text-amber-700 dark:text-amber-400 font-black'
-                        : 'text-stone-700 dark:text-stone-300'
+                        ? 'text-amber-800 dark:text-amber-300 font-black'
+                        : 'text-stone-800 dark:text-stone-200'
                     }`}
                   >
                     {dayNum}
@@ -254,12 +254,12 @@ export default function AttendanceCalendar() {
         </div>
       ) : (
         /* List Mode */
-        <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-6 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] p-4 sm:p-6 shadow-sm space-y-3">
           <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100 mb-2">
             Seluruh Catatan Bulan Ini
           </h3>
           {monthRecords.length === 0 ? (
-            <div className="p-8 text-center text-stone-400 text-xs">
+            <div className="p-8 text-center text-stone-500 dark:text-stone-400 text-xs">
               Belum ada riwayat absensi pada bulan ini.
             </div>
           ) : (
@@ -269,13 +269,13 @@ export default function AttendanceCalendar() {
                 return (
                   <div
                     key={r.id}
-                    className="p-3.5 rounded-2xl border border-stone-100 dark:border-stone-800 flex items-center justify-between gap-3 text-xs bg-stone-50/50 dark:bg-stone-800/30"
+                    className="p-3.5 rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] flex items-center justify-between gap-3 text-xs bg-stone-50/80 dark:bg-[#162B22]/40"
                   >
                     <div>
                       <p className="font-bold text-stone-900 dark:text-stone-100">
                         {r.activity_name}
                       </p>
-                      <p className="text-[11px] text-stone-400">
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400">
                         {r.operational_date} • {new Date(r.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
                       </p>
                     </div>
@@ -293,19 +293,19 @@ export default function AttendanceCalendar() {
       )}
 
       {/* Selected Day Details Panel */}
-      <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-5 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-            <Info className="w-4 h-4 text-[#146B50] dark:text-[#D6A84F]" />
+            <Info className="w-4 h-4 text-[#0D7B5F] dark:text-[#D6A84F]" />
             <span>Detail Presensi: {selectedDateStr}</span>
           </h3>
-          <span className="text-xs font-bold text-stone-500">
+          <span className="text-xs font-bold text-stone-600 dark:text-stone-300">
             {selectedRecords.length} Catatan
           </span>
         </div>
 
         {selectedRecords.length === 0 ? (
-          <div className="p-6 text-center text-stone-400 text-xs bg-stone-50/60 dark:bg-stone-800/30 rounded-2xl">
+          <div className="p-6 text-center text-stone-500 dark:text-stone-400 text-xs bg-stone-50/80 dark:bg-[#162B22]/40 rounded-2xl border border-stone-200/60 dark:border-[#1C3A2E]">
             Tidak ada riwayat presensi tercatat pada tanggal {selectedDateStr}.
           </div>
         ) : (
@@ -315,7 +315,7 @@ export default function AttendanceCalendar() {
               return (
                 <div
                   key={rec.id}
-                  className="p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-800/30 space-y-3"
+                  className="p-4 rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] bg-stone-50/70 dark:bg-[#162B22]/40 space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -343,12 +343,12 @@ export default function AttendanceCalendar() {
                       alt="Selfie"
                       className="w-14 h-14 rounded-2xl object-cover border border-stone-200 dark:border-stone-700 bg-black shrink-0"
                     />
-                    <div className="text-[11px] space-y-1 text-stone-600 dark:text-stone-300">
-                      <div className="flex items-center gap-1.5 font-bold text-[#146B50] dark:text-[#D6A84F]">
+                    <div className="text-[11px] space-y-1 text-stone-700 dark:text-stone-300">
+                      <div className="flex items-center gap-1.5 font-bold text-[#0D7B5F] dark:text-[#D6A84F]">
                         <MapPin className="w-3.5 h-3.5" />
                         <span>Jarak Geodesik: {Math.round(rec.distance_from_site_m)}m</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-stone-400">
+                      <div className="flex items-center gap-1.5 text-stone-500 dark:text-stone-400">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Akurasi GPS: ±{Math.round(rec.gps_accuracy_m)}m</span>
                       </div>
@@ -356,13 +356,13 @@ export default function AttendanceCalendar() {
                   </div>
 
                   {rec.permission_reason && (
-                    <div className="p-2.5 bg-amber-50/80 dark:bg-amber-950/30 rounded-xl text-xs text-amber-900 dark:text-amber-200 border border-amber-200">
+                    <div className="p-2.5 bg-amber-50/90 dark:bg-amber-950/40 rounded-xl text-xs text-amber-950 dark:text-amber-200 border border-amber-200 dark:border-amber-900">
                       <strong>Alasan Izin:</strong> &ldquo;{rec.permission_reason}&rdquo;
                     </div>
                   )}
 
                   {rec.review_note && (
-                    <div className="p-2.5 bg-sky-50/80 dark:bg-sky-950/30 rounded-xl text-xs text-sky-900 dark:text-sky-200 border border-sky-200">
+                    <div className="p-2.5 bg-sky-50/90 dark:bg-sky-950/40 rounded-xl text-xs text-sky-950 dark:text-sky-200 border border-sky-200 dark:border-sky-900">
                       <strong>Catatan Musyrif:</strong> {rec.review_note}
                     </div>
                   )}

@@ -1,22 +1,23 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, :where(.dark *)));
 @variant dark (&:where(.dark, .dark *));
 
 :root {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Refined Islamic Theme — more contrast, less flat */
+  /* Refined Islamic Theme — high contrast, warm cream luxury */
   --emerald-primary: #0D7B5F;
   --emerald-hover: #096B52;
   --deep-green: #082F23;
   --gold-accent: #D4A24C;
   --gold-light: #FFF9ED;
-  --cream-bg: #F4F1EB;
+  --cream-bg: #F8F6F0;
   --surface: #FFFFFF;
-  --surface-subtle: #EDE9E0;
-  --text-primary: #1A2420;
-  --text-muted: #6B7A72;
-  --border-color: #DDD7C9;
+  --surface-subtle: #F1ECE1;
+  --text-primary: #141F1A;
+  --text-muted: #4A5B53;
+  --border-color: #D8D1C2;
 
   --success: #198754;
   --warning: #B86E12;
@@ -24,8 +25,8 @@
   --info: #2563EB;
 
   /* Glass variables */
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(220, 214, 200, 0.7);
   --glass-shadow: 0 8px 32px rgba(14, 56, 42, 0.08);
 }
 
@@ -43,9 +44,9 @@
   --gold-accent: #E8C36E;
   --gold-light: #1D261A;
 
-  --glass-bg: rgba(15, 30, 24, 0.75);
-  --glass-border: rgba(26, 163, 122, 0.15);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(15, 30, 24, 0.85);
+  --glass-border: rgba(26, 163, 122, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 @theme {
@@ -132,6 +133,7 @@ body {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   padding: 1.5px;
+  pointer-events: none;
 }
 
 @keyframes pulse-ring {
@@ -146,6 +148,7 @@ body {
   border-radius: inherit;
   border: 2px solid currentColor;
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
 }
 
 @keyframes float {

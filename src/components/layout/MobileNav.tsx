@@ -57,9 +57,9 @@ export default function MobileNav() {
   const items = isMusyrif ? musyrifItems : santriItems;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-pb">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-pb pointer-events-none">
       {/* Glass backdrop */}
-      <div className="mx-3 mb-2 rounded-2xl bg-white/80 dark:bg-[#0F1E18]/85 backdrop-blur-xl border border-white/50 dark:border-[#1C3A2E]/80 shadow-[0_-4px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_30px_rgba(0,0,0,0.4)] px-1 py-1.5">
+      <div className="mx-3 mb-2 rounded-2xl bg-white/95 dark:bg-[#0F1E18]/90 backdrop-blur-xl border border-stone-200/90 dark:border-[#1C3A2E]/80 shadow-[0_-4px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_30px_rgba(0,0,0,0.4)] px-1 py-1.5 pointer-events-auto">
         <div className="flex items-center justify-around">
           {items.map((item) => {
             const isActive = pathname === item.href;

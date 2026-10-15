@@ -19,6 +19,7 @@ import {
   FileQuestion,
   Zap,
   TrendingUp,
+  User,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
 
@@ -178,7 +179,7 @@ export default function SantriHomePage() {
             ) : isWindowOpen ? (
               <Link
                 href="/santri/absensi"
-                className="flex items-center justify-center gap-3 w-full py-4 sm:py-5 rounded-xl bg-gradient-to-r from-[#082F23] via-[#0D7B5F] to-[#096B52] hover:from-[#0A3D2D] hover:to-[#0D7B5F] text-white font-bold text-base shadow-xl shadow-emerald-900/20 active:scale-[0.98] transition-all border border-[#D4A24C]/20 cursor-pointer group"
+                className="flex items-center justify-center gap-3 w-full py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-[#082F23] via-[#0D7B5F] to-[#096B52] hover:from-[#0A3D2D] hover:to-[#0D7B5F] text-white font-bold text-base shadow-xl shadow-emerald-900/20 active:scale-[0.98] transition-all border border-[#D4A24C]/20 cursor-pointer group"
               >
                 <div className="relative">
                   <Camera className="w-5 h-5 text-[#D4A24C]" />
@@ -187,15 +188,87 @@ export default function SantriHomePage() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             ) : (
-              <div className="p-4 rounded-xl bg-stone-50 dark:bg-[#162B22]/50 border border-stone-200 dark:border-[#1C3A2E]">
-                <p className="text-xs text-stone-500">
-                  {activeResult.nextActivity
-                    ? `Kegiatan berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time} WIB)`
-                    : 'Semua kegiatan terjadwal hari ini telah selesai.'}
-                </p>
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                    <Clock className="w-4 h-4 text-[#D4A24C] shrink-0" />
+                    <span>
+                      {activeResult.nextActivity
+                        ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time} WIB)`
+                        : 'Semua sesi terjadwal hari ini telah selesai.'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 shrink-0">
+                    Di luar jam
+                  </span>
+                </div>
+
+                <Link
+                  href="/santri/absensi"
+                  className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-gradient-to-r from-[#0D7B5F] to-[#082F23] hover:from-[#146B50] hover:to-[#0B3D2E] text-white font-bold text-sm shadow-lg shadow-emerald-900/15 active:scale-[0.98] transition-all border border-[#D4A24C]/30 cursor-pointer group"
+                >
+                  <Camera className="w-4 h-4 text-[#D4A24C]" />
+                  <span>Buka Formulir Presensi & Pengajuan Izin</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Quick Shortcut Navigation ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <Link
+            href="/santri/absensi"
+            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#0D7B5F] transition-all flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Camera className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Absen Kamera</span>
+              <span className="text-[10px] text-stone-500">Selfie & Geotag</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/santri/kalender"
+            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#D4A24C] transition-all flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Kalender</span>
+              <span className="text-[10px] text-stone-500">Rekap Bulanan</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/santri/riwayat"
+            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#0D7B5F] transition-all flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <History className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Riwayat</span>
+              <span className="text-[10px] text-stone-500">Log Kehadiran</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/santri/profil"
+            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#D4A24C] transition-all flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <User className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Profil Santri</span>
+              <span className="text-[10px] text-stone-500">Akun & Sandi</span>
+            </div>
+          </Link>
         </div>
 
         {/* ── Monthly Stats ── */}
