@@ -30,23 +30,23 @@
   --glass-shadow: 0 10px 32px rgba(14, 56, 42, 0.08);
 }
 
-.dark {
-  --cream-bg: #080F0C;
-  --surface: #0F1E18;
-  --surface-subtle: #162B22;
-  --text-primary: #E8F0EC;
-  --text-muted: #8BA89A;
-  --border-color: #1C3A2E;
+html.dark {
+  --cream-bg: #070D0A;
+  --surface: #0E1D17;
+  --surface-subtle: #14271F;
+  --text-primary: #F3F8F5; /* Crisp bright high-contrast text */
+  --text-muted: #9BB8AA;
+  --border-color: #1B3B2D;
 
-  --emerald-primary: #1AA37A;
-  --emerald-hover: #0D7B5F;
-  --deep-green: #050C09;
-  --gold-accent: #E8C36E;
-  --gold-light: #1D261A;
+  --emerald-primary: #10B981;
+  --emerald-hover: #059669;
+  --deep-green: #030805;
+  --gold-accent: #F2C94C;
+  --gold-light: #1E2818;
 
-  --glass-bg: rgba(15, 30, 24, 0.85);
-  --glass-border: rgba(26, 163, 122, 0.2);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-bg: rgba(14, 29, 23, 0.90);
+  --glass-border: rgba(34, 197, 94, 0.25);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
 @theme {
@@ -68,66 +68,119 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ──────── Light Mode Warmth, Soft Tactile Surfaces & Anti-Monotonous Palette ──────── */
-:not(.dark) .bg-white {
+/* ──────── Light Mode ONLY: Warm Ivory Luxury & Tactile Surfaces ──────── */
+html:not(.dark) .bg-white {
   background: linear-gradient(180deg, #FFFFFF 0%, #FAF6EE 100%) !important;
 }
 
-:not(.dark) .border-stone-200,
-:not(.dark) .border-stone-200\/80,
-:not(.dark) .border-stone-200\/60,
-:not(.dark) .border-stone-200\/70,
-:not(.dark) .border-stone-200\/90 {
+html:not(.dark) .border-stone-200,
+html:not(.dark) .border-stone-200\/80,
+html:not(.dark) .border-stone-200\/60,
+html:not(.dark) .border-stone-200\/70,
+html:not(.dark) .border-stone-200\/90 {
   border-color: #E2D7C7 !important;
 }
 
-:not(.dark) .border-stone-100 {
+html:not(.dark) .border-stone-100 {
   border-color: #EDE4D6 !important;
 }
 
-:not(.dark) .bg-stone-50 {
+html:not(.dark) .bg-stone-50 {
   background-color: #F5EFE4 !important;
 }
 
-:not(.dark) .bg-stone-100 {
+html:not(.dark) .bg-stone-100 {
   background-color: #EDE5D6 !important;
 }
 
-:not(.dark) .text-stone-900 {
+html:not(.dark) .text-stone-900 {
   color: #16241D !important;
 }
 
-:not(.dark) .text-stone-800 {
+html:not(.dark) .text-stone-800 {
   color: #23342B !important;
 }
 
-:not(.dark) .text-stone-700 {
+html:not(.dark) .text-stone-700 {
   color: #34473C !important;
 }
 
-:not(.dark) .text-stone-600 {
+html:not(.dark) .text-stone-600 {
   color: #44584D !important;
 }
 
-:not(.dark) .text-stone-500 {
+html:not(.dark) .text-stone-500 {
   color: #5D7266 !important;
 }
 
-:not(.dark) .shadow-xs,
-:not(.dark) .shadow-sm {
+html:not(.dark) .shadow-xs,
+html:not(.dark) .shadow-sm {
   box-shadow: 0 4px 16px -2px rgba(28, 48, 38, 0.06), 0 1px 4px rgba(212, 162, 76, 0.04) !important;
 }
 
-:not(.dark) .shadow-md {
+html:not(.dark) .shadow-md {
   box-shadow: 0 8px 24px -4px rgba(13, 123, 95, 0.09), 0 2px 8px -1px rgba(212, 162, 76, 0.06) !important;
 }
 
-:not(.dark) .shadow-lg {
+html:not(.dark) .shadow-lg {
   box-shadow: 0 14px 34px -6px rgba(13, 123, 95, 0.12), 0 4px 12px -2px rgba(212, 162, 76, 0.08) !important;
 }
 
-:not(.dark) .shadow-xl {
+html:not(.dark) .shadow-xl {
   box-shadow: 0 20px 42px -8px rgba(13, 123, 95, 0.16), 0 6px 16px -2px rgba(212, 162, 76, 0.10) !important;
+}
+
+/* ──────── Dark Mode High Contrast, Obsidian-Emerald Luxury ──────── */
+html.dark .dark\:bg-\[\#0F1E18\],
+html.dark .dark\:bg-stone-900 {
+  background: linear-gradient(180deg, #11221A 0%, #0B1712 100%) !important;
+  border-color: rgba(34, 197, 94, 0.24) !important;
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+html.dark .dark\:bg-\[\#162B22\] {
+  background-color: #142820 !important;
+}
+
+html.dark .dark\:border-\[\#1C3A2E\],
+html.dark .dark\:border-stone-800 {
+  border-color: rgba(34, 197, 94, 0.24) !important;
+}
+
+html.dark .dark\:text-stone-100 {
+  color: #F4FAF6 !important;
+}
+
+html.dark .dark\:text-stone-200 {
+  color: #E2EDE7 !important;
+}
+
+html.dark .dark\:text-stone-300 {
+  color: #C6DDD2 !important;
+}
+
+html.dark .dark\:text-stone-400 {
+  color: #92B1A2 !important;
+}
+
+html.dark .dark\:text-emerald-300 {
+  color: #6EE7B7 !important;
+}
+
+html.dark .dark\:text-emerald-400 {
+  color: #34D399 !important;
+}
+
+html.dark .dark\:text-amber-300 {
+  color: #FDE047 !important;
+}
+
+html.dark .dark\:text-amber-400 {
+  color: #FACC15 !important;
+}
+
+html.dark .dark\:divide-\[\#1C3A2E\] > * + * {
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* ──────── Animated Background Mesh with Warm Golden-Emerald Ambiance ──────── */
@@ -161,13 +214,18 @@ body {
   z-index: 0;
   opacity: 0.9;
 }
-.dark .mesh-bg::before {
+
+html.dark .mesh-bg::before {
   background:
-    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(26, 163, 122, 0.12), transparent),
-    radial-gradient(ellipse 500px 500px at 90% 80%, rgba(232, 195, 110, 0.08), transparent);
+    radial-gradient(ellipse 700px 500px at 5% 15%, rgba(16, 185, 129, 0.18), transparent 70%),
+    radial-gradient(ellipse 600px 600px at 95% 20%, rgba(242, 201, 76, 0.14), transparent 70%),
+    radial-gradient(ellipse 800px 500px at 50% 85%, rgba(16, 185, 129, 0.12), transparent 70%);
 }
-.dark .mesh-bg::after {
-  opacity: 0.25;
+html.dark .mesh-bg::after {
+  opacity: 0.35;
+  background-image: 
+    radial-gradient(rgba(16, 185, 129, 0.06) 1px, transparent 1px),
+    radial-gradient(rgba(242, 201, 76, 0.05) 1px, transparent 1px);
 }
 
 /* ──────── Glassmorphism Cards ──────── */
@@ -187,12 +245,12 @@ body {
   transform: translateY(-3px) scale(1.004) !important;
   box-shadow: 0 16px 36px -6px rgba(13, 123, 95, 0.13), 0 4px 12px -1px rgba(212, 162, 76, 0.09) !important;
 }
-:not(.dark) .card-hover:hover {
+html:not(.dark) .card-hover:hover {
   border-color: rgba(13, 123, 95, 0.35) !important;
 }
-.dark .card-hover:hover {
-  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.45), 0 4px 12px -1px rgba(26, 163, 122, 0.15) !important;
-  border-color: rgba(26, 163, 122, 0.35) !important;
+html.dark .card-hover:hover {
+  box-shadow: 0 18px 42px -8px rgba(0, 0, 0, 0.8), 0 0 25px rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(34, 197, 94, 0.45) !important;
 }
 
 /* ──────── Button Organic Feedback ──────── */
@@ -319,16 +377,33 @@ body {
 
 /* ──────── Stat Card Accent Strips ──────── */
 .stat-accent-emerald {
-  border-left: 3px solid #0D7B5F;
+  border-left: 3.5px solid #0D7B5F;
 }
 .stat-accent-gold {
-  border-left: 3px solid #D4A24C;
+  border-left: 3.5px solid #D4A24C;
 }
 .stat-accent-rose {
-  border-left: 3px solid #E54D3D;
+  border-left: 3.5px solid #E54D3D;
 }
 .stat-accent-blue {
-  border-left: 3px solid #2563EB;
+  border-left: 3.5px solid #2563EB;
+}
+
+html.dark .stat-accent-emerald {
+  border-left: 3.5px solid #10B981 !important;
+  box-shadow: inset 4px 0 12px -3px rgba(16, 185, 129, 0.35);
+}
+html.dark .stat-accent-gold {
+  border-left: 3.5px solid #F2C94C !important;
+  box-shadow: inset 4px 0 12px -3px rgba(242, 201, 76, 0.35);
+}
+html.dark .stat-accent-rose {
+  border-left: 3.5px solid #FB7185 !important;
+  box-shadow: inset 4px 0 12px -3px rgba(251, 113, 133, 0.35);
+}
+html.dark .stat-accent-blue {
+  border-left: 3.5px solid #60A5FA !important;
+  box-shadow: inset 4px 0 12px -3px rgba(96, 165, 250, 0.35);
 }
 
 /* ──────── Bottom Nav Pill Indicator ──────── */

@@ -228,7 +228,7 @@ export default function SantriHomePage() {
             </div>
             <div>
               <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-[#0D7B5F] dark:group-hover:text-emerald-400 transition-colors">Absen Kamera</span>
-              <span className="text-[10px] text-stone-500">Selfie & Geotag</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">Selfie & Geotag</span>
             </div>
           </Link>
 
@@ -241,7 +241,7 @@ export default function SantriHomePage() {
             </div>
             <div>
               <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-[#D4A24C] transition-colors">Kalender</span>
-              <span className="text-[10px] text-stone-500">Rekap Bulanan</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">Rekap Bulanan</span>
             </div>
           </Link>
 
@@ -254,7 +254,7 @@ export default function SantriHomePage() {
             </div>
             <div>
               <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">Riwayat</span>
-              <span className="text-[10px] text-stone-500">Log Kehadiran</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">Log Kehadiran</span>
             </div>
           </Link>
 
@@ -267,7 +267,7 @@ export default function SantriHomePage() {
             </div>
             <div>
               <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Profil Santri</span>
-              <span className="text-[10px] text-stone-500">Akun & Sandi</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">Akun & Sandi</span>
             </div>
           </Link>
         </div>
