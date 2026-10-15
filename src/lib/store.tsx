@@ -79,6 +79,8 @@ interface StoreContextType {
     email?: string;
     newPassword?: string;
     phone?: string;
+    studentNumber?: string;
+    groupName?: string;
   }) => Promise<{ success: boolean; message: string }>;
   toggleStudentStatus: (id: string) => Promise<void>;
   addActivity: (activity: Omit<Activity, 'id'>) => Promise<void>;
@@ -996,6 +998,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     delete (cleanStudent as any).password;
 
     setProfiles((prev) => prev.map((p) => (p.id === cleanStudent.id ? cleanStudent : p)));
+    setAttendanceRecords((prev) =>
+      prev.map((rec) =>
+        rec.student_id === cleanStudent.id
+          ? {
+              ...rec,
+              student_name: cleanStudent.full_name,
+              student_number: cleanStudent.student_number,
+              group_name: cleanStudent.group_name,
+            }
+          : rec
+      )
+    );
     if (currentUser.id === cleanStudent.id) {
       setCurrentUserState(cleanStudent);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(cleanStudent));
@@ -1011,6 +1025,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       after_data: {
         full_name: cleanStudent.full_name,
         email: cleanStudent.email,
+        student_number: cleanStudent.student_number,
+        group_name: cleanStudent.group_name,
         password_changed: Boolean(rawPass),
       },
       reason: rawPass ? 'Perubahan biodata & kata sandi santri' : 'Pembaruan data santri',
@@ -1022,6 +1038,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (supabase && isSupabaseConnected) {
       try {
         await supabase.from('profiles').update(cleanStudent).eq('id', cleanStudent.id);
+        if (rawPass && currentUser.id === cleanStudent.id) {
+          try {
+            await supabase.auth.updateUser({ password: rawPass });
+          } catch (authErr) {
+            console.warn('Supabase auth updateUser warning:', authErr);
+          }
+        }
       } catch (err) {
         console.warn('Supabase update profile failed:', err);
       }
@@ -1034,6 +1057,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     email?: string;
     newPassword?: string;
     phone?: string;
+    studentNumber?: string;
+    groupName?: string;
   }): Promise<{ success: boolean; message: string }> => {
     if (!currentUser || currentUser.id === 'guest') {
       return { success: false, message: 'Anda belum masuk ke akun.' };
@@ -1044,11 +1069,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       full_name: data.fullName?.trim() || currentUser.full_name,
       email: data.email?.trim().toLowerCase() || currentUser.email,
       phone: data.phone !== undefined ? data.phone.trim() : currentUser.phone,
+      student_number: data.studentNumber !== undefined ? data.studentNumber.trim() : currentUser.student_number,
+      group_name: data.groupName !== undefined ? data.groupName.trim() : currentUser.group_name,
       password_hash: data.newPassword?.trim() ? data.newPassword.trim() : currentUser.password_hash || 'password123',
     };
 
     setCurrentUserState(updatedProfile);
     setProfiles((prev) => prev.map((p) => (p.id === updatedProfile.id ? updatedProfile : p)));
+    setAttendanceRecords((prev) =>
+      prev.map((rec) =>
+        rec.student_id === updatedProfile.id
+          ? {
+              ...rec,
+              student_name: updatedProfile.full_name,
+              student_number: updatedProfile.student_number,
+              group_name: updatedProfile.group_name,
+            }
+          : rec
+      )
+    );
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedProfile));
 
     const audit: AuditLog = {
@@ -1060,9 +1099,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       entity_id: currentUser.id,
       after_data: {
         email: updatedProfile.email,
+        full_name: updatedProfile.full_name,
+        student_number: updatedProfile.student_number,
+        group_name: updatedProfile.group_name,
         password_changed: Boolean(data.newPassword),
       },
-      reason: 'Pembaruan kredensial akun mandiri',
+      reason: 'Pembaruan data & kredensial akun mandiri',
       created_at: effectiveTime.toISOString(),
     };
     setAuditLogs((prev) => [audit, ...prev]);
@@ -1089,7 +1131,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
-      message: 'Kredensial akun (username/email & kata sandi) berhasil diperbarui!',
+      message: 'Data profil santri dan kredensial akun berhasil diperbarui!',
     };
   };
 

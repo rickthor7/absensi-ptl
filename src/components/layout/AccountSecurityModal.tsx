@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { X, Key, Lock, Mail, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle, Shield, Phone } from 'lucide-react';
+import { X, Key, Lock, Mail, User, Eye, EyeOff, Save, CheckCircle2, AlertCircle, Shield, Phone, GraduationCap, Building } from 'lucide-react';
 
 interface AccountSecurityModalProps {
   isOpen: boolean;
@@ -13,6 +13,8 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
   const { currentUser, updateCurrentUserCredentials } = useStore();
 
   const [fullName, setFullName] = useState(currentUser.full_name || '');
+  const [studentNumber, setStudentNumber] = useState(currentUser.student_number || '');
+  const [groupName, setGroupName] = useState(currentUser.group_name || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [phone, setPhone] = useState(currentUser.phone || '');
   const [newPassword, setNewPassword] = useState('');
@@ -27,6 +29,8 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
   useEffect(() => {
     if (isOpen) {
       setFullName(currentUser.full_name || '');
+      setStudentNumber(currentUser.student_number || '');
+      setGroupName(currentUser.group_name || '');
       setEmail(currentUser.email || '');
       setPhone(currentUser.phone || '');
       setNewPassword('');
@@ -77,6 +81,8 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
     try {
       const result = await updateCurrentUserCredentials({
         fullName: fullName.trim(),
+        studentNumber: currentUser.role === 'santri' ? studentNumber.trim() : undefined,
+        groupName: currentUser.role === 'santri' ? groupName.trim() : undefined,
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         newPassword: newPassword.trim() ? newPassword.trim() : undefined,
@@ -174,6 +180,42 @@ export default function AccountSecurityModal({ isOpen, onClose }: AccountSecurit
               />
             </div>
           </div>
+
+          {currentUser.role === 'santri' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nomor Induk Santri (NIS)
+                </label>
+                <div className="relative">
+                  <GraduationCap className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    value={studentNumber}
+                    onChange={(e) => setStudentNumber(e.target.value)}
+                    placeholder="Contoh: STR-2026-001"
+                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Kamar Asrama
+                </label>
+                <div className="relative">
+                  <Building className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder="Kamar Al-Fatih 01"
+                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">

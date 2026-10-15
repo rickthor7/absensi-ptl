@@ -81,7 +81,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await logout();
     setShowUserMenu(false);
-    router.push('/login');
+    router.push('/');
   };
 
   interface NavItem {
@@ -148,7 +148,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-14">
             {/* Brand Logo */}
             <Link
-              href={isAuthenticated ? (isMusyrif ? '/musyrif' : '/santri') : '/'}
+              href="/"
               className="flex items-center gap-2.5 group"
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[2px] shadow-lg shadow-emerald-900/30">

@@ -19,13 +19,16 @@ import {
   Mail,
   Shield,
   MapPin,
+  Edit,
 } from 'lucide-react';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
 import AccountSecurityModal from '@/components/layout/AccountSecurityModal';
+import SantriEditModal from '@/components/students/SantriEditModal';
 
 export default function SantriProfilPage() {
   const { currentUser, attendanceRecords } = useStore();
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const studentRecords = attendanceRecords.filter((r) => r.student_id === currentUser.id);
   const totalHadir = studentRecords.filter((r) => r.status === 'hadir_valid').length;
@@ -88,14 +91,25 @@ export default function SantriProfilPage() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowSecurityModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition border border-white/20 active:scale-95 cursor-pointer backdrop-blur-sm"
-            >
-              <Key className="w-3.5 h-3.5 text-[#D6A84F]" />
-              <span>Ganti Sandi</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#D6A84F] to-[#F3D78A] hover:brightness-105 text-[#082F23] text-xs font-bold transition shadow-md active:scale-95 cursor-pointer"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>Edit Biodata</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSecurityModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition border border-white/20 active:scale-95 cursor-pointer backdrop-blur-sm"
+              >
+                <Key className="w-3.5 h-3.5 text-[#D6A84F]" />
+                <span>Ganti Sandi</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -158,14 +172,16 @@ export default function SantriProfilPage() {
               <User className="w-4 h-4 text-[#0D7B5F] dark:text-[#D6A84F]" />
               <span>Informasi Biodata Santri</span>
             </h2>
-            <button
-              type="button"
-              onClick={() => setShowSecurityModal(true)}
-              className="text-[11px] font-bold text-[#0D7B5F] dark:text-[#D6A84F] hover:underline cursor-pointer flex items-center gap-1"
-            >
-              <Key className="w-3 h-3" />
-              <span>Edit Kredensial</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEditModal(true)}
+                className="text-[11px] font-bold text-[#0D7B5F] dark:text-[#D6A84F] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Edit className="w-3 h-3" />
+                <span>Edit Data Santri</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3 text-xs">
@@ -250,6 +266,12 @@ export default function SantriProfilPage() {
           </div>
         </div>
       </div>
+
+      {/* Santri Profile Edit Modal */}
+      <SantriEditModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+      />
 
       {/* Account & Security Modal */}
       <AccountSecurityModal
