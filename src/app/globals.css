@@ -493,3 +493,43 @@ html.dark .stat-accent-blue {
     text-align: center;
   }
 }
+
+/* ──────── Print Styling for Raport Santri Formal PDF ──────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm 1.5cm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #raport-printable-area,
+  #raport-printable-area * {
+    visibility: visible;
+  }
+  #raport-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .raport-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    page-break-after: always;
+    break-after: page;
+  }
+}

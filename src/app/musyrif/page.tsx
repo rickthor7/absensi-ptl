@@ -30,8 +30,10 @@ import {
   FileSpreadsheet,
   Crosshair,
   Locate,
+  GraduationCap,
 } from 'lucide-react';
 import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
+import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 export default function MusyrifDashboardPage() {
   const {
@@ -48,6 +50,8 @@ export default function MusyrifDashboardPage() {
   const [reviewRecord, setReviewRecord] = useState<AttendanceRecord | null>(null);
   const [correctRecord, setCorrectRecord] = useState<AttendanceRecord | null>(null);
   const [isGeotagModalOpen, setIsGeotagModalOpen] = useState(false);
+  const [isRaportModalOpen, setIsRaportModalOpen] = useState(false);
+  const [selectedRaportStudentId, setSelectedRaportStudentId] = useState<string | undefined>(undefined);
 
   const todayStr = effectiveTime.toISOString().split('T')[0];
   const santriList = profiles.filter((p) => p.role === 'santri' && p.is_active);
@@ -322,17 +326,28 @@ export default function MusyrifDashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setSelectedRaportStudentId(undefined);
+                  setIsRaportModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D6A84F] to-[#E8C36E] text-[#082F23] text-xs font-black transition shadow-sm hover:brightness-105 active:scale-95 cursor-pointer"
+                title="Buka raport bulanan santri dengan kop resmi (PDF & CSV)"
+              >
+                <GraduationCap className="w-4 h-4 stroke-[2.2]" />
+                <span>Raport Santri</span>
+              </button>
               <button
                 onClick={exportMonthlyCSV}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0D7B5F] hover:bg-[#096B52] text-white text-[11px] font-bold transition shadow-sm cursor-pointer btn-press"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#096B52] text-white text-[11px] font-bold transition shadow-sm cursor-pointer btn-press"
               >
                 <Download className="w-3.5 h-3.5 text-[#D4A24C]" />
                 <span>Ekspor CSV</span>
               </button>
               <Link
                 href="/musyrif/laporan"
-                className="px-3 py-2 rounded-lg border border-stone-200 dark:border-[#1C3A2E] hover:bg-stone-50 dark:hover:bg-[#162B22] text-stone-600 dark:text-stone-300 text-[11px] font-semibold transition"
+                className="px-3 py-2 rounded-xl border border-stone-200 dark:border-[#1C3A2E] hover:bg-stone-50 dark:hover:bg-[#162B22] text-stone-600 dark:text-stone-300 text-[11px] font-semibold transition"
               >
                 Lengkap
               </Link>
@@ -620,6 +635,19 @@ export default function MusyrifDashboardPage() {
           isOpen={isGeotagModalOpen}
           onClose={() => setIsGeotagModalOpen(false)}
         />
+
+        {/* Raport Santri Bulanan Modal (Kop Resmi, Rincian Kegiatan, Cetak PDF & Ekspor CSV) */}
+        {isRaportModalOpen && (
+          <RaportSantriModal
+            studentsScores={monthlyStats.studentScores}
+            initialStudentId={selectedRaportStudentId}
+            activities={activities}
+            monthLabel={monthlyStats.monthLabel}
+            monthKey={currentMonthKey}
+            musyrifUser={currentUser}
+            onClose={() => setIsRaportModalOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

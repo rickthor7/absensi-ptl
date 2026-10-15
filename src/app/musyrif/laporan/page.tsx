@@ -21,18 +21,22 @@ import {
   ChevronDown,
   Info,
   TrendingUp,
+  GraduationCap,
 } from 'lucide-react';
 import { formatIndonesianDate } from '@/lib/schedule';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
+import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 export default function MusyrifLaporanPage() {
-  const { attendanceRecords, activities, profiles, effectiveTime } = useStore();
+  const { attendanceRecords, activities, profiles, effectiveTime, currentUser } = useStore();
 
   const defaultMonth = effectiveTime.toISOString().substring(0, 7); // e.g. "2026-10"
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGroup, setFilterGroup] = useState('all');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [isRaportModalOpen, setIsRaportModalOpen] = useState(false);
+  const [selectedRaportStudentId, setSelectedRaportStudentId] = useState<string | undefined>(undefined);
 
   // Month options for selector
   const availableMonths = [
@@ -159,6 +163,19 @@ export default function MusyrifLaporanPage() {
             </select>
             <ChevronDown className="w-4 h-4 text-stone-400 absolute right-2.5 top-3 pointer-events-none" />
           </div>
+
+          {/* Buka Raport Santri Modal */}
+          <button
+            onClick={() => {
+              setSelectedRaportStudentId(currentSelectedStudent?.student?.id);
+              setIsRaportModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D6A84F] to-[#E8C36E] text-[#082F23] text-xs font-black transition shadow-sm hover:brightness-105 active:scale-95 cursor-pointer"
+            title="Buka raport evaluasi santri dengan kop resmi (PDF & CSV)"
+          >
+            <GraduationCap className="w-4 h-4 stroke-[2.2]" />
+            <span>Raport Santri (Kop &amp; PDF)</span>
+          </button>
 
           {/* Export CSV Button */}
           <button
@@ -692,16 +709,29 @@ export default function MusyrifLaporanPage() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => setSelectedStudentId(st.student.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#146B50] text-white shadow-xs'
-                            : 'border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-[#146B50] hover:text-white'
-                        }`}
-                      >
-                        Grafik
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => {
+                            setSelectedRaportStudentId(st.student.id);
+                            setIsRaportModalOpen(true);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#D4A24C]/15 text-[#D4A24C] hover:bg-[#D4A24C] hover:text-[#082F23] border border-[#D4A24C]/30 transition cursor-pointer"
+                          title={`Buka raport resmi ${st.student.full_name} (PDF & CSV)`}
+                        >
+                          <GraduationCap className="w-3.5 h-3.5" />
+                          <span>Raport</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedStudentId(st.student.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#146B50] text-white shadow-xs'
+                              : 'border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-[#146B50] hover:text-white'
+                          }`}
+                        >
+                          Grafik
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -710,6 +740,19 @@ export default function MusyrifLaporanPage() {
           </table>
         </div>
       </div>
+
+      {/* Raport Santri Bulanan Modal (Kop Resmi, Rincian Kegiatan, Cetak PDF & Ekspor CSV) */}
+      {isRaportModalOpen && (
+        <RaportSantriModal
+          studentsScores={monthlyStats.studentScores}
+          initialStudentId={selectedRaportStudentId}
+          activities={activities}
+          monthLabel={monthlyStats.monthLabel}
+          monthKey={selectedMonth}
+          musyrifUser={currentUser}
+          onClose={() => setIsRaportModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
