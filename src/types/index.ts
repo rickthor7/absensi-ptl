@@ -14,6 +14,7 @@ export type AttendanceStatus =
 export interface Profile {
   id: string;
   email?: string;
+  password_hash?: string;
   full_name: string;
   role: Role;
   student_number?: string; // NIS

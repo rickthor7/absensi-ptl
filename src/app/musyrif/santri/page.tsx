@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   Sparkles,
   Bed,
+  Key,
+  Mail,
 } from 'lucide-react';
 
 export default function MusyrifSantriPage() {
@@ -131,9 +133,17 @@ export default function MusyrifSantriPage() {
                       <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
                         {s.full_name}
                       </h3>
-                      <p className="text-[11px] text-stone-400 font-mono">
-                        NIS: {s.student_number}
-                      </p>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <span className="text-[11px] text-stone-400 font-mono">
+                          NIS: {s.student_number}
+                        </span>
+                        {s.email && (
+                          <span className="text-[10px] text-[#146B50] dark:text-[#D6A84F] font-mono flex items-center gap-1">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            {s.email}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -190,7 +200,20 @@ export default function MusyrifSantriPage() {
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold hover:bg-stone-200 transition active:scale-95 cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-[#146B50]" />
-                    <span>Edit Data</span>
+                    <span>Edit Biodata</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingStudent(s);
+                      setIsModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[#D6A84F]/40 bg-amber-50/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-xs font-bold transition active:scale-95 cursor-pointer"
+                    title="Ubah Username & Password"
+                  >
+                    <Key className="w-3.5 h-3.5 text-[#D6A84F]" />
+                    <span>Sandi</span>
                   </button>
 
                   <button
@@ -241,9 +264,16 @@ export default function MusyrifSantriPage() {
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#146B50] to-[#0B3D2E] text-[#D6A84F] flex items-center justify-center font-bold text-xs shadow-xs">
                           {s.full_name.charAt(0)}
                         </div>
-                        <span className="font-bold text-stone-900 dark:text-stone-100">
-                          {s.full_name}
-                        </span>
+                        <div>
+                          <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                            {s.full_name}
+                          </span>
+                          {s.email && (
+                            <span className="text-[10px] text-stone-400 font-mono block">
+                              {s.email}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-semibold text-stone-600 dark:text-stone-400">
@@ -286,9 +316,20 @@ export default function MusyrifSantriPage() {
                             setIsModalOpen(true);
                           }}
                           className="p-2 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:text-[#146B50] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
-                          title="Edit Santri"
+                          title="Edit Biodata & Password"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStudent(s);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition cursor-pointer"
+                          title="Ubah Username & Password Login"
+                        >
+                          <Key className="w-3.5 h-3.5 text-[#D6A84F]" />
                         </button>
                         <button
                           type="button"

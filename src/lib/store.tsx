@@ -72,8 +72,14 @@ interface StoreContextType {
   }) => Promise<{ success: boolean; record: AttendanceRecord; message: string }>;
   reviewPermission: (recordId: string, status: AttendanceStatus, reviewNote?: string) => Promise<void>;
   correctAttendance: (recordId: string, newStatus: AttendanceStatus, reason: string) => Promise<void>;
-  addStudent: (student: Omit<Profile, 'id' | 'created_at'>) => Promise<void>;
-  updateStudent: (student: Profile) => Promise<void>;
+  addStudent: (student: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => Promise<void>;
+  updateStudent: (student: Profile & { password?: string }) => Promise<void>;
+  updateCurrentUserCredentials: (data: {
+    fullName?: string;
+    email?: string;
+    newPassword?: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; message: string }>;
   toggleStudentStatus: (id: string) => Promise<void>;
   addActivity: (activity: Omit<Activity, 'id'>) => Promise<void>;
   updateActivity: (activity: Activity) => Promise<void>;
@@ -931,15 +937,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Student management
-  const addStudent = async (studentData: Omit<Profile, 'id' | 'created_at'>) => {
+  // Student management with real credential support (Username/Email & Password)
+  const addStudent = async (studentData: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => {
+    const rawPass = studentData.password?.trim() || studentData.password_hash || 'password123';
+    const cleanStudentNumber = studentData.student_number?.trim() || '';
+    const cleanEmail =
+      studentData.email?.trim().toLowerCase() ||
+      `${cleanStudentNumber.toLowerCase().replace(/[^a-z0-9]/g, '')}@santri.nurulfalah.ac.id`;
+
     const newStudent: Profile = {
       ...studentData,
       id: `usr-santri-${Date.now()}`,
       role: 'santri',
-      is_active: true,
+      email: cleanEmail,
+      student_number: cleanStudentNumber,
+      password_hash: rawPass,
+      is_active: studentData.is_active !== undefined ? studentData.is_active : true,
       created_at: effectiveTime.toISOString(),
     };
+    delete (newStudent as any).password;
+
     setProfiles((prev) => [...prev, newStudent]);
 
     const audit: AuditLog = {
@@ -949,8 +966,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       action: 'CREATE_STUDENT',
       entity_type: 'profile',
       entity_id: newStudent.id,
-      after_data: { full_name: newStudent.full_name, student_number: newStudent.student_number },
-      reason: 'Penambahan data santri baru',
+      after_data: {
+        full_name: newStudent.full_name,
+        student_number: newStudent.student_number,
+        email: newStudent.email,
+      },
+      reason: 'Penambahan data & akun santri baru',
       created_at: effectiveTime.toISOString(),
     };
     setAuditLogs((prev) => [audit, ...prev]);
@@ -965,20 +986,111 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateStudent = async (student: Profile) => {
-    setProfiles((prev) => prev.map((p) => (p.id === student.id ? student : p)));
-    if (currentUser.id === student.id) {
-      setCurrentUserState(student);
+  const updateStudent = async (student: Profile & { password?: string }) => {
+    const rawPass = student.password?.trim();
+    const cleanStudent: Profile = {
+      ...student,
+      email: student.email?.trim().toLowerCase() || student.email,
+      password_hash: rawPass ? rawPass : student.password_hash || 'password123',
+    };
+    delete (cleanStudent as any).password;
+
+    setProfiles((prev) => prev.map((p) => (p.id === cleanStudent.id ? cleanStudent : p)));
+    if (currentUser.id === cleanStudent.id) {
+      setCurrentUserState(cleanStudent);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(cleanStudent));
     }
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'UPDATE_STUDENT',
+      entity_type: 'profile',
+      entity_id: cleanStudent.id,
+      after_data: {
+        full_name: cleanStudent.full_name,
+        email: cleanStudent.email,
+        password_changed: Boolean(rawPass),
+      },
+      reason: rawPass ? 'Perubahan biodata & kata sandi santri' : 'Pembaruan data santri',
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
 
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        await supabase.from('profiles').update(student).eq('id', student.id);
+        await supabase.from('profiles').update(cleanStudent).eq('id', cleanStudent.id);
       } catch (err) {
         console.warn('Supabase update profile failed:', err);
       }
     }
+  };
+
+  // Self-update username & password for the logged-in user (Musyrif, Admin, or Santri)
+  const updateCurrentUserCredentials = async (data: {
+    fullName?: string;
+    email?: string;
+    newPassword?: string;
+    phone?: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    if (!currentUser || currentUser.id === 'guest') {
+      return { success: false, message: 'Anda belum masuk ke akun.' };
+    }
+
+    const updatedProfile: Profile = {
+      ...currentUser,
+      full_name: data.fullName?.trim() || currentUser.full_name,
+      email: data.email?.trim().toLowerCase() || currentUser.email,
+      phone: data.phone !== undefined ? data.phone.trim() : currentUser.phone,
+      password_hash: data.newPassword?.trim() ? data.newPassword.trim() : currentUser.password_hash || 'password123',
+    };
+
+    setCurrentUserState(updatedProfile);
+    setProfiles((prev) => prev.map((p) => (p.id === updatedProfile.id ? updatedProfile : p)));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedProfile));
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'UPDATE_CREDENTIALS',
+      entity_type: 'profile',
+      entity_id: currentUser.id,
+      after_data: {
+        email: updatedProfile.email,
+        password_changed: Boolean(data.newPassword),
+      },
+      reason: 'Pembaruan kredensial akun mandiri',
+      created_at: effectiveTime.toISOString(),
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase
+          .from('profiles')
+          .update(updatedProfile)
+          .eq('id', currentUser.id);
+
+        if (data.newPassword) {
+          try {
+            await supabase.auth.updateUser({ password: data.newPassword.trim() });
+          } catch (authErr) {
+            console.warn('Supabase auth updateUser warning:', authErr);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to update credentials in Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Kredensial akun (username/email & kata sandi) berhasil diperbarui!',
+    };
   };
 
   const toggleStudentStatus = async (id: string) => {
@@ -1084,6 +1196,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         correctAttendance,
         addStudent,
         updateStudent,
+        updateCurrentUserCredentials,
         toggleStudentStatus,
         addActivity,
         updateActivity,

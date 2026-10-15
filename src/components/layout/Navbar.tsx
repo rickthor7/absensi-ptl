@@ -25,7 +25,9 @@ import {
   LogOut,
   Database,
   LogIn,
+  Key,
 } from 'lucide-react';
+import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
 
 export default function Navbar() {
@@ -43,6 +45,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -251,6 +254,18 @@ export default function Navbar() {
                         <span>Profil Pengguna</span>
                       </Link>
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setShowSecurityModal(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition cursor-pointer text-left"
+                      >
+                        <Key className="w-3.5 h-3.5 text-[#D4A24C]" />
+                        <span>Akun & Kata Sandi</span>
+                      </button>
+
                       <div className="pt-1 border-t border-stone-200 dark:border-[#1C3A2E]">
                         <button
                           onClick={handleLogout}
@@ -327,6 +342,12 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Account & Security Modal */}
+      <AccountSecurityModal
+        isOpen={showSecurityModal}
+        onClose={() => setShowSecurityModal(false)}
+      />
     </header>
   );
 }
