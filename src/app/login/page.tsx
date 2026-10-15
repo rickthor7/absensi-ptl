@@ -107,9 +107,11 @@ export default function LoginPage() {
         <div className="text-center space-y-3">
           <Link href="/" className="inline-block group">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#082F23] p-[2px] mx-auto shadow-xl shadow-emerald-900/20 transform group-hover:scale-105 transition-transform">
-              <div className="w-full h-full rounded-[14px] bg-[#051A13] flex items-center justify-center text-[#D4A24C] font-serif text-2xl font-bold">
-                ن
-              </div>
+              <img
+                src="/logo.jpg"
+                alt="Logo PP Nurul Falah"
+                className="w-full h-full object-cover rounded-[14px]"
+              />
             </div>
           </Link>
 

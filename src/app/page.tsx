@@ -51,9 +51,18 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-10">
               {/* Left Content */}
               <div className="space-y-5 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/8 text-[11px] font-semibold text-[#D4A24C] border border-[#D4A24C]/20 backdrop-blur-sm">
-                  <Zap className="w-3 h-3" />
-                  <span>Presensi GPS & Selfie Terpadu</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[2px] shadow-xl overflow-hidden shrink-0">
+                    <img
+                      src="/logo.jpg"
+                      alt="Logo Pondok Pesantren Nurul Falah"
+                      className="w-full h-full object-cover rounded-[14px]"
+                    />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/8 text-[11px] font-semibold text-[#D4A24C] border border-[#D4A24C]/20 backdrop-blur-sm">
+                    <Zap className="w-3 h-3" />
+                    <span>Presensi GPS & SPP Terpadu</span>
+                  </div>
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.15]">

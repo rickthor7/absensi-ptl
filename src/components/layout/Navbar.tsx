@@ -159,10 +159,12 @@ export default function Navbar() {
               href="/"
               className="flex items-center gap-2.5 group"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[2px] shadow-lg shadow-emerald-900/30">
-                <div className="w-full h-full rounded-[10px] bg-[#051A13] flex items-center justify-center text-[#D4A24C] group-hover:bg-[#082F23] transition-colors">
-                  <span className="text-lg font-bold font-serif leading-none">ن</span>
-                </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[1.5px] shadow-lg shadow-emerald-900/30 overflow-hidden shrink-0">
+                <img
+                  src="/icon.jpg"
+                  alt="Logo PP Nurul Falah"
+                  className="w-full h-full object-cover rounded-[9px]"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">

@@ -13,15 +13,56 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Absensi Santri - Pondok Pesantren Nurul Falah Ketintang Surabaya',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://absensi-santri.nurulfalah.ac.id'),
+  title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP Terpadu',
   description:
-    'Sistem absensi santri terpadu Pondok Pesantren Nurul Falah, Ketintang, Surabaya berbasis selfie kamera dan geotag lokasi presisi.',
+    'Sistem presensi santri terpadu Pondok Pesantren Nurul Falah, Ketintang, Surabaya berbasis selfie kamera, geotag GPS presisi, pembayaran SPP bulanan, dan transparansi keuangan kas terbuka.',
+  keywords: [
+    'Absensi Santri',
+    'Pondok Pesantren Nurul Falah',
+    'Ketintang Surabaya',
+    'SPP Santri',
+    'Transparansi Keuangan Pesantren',
+    'Presensi GPS',
+  ],
+  icons: {
+    icon: [
+      { url: '/icon.jpg', sizes: '512x512', type: 'image/jpeg' },
+    ],
+    apple: [
+      { url: '/apple-icon.jpg', sizes: '512x512', type: 'image/jpeg' },
+    ],
+  },
+  openGraph: {
+    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP',
+    description:
+      'Sistem presensi santri terpadu berbasis selfie kamera & validasi koordinat GPS pondok, pembayaran SPP bulanan, dan transparansi keuangan publik.',
+    url: 'https://absensi-santri.nurulfalah.ac.id',
+    siteName: 'Pesantren Nurul Falah Ketintang',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Pondok Pesantren Nurul Falah Surabaya — Presensi & Keuangan SPP',
+      },
+    ],
+    locale: 'id_ID',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP',
+    description:
+      'Sistem presensi santri terpadu berbasis selfie kamera, geotag GPS presisi, pembayaran SPP bulanan, dan transparansi kas terbuka.',
+    images: ['/og-image.jpg'],
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0B3D2E',
+  themeColor: '#082F23',
 };
 
 export default function RootLayout({
