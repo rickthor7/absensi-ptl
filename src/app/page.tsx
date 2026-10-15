@@ -138,92 +138,153 @@ export default function HomePage() {
         </div>
 
         {/* ── Feature Highlights ── */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-5">
           {[
-            { icon: Fingerprint, label: 'Selfie Validasi', desc: 'Bukti foto wajah', color: 'from-emerald-500/10 to-emerald-500/5', iconColor: 'text-emerald-600 dark:text-emerald-400' },
-            { icon: Locate, label: 'GPS Presisi', desc: 'Radius geolokasi', color: 'from-blue-500/10 to-blue-500/5', iconColor: 'text-blue-600 dark:text-blue-400' },
-            { icon: Shield, label: 'Audit Trail', desc: 'Rekam jejak lengkap', color: 'from-amber-500/10 to-amber-500/5', iconColor: 'text-amber-600 dark:text-amber-400' },
+            {
+              icon: Fingerprint,
+              label: 'Selfie Validasi',
+              desc: 'Bukti foto wajah santri langsung dari kamera',
+              badge: 'Anti-Titip',
+              gradient: 'from-emerald-500/12 via-emerald-500/6 to-transparent',
+              iconBg: 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-300',
+              borderHover: 'hover:border-emerald-500/40',
+            },
+            {
+              icon: Locate,
+              label: 'GPS Presisi',
+              desc: 'Radius radius geolokasi pondok akurat',
+              badge: 'Geotag Real-Time',
+              gradient: 'from-blue-500/12 via-blue-500/6 to-transparent',
+              iconBg: 'bg-blue-600/15 text-blue-700 dark:text-blue-300',
+              borderHover: 'hover:border-blue-500/40',
+            },
+            {
+              icon: Shield,
+              label: 'Audit Trail',
+              desc: 'Rekam jejak kehadiran lengkap & transparan',
+              badge: 'Tinjauan Musyrif',
+              gradient: 'from-amber-500/12 via-amber-500/6 to-transparent',
+              iconBg: 'bg-amber-600/15 text-amber-700 dark:text-amber-300',
+              borderHover: 'hover:border-amber-500/40',
+            },
           ].map((f, i) => (
-            <div key={i} className={`bg-gradient-to-br ${f.color} rounded-2xl p-4 border border-stone-200/60 dark:border-[#1C3A2E] card-hover text-center sm:text-left`}>
-              <f.icon className={`w-6 h-6 ${f.iconColor} mx-auto sm:mx-0 mb-2`} />
-              <p className="text-xs font-bold text-stone-800 dark:text-stone-100">{f.label}</p>
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5 hidden sm:block">{f.desc}</p>
+            <div
+              key={i}
+              className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-br ${f.gradient} bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-sm card-hover transition-all ${f.borderHover}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl ${f.iconBg} flex items-center justify-center shadow-xs`}>
+                  <f.icon className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-200/50 dark:bg-white/10 text-stone-600 dark:text-stone-300">
+                  {f.badge}
+                </span>
+              </div>
+              <p className="text-sm font-extrabold text-stone-900 dark:text-stone-100">{f.label}</p>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
 
         {/* ── Two Role Portal Cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           {/* Santri Card */}
-          <div className="group bg-white dark:bg-[#0F1E18] rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] shadow-sm card-hover flex flex-col justify-between overflow-hidden">
-            {/* Top accent bar */}
-            <div className="h-1 bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#0D7B5F]" />
+          <div className="group bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] shadow-md card-hover flex flex-col justify-between overflow-hidden relative">
+            {/* Top decorative gradient bar */}
+            <div className="h-1.5 bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#D4A24C]" />
             
-            <div className="p-5 sm:p-6 space-y-4 flex-1">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950/60 dark:to-emerald-900/30 flex items-center justify-center">
-                  <Camera className="w-5 h-5 text-[#0D7B5F]" />
+            <div className="p-6 sm:p-8 space-y-5 flex-1">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 text-[#0D7B5F] dark:text-[#1AA37A] flex items-center justify-center shadow-inner border border-emerald-500/20">
+                    <Camera className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-[#0D7B5F] dark:text-emerald-400 uppercase tracking-wider">Area Santri</span>
+                    <h2 className="text-xl font-extrabold text-stone-900 dark:text-stone-100">Portal Santri</h2>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Portal Santri</h2>
-                  <p className="text-[10px] text-stone-500">Alur mandiri absensi kegiatan harian</p>
-                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                  Mandiri
+                </span>
               </div>
 
-              <div className="space-y-2">
-                {['Absensi selfie & GPS', 'Pengajuan izin syar\'i', 'Kalender presensi harian'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] text-stone-600 dark:text-stone-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+                Akses cepat untuk melakukan presensi harian berbasis swafoto dan GPS, mengecek kalender rekap kehadiran, serta mengajukan izin syar&apos;i.
+              </p>
+
+              <div className="space-y-2.5 pt-1">
+                {[
+                  'Presensi kamera selfie dan validasi koordinat GPS pondok',
+                  'Pengajuan izin syar\'i (sakit/pulang) dengan bukti lampiran',
+                  'Kalender visual dan riwayat log presensi santri lengkap',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs text-stone-700 dark:text-stone-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+            <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-2">
               <Link
                 href="/santri"
-                className="flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-[#0D7B5F] hover:bg-[#096B52] text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/15 btn-press group-hover:shadow-lg w-full"
+                className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#0D7B5F] to-[#0A6951] hover:from-[#096B52] hover:to-[#075340] text-white text-sm font-bold transition-all shadow-md shadow-emerald-900/20 btn-press group-hover:shadow-xl w-full"
               >
                 <span>Buka Dashboard Santri</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>
 
           {/* Musyrif Card */}
-          <div className="group bg-white dark:bg-[#0F1E18] rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] shadow-sm card-hover flex flex-col justify-between overflow-hidden">
-            {/* Top accent bar — gold gradient */}
-            <div className="h-1 bg-gradient-to-r from-[#D4A24C] via-[#E8C36E] to-[#D4A24C]" />
+          <div className="group bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200/90 dark:border-[#1C3A2E] shadow-md card-hover flex flex-col justify-between overflow-hidden relative">
+            {/* Top decorative gradient bar — gold focus */}
+            <div className="h-1.5 bg-gradient-to-r from-[#D4A24C] via-[#E8C36E] to-[#0D7B5F]" />
             
-            <div className="p-5 sm:p-6 space-y-4 flex-1">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-950/60 dark:to-amber-900/30 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-[#D4A24C]" />
+            <div className="p-6 sm:p-8 space-y-5 flex-1">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 text-[#D4A24C] dark:text-[#E8C36E] flex items-center justify-center shadow-inner border border-amber-500/20">
+                    <Shield className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-[#D4A24C] uppercase tracking-wider">Area Pembina</span>
+                    <h2 className="text-xl font-extrabold text-stone-900 dark:text-stone-100">Portal Musyrif</h2>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Portal Musyrif</h2>
-                  <p className="text-[10px] text-stone-500">Panel pengawasan & pengelolaan</p>
-                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                  Pengawasan
+                </span>
               </div>
 
-              <div className="space-y-2">
-                {['Monitoring kehadiran real-time', 'Persetujuan izin santri', 'Konfigurasi kegiatan & radius', 'Ekspor rekap CSV & audit'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] text-stone-600 dark:text-stone-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+                Panel kendali musyrif untuk memantau kehadiran langsung, menyetujui izin, mengkalibrasi titik geotag GPS, serta mengunduh rekap evaluasi bulanan.
+              </p>
+
+              <div className="space-y-2.5 pt-1">
+                {[
+                  'Monitoring absensi real-time per sesi jadwal kegiatan',
+                  'Persetujuan izin santri dan verifikasi tinjauan presensi',
+                  'Kalibrasi geotag koordinat GPS & radius pondok terkini',
+                  'Ekspor rekap skor bulanan & evaluasi santri ke Excel/CSV',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs text-stone-700 dark:text-stone-300">
+                    <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+            <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-2">
               <Link
                 href="/musyrif"
-                className="flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-[#082F23] hover:bg-[#051A13] text-white text-xs font-bold transition-all shadow-md border border-[#D4A24C]/20 btn-press group-hover:shadow-lg w-full"
+                className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#082F23] to-[#0D4433] hover:from-[#051A13] hover:to-[#082F23] text-[#D4A24C] hover:text-[#E8C36E] text-sm font-bold transition-all shadow-md shadow-emerald-950/20 border border-[#D4A24C]/30 btn-press group-hover:shadow-xl w-full"
               >
                 <span>Buka Dashboard Musyrif</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>

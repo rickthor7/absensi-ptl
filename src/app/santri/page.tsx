@@ -217,87 +217,100 @@ export default function SantriHomePage() {
         </div>
 
         {/* ── Quick Shortcut Navigation ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {/* ── Quick Shortcut Navigation ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link
             href="/santri/absensi"
-            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#0D7B5F] transition-all flex items-center gap-2.5 group cursor-pointer"
+            className="p-4 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm hover:border-emerald-500/50 card-hover transition-all flex items-center gap-3 group cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Camera className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 text-[#0D7B5F] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-xs">
+              <Camera className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Absen Kamera</span>
+              <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-[#0D7B5F] dark:group-hover:text-emerald-400 transition-colors">Absen Kamera</span>
               <span className="text-[10px] text-stone-500">Selfie & Geotag</span>
             </div>
           </Link>
 
           <Link
             href="/santri/kalender"
-            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#D4A24C] transition-all flex items-center gap-2.5 group cursor-pointer"
+            className="p-4 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm hover:border-amber-500/50 card-hover transition-all flex items-center gap-3 group cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Calendar className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-[#D4A24C] dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-xs">
+              <Calendar className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Kalender</span>
+              <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-[#D4A24C] transition-colors">Kalender</span>
               <span className="text-[10px] text-stone-500">Rekap Bulanan</span>
             </div>
           </Link>
 
           <Link
             href="/santri/riwayat"
-            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#0D7B5F] transition-all flex items-center gap-2.5 group cursor-pointer"
+            className="p-4 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm hover:border-sky-500/50 card-hover transition-all flex items-center gap-3 group cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <History className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500/15 to-sky-500/5 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-xs">
+              <History className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Riwayat</span>
+              <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">Riwayat</span>
               <span className="text-[10px] text-stone-500">Log Kehadiran</span>
             </div>
           </Link>
 
           <Link
             href="/santri/profil"
-            className="p-3.5 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/80 dark:border-[#1C3A2E] shadow-xs hover:border-[#D4A24C] transition-all flex items-center gap-2.5 group cursor-pointer"
+            className="p-4 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200/90 dark:border-[#1C3A2E] shadow-sm hover:border-purple-500/50 card-hover transition-all flex items-center gap-3 group cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <User className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/15 to-purple-500/5 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-xs">
+              <User className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <span className="font-bold text-xs text-stone-900 dark:text-stone-100 block">Profil Santri</span>
+              <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100 block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Profil Santri</span>
               <span className="text-[10px] text-stone-500">Akun & Sandi</span>
             </div>
           </Link>
         </div>
 
         {/* ── Monthly Stats ── */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-emerald card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-emerald card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                 {attendanceRate}%
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-stone-900 dark:text-stone-100">{hadirCount}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Hadir Valid</span>
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100">{hadirCount}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Hadir Valid</span>
           </div>
 
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-gold card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <FileQuestion className="w-4 h-4 text-amber-500" />
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-gold card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/12 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <FileQuestion className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                Syar&apos;i
+              </span>
             </div>
-            <div className="text-2xl font-extrabold text-stone-900 dark:text-stone-100">{izinCount}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Izin</span>
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100">{izinCount}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Izin Santri</span>
           </div>
 
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-rose card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-4 h-4 text-orange-500" />
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-rose card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-orange-500/12 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
+                Review
+              </span>
             </div>
-            <div className="text-2xl font-extrabold text-stone-900 dark:text-stone-100">{reviewCount}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Tinjauan</span>
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100">{reviewCount}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Tinjauan</span>
           </div>
         </div>
 

@@ -6,18 +6,18 @@
 :root {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Refined Islamic Theme — high contrast, warm cream luxury */
+  /* Refined Islamic Theme — Warm Ivory Luxury, High Depth (anti-stark, anti-monotonous) */
   --emerald-primary: #0D7B5F;
   --emerald-hover: #096B52;
   --deep-green: #082F23;
   --gold-accent: #D4A24C;
   --gold-light: #FFF9ED;
-  --cream-bg: #F8F6F0;
-  --surface: #FFFFFF;
-  --surface-subtle: #F1ECE1;
-  --text-primary: #141F1A;
-  --text-muted: #4A5B53;
-  --border-color: #D8D1C2;
+  --cream-bg: #F2EDE4; /* Warm illuminated ivory/parchment tone */
+  --surface: #FDFBF7;
+  --surface-subtle: #E8E1D3;
+  --text-primary: #15221B;
+  --text-muted: #4B5E54;
+  --border-color: #DCD3C3;
 
   --success: #198754;
   --warning: #B86E12;
@@ -25,9 +25,9 @@
   --info: #2563EB;
 
   /* Glass variables */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(220, 214, 200, 0.7);
-  --glass-shadow: 0 8px 32px rgba(14, 56, 42, 0.08);
+  --glass-bg: rgba(253, 251, 247, 0.90);
+  --glass-border: rgba(212, 162, 76, 0.24);
+  --glass-shadow: 0 10px 32px rgba(14, 56, 42, 0.08);
 }
 
 .dark {
@@ -68,20 +68,106 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ──────── Animated Background Mesh ──────── */
+/* ──────── Light Mode Warmth, Soft Tactile Surfaces & Anti-Monotonous Palette ──────── */
+:not(.dark) .bg-white {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF6EE 100%) !important;
+}
+
+:not(.dark) .border-stone-200,
+:not(.dark) .border-stone-200\/80,
+:not(.dark) .border-stone-200\/60,
+:not(.dark) .border-stone-200\/70,
+:not(.dark) .border-stone-200\/90 {
+  border-color: #E2D7C7 !important;
+}
+
+:not(.dark) .border-stone-100 {
+  border-color: #EDE4D6 !important;
+}
+
+:not(.dark) .bg-stone-50 {
+  background-color: #F5EFE4 !important;
+}
+
+:not(.dark) .bg-stone-100 {
+  background-color: #EDE5D6 !important;
+}
+
+:not(.dark) .text-stone-900 {
+  color: #16241D !important;
+}
+
+:not(.dark) .text-stone-800 {
+  color: #23342B !important;
+}
+
+:not(.dark) .text-stone-700 {
+  color: #34473C !important;
+}
+
+:not(.dark) .text-stone-600 {
+  color: #44584D !important;
+}
+
+:not(.dark) .text-stone-500 {
+  color: #5D7266 !important;
+}
+
+:not(.dark) .shadow-xs,
+:not(.dark) .shadow-sm {
+  box-shadow: 0 4px 16px -2px rgba(28, 48, 38, 0.06), 0 1px 4px rgba(212, 162, 76, 0.04) !important;
+}
+
+:not(.dark) .shadow-md {
+  box-shadow: 0 8px 24px -4px rgba(13, 123, 95, 0.09), 0 2px 8px -1px rgba(212, 162, 76, 0.06) !important;
+}
+
+:not(.dark) .shadow-lg {
+  box-shadow: 0 14px 34px -6px rgba(13, 123, 95, 0.12), 0 4px 12px -2px rgba(212, 162, 76, 0.08) !important;
+}
+
+:not(.dark) .shadow-xl {
+  box-shadow: 0 20px 42px -8px rgba(13, 123, 95, 0.16), 0 6px 16px -2px rgba(212, 162, 76, 0.10) !important;
+}
+
+/* ──────── Animated Background Mesh with Warm Golden-Emerald Ambiance ──────── */
 .mesh-bg {
   position: relative;
   overflow: hidden;
+  background-color: var(--cream-bg);
 }
 .mesh-bg::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(13,123,95,0.07), transparent),
-    radial-gradient(ellipse 500px 500px at 90% 80%, rgba(212,162,76,0.05), transparent);
+    radial-gradient(ellipse 700px 500px at 5% 15%, rgba(13, 123, 95, 0.10), transparent 70%),
+    radial-gradient(ellipse 600px 600px at 95% 20%, rgba(212, 162, 76, 0.13), transparent 70%),
+    radial-gradient(ellipse 800px 500px at 50% 85%, rgba(13, 123, 95, 0.07), transparent 70%),
+    radial-gradient(ellipse 400px 400px at 80% 90%, rgba(212, 162, 76, 0.09), transparent 60%);
   pointer-events: none;
   z-index: 0;
+}
+.mesh-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(13, 123, 95, 0.035) 1px, transparent 1px),
+    radial-gradient(rgba(212, 162, 76, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px, 16px 16px;
+  background-position: 0 0, 16px 16px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+}
+.dark .mesh-bg::before {
+  background:
+    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(26, 163, 122, 0.12), transparent),
+    radial-gradient(ellipse 500px 500px at 90% 80%, rgba(232, 195, 110, 0.08), transparent);
+}
+.dark .mesh-bg::after {
+  opacity: 0.25;
 }
 
 /* ──────── Glassmorphism Cards ──────── */
@@ -93,16 +179,32 @@ body {
   box-shadow: var(--glass-shadow);
 }
 
-/* ──────── Premium Card Hover Effect ──────── */
+/* ──────── Premium Dynamic Card Hover (Anti-Kaku) ──────── */
 .card-hover {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease !important;
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(14, 56, 42, 0.1), 0 4px 8px rgba(14, 56, 42, 0.06);
+  transform: translateY(-3px) scale(1.004) !important;
+  box-shadow: 0 16px 36px -6px rgba(13, 123, 95, 0.13), 0 4px 12px -1px rgba(212, 162, 76, 0.09) !important;
+}
+:not(.dark) .card-hover:hover {
+  border-color: rgba(13, 123, 95, 0.35) !important;
 }
 .dark .card-hover:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(26, 163, 122, 0.08);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.45), 0 4px 12px -1px rgba(26, 163, 122, 0.15) !important;
+  border-color: rgba(26, 163, 122, 0.35) !important;
+}
+
+/* ──────── Button Organic Feedback ──────── */
+.btn-press {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-press:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.03);
+}
+.btn-press:active {
+  transform: translateY(1px) scale(0.97) !important;
 }
 
 /* ──────── Gradient Text Utility ──────── */

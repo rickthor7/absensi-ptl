@@ -190,46 +190,74 @@ export default function MusyrifDashboardPage() {
       </div>
 
         {/* ── 4 Metric Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-emerald card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded">Hari Ini</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-emerald card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                Hari Ini
+              </span>
             </div>
-            <div className="text-2xl font-extrabold text-stone-900 dark:text-stone-100">{hadirValidToday}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Hadir Valid</span>
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100">{hadirValidToday}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Hadir Valid</span>
           </div>
 
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-gold card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <FileQuestion className="w-4 h-4 text-amber-500" />
-              {izinMenungguToday > 0 && (
-                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded dot-pulse">Perlu Review</span>
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-gold card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/12 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <FileQuestion className="w-4 h-4" />
+              </div>
+              {izinMenungguToday > 0 ? (
+                <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full dot-pulse">
+                  Perlu Aksi
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-stone-400 bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                  Nihil
+                </span>
               )}
             </div>
-            <div className="text-2xl font-extrabold text-amber-700 dark:text-amber-400">{izinMenungguToday}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Izin Menunggu</span>
+            <div className="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-400">{izinMenungguToday}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Izin Menunggu</span>
           </div>
 
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] stat-accent-blue card-hover">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-4 h-4 text-blue-500" />
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] stat-accent-blue card-hover shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/12 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Users className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                Sesi Aktif
+              </span>
             </div>
-            <div className="text-2xl font-extrabold text-stone-900 dark:text-stone-100">{belumAbsenCount}</div>
-            <span className="text-[10px] text-stone-500 font-medium">Belum Absen</span>
-            <span className="block text-[9px] text-stone-400">dari {santriList.length} santri</span>
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100">{belumAbsenCount}</div>
+            <span className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5 block">Belum Absen</span>
+            <span className="block text-[9px] text-stone-400">dari total {santriList.length} santri</span>
           </div>
 
-          <div className="bg-white dark:bg-[#0F1E18] p-4 rounded-xl border border-stone-200 dark:border-[#1C3A2E] card-hover" style={{ borderLeft: '3px solid #0D7B5F' }}>
-            <div className="flex items-center justify-between mb-2">
-              <Clock className="w-4 h-4 text-[#0D7B5F]" />
-              {activeActivity && <span className="w-2 h-2 rounded-full bg-emerald-500 dot-pulse" />}
+          <div className="bg-white dark:bg-[#0F1E18] p-4 sm:p-5 rounded-2xl border border-stone-200/90 dark:border-[#1C3A2E] card-hover shadow-sm" style={{ borderLeft: '3px solid #0D7B5F' }}>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#0D7B5F]/12 text-[#0D7B5F] dark:text-emerald-400 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+              {activeActivity ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dot-pulse" />
+                  Aktif
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-stone-400 bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                  Tutup
+                </span>
+              )}
             </div>
-            <div className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
+            <div className="text-sm font-black text-stone-900 dark:text-stone-100 truncate">
               {activeActivity ? activeActivity.name : 'Ditutup'}
             </div>
-            <span className="text-[10px] text-[#0D7B5F] font-semibold">
-              {activeActivity ? `${activeActivity.start_time} – ${activeActivity.end_time}` : 'Jadwal nanti'}
+            <span className="text-[11px] text-[#0D7B5F] dark:text-[#D4A24C] font-bold block mt-0.5">
+              {activeActivity ? `${activeActivity.start_time} – ${activeActivity.end_time} WIB` : 'Jadwal sesi berikutnya'}
             </span>
           </div>
         </div>
