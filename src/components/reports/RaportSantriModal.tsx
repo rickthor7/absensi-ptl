@@ -213,8 +213,8 @@ export default function RaportSantriModal({
             <h1 className="text-base sm:text-xl font-black tracking-wider uppercase text-emerald-950 font-serif">
               Pesantren Al-Qur&apos;an Nurul Falah
             </h1>
-            <p className="text-xs sm:text-sm font-bold text-stone-800 tracking-tight">
-              Pondok Pesantren Mahasiswa &amp; Pelajar Tahfidzul Qur&apos;an
+            <p className="text-xs sm:text-sm font-bold text-stone-800 tracking-tight font-serif">
+              Pondok Pesantren Tahfidz Leader
             </p>
             <p className="text-[10px] sm:text-[11px] text-stone-600 leading-tight mt-0.5 font-sans">
               Jl. Ketintang PTT V-B No. 24, Kel. Ketintang, Kec. Gayungan, Kota Surabaya, Jawa Timur 60231
@@ -273,7 +273,7 @@ export default function RaportSantriModal({
         </div>
 
         {/* ── TABEL RINCIAN KEGIATAN ── */}
-        <div className="mb-5 overflow-x-auto font-sans">
+        <div className="mb-6 overflow-x-auto font-sans">
           <table className="w-full text-left text-xs border-collapse border border-stone-300">
             <thead>
               <tr className="bg-stone-100 text-stone-800 text-[11px] font-bold">
@@ -348,30 +348,6 @@ export default function RaportSantriModal({
               </tr>
             </tfoot>
           </table>
-        </div>
-
-        {/* ── KETERANGAN SKOR & PREDIKAT ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-sans mb-6">
-          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800 block">Kriteria Penilaian Kehadiran:</span>
-            <ul className="text-[11px] text-stone-600 space-y-0.5 list-disc list-inside">
-              <li>Hadir Tepat Waktu (Swafoto &amp; GPS): <strong>1.0 Poin</strong></li>
-              <li>Izin Syar&apos;i (Disetujui Musyrif): <strong>0.5 Poin</strong></li>
-              <li>Alpa / Tidak Hadir / Ditolak: <strong>0.0 Poin</strong></li>
-              <li>Batas Minimal Kelulusan Presensi: <strong>70.0%</strong></li>
-            </ul>
-          </div>
-
-          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800 block">Catatan Musyrif Pembina:</span>
-            <p className="text-[11px] text-stone-600 italic">
-              {s.isWarning
-                ? 'Perlu peningkatan kedisiplinan pada kegiatan berjamaah dan tilawah harian. Santri wajib menghadap musyrif untuk pendampingan khusus.'
-                : s.scorePercentage >= 85
-                ? 'Alhamdulillah, santri menunjukkan komitmen kedisiplinan dan akhlak yang sangat baik. Pertahankan istiqomah.'
-                : 'Kehadiran santri cukup baik dan memenuhi kriteria pondok pesantren. Tetap jaga konsistensi sholat berjamaah.'}
-            </p>
-          </div>
         </div>
 
         {/* ── TANDA TANGAN PENGESAHAN ── */}
