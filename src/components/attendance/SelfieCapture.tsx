@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, RefreshCw, AlertCircle, Check, Image as ImageIcon, Sparkles, FlipHorizontal } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle, Check, ShieldCheck, FlipHorizontal } from 'lucide-react';
 
 interface SelfieCaptureProps {
   onCapture: (dataUrl: string) => void;
@@ -50,7 +50,7 @@ export default function SelfieCapture({ onCapture, photoUrl, onRetake }: SelfieC
       const message =
         err instanceof Error ? err.message : 'Kamera tidak dapat diakses atau izin ditolak.';
       setCameraError(
-        `${message} Pastikan izin kamera aktif pada peramban Anda atau unggah foto selfie langsung.`
+        `${message} Pastikan izin kamera telah diizinkan pada peramban ponsel/laptop Anda untuk mengambil foto selfie langsung.`
       );
     } finally {
       setIsLoadingCamera(false);
@@ -249,43 +249,19 @@ export default function SelfieCapture({ onCapture, photoUrl, onRetake }: SelfieC
           </button>
           <div className="text-center">
             <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
-              Ketuk untuk Ambil Foto
+              Ketuk untuk Ambil Foto Selfie
             </span>
-            <span className="text-[11px] text-stone-500">
-              Tatap kamera dengan penerangan yang cukup
+            <span className="text-[11px] text-stone-500 dark:text-stone-400">
+              Tatap kamera langsung dengan pencahayaan memadai
             </span>
           </div>
         </div>
       )}
 
-      {/* Alternative File Upload Option */}
-      <div className="flex items-center justify-center pt-1">
-        <label className="text-xs text-stone-500 hover:text-[#146B50] dark:hover:text-[#D6A84F] flex items-center gap-1.5 cursor-pointer py-1.5 px-3.5 rounded-xl border border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition">
-          <ImageIcon className="w-4 h-4 text-stone-400" />
-          <span>Atau unggah foto dari galeri/perangkat</span>
-          <input
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  if (typeof reader.result === 'string') {
-                    if (stream) {
-                      stream.getTracks().forEach((track) => track.stop());
-                      setStream(null);
-                    }
-                    onCapture(reader.result);
-                  }
-                };
-                reader.readAsDataURL(file);
-              }
-            }}
-          />
-        </label>
+      {/* Security notice: Live selfie only */}
+      <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-600 dark:text-stone-400 bg-stone-100/80 dark:bg-[#142820]/60 px-4 py-2 rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] max-w-sm mx-auto text-center shadow-xs">
+        <ShieldCheck className="w-4 h-4 text-[#0D7B5F] dark:text-[#10B981] shrink-0" />
+        <span>Wajib kamera langsung (Selfie Real-Time). Unggah file dari galeri dinonaktifkan.</span>
       </div>
     </div>
   );
