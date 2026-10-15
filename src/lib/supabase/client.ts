@@ -84,8 +84,12 @@ export async function checkSupabaseConnection(): Promise<{
   }
 
   try {
-    // Try pinging public.activities or public.profiles
-    const { data, error } = await supabase.from('activities').select('id').limit(1);
+    // Try pinging public.activities or public.profiles with 3500ms timeout
+    const pingPromise = supabase.from('activities').select('id').limit(1);
+    const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string } }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT', message: 'Koneksi timeout (3.5 detik).' } }), 3500)
+    );
+    const { data, error } = (await Promise.race([pingPromise, timeoutPromise])) as any;
 
     if (error) {
       if (

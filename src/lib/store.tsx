@@ -150,41 +150,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
 
     try {
+      const timeout = 4000;
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: 'timeout' } }), timeout)
+      );
+
       // 1. Fetch Activities
-      const { data: actData, error: actErr } = await supabase
-        .from('activities')
-        .select('*')
-        .order('start_time', { ascending: true });
+      const actPromise = supabase.from('activities').select('*').order('start_time', { ascending: true });
+      const { data: actData, error: actErr } = (await Promise.race([actPromise, timeoutPromise])) as any;
 
       if (!actErr && actData && actData.length > 0) {
         setActivities(actData as Activity[]);
       }
 
       // 2. Fetch Profiles
-      const { data: profData, error: profErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('full_name', { ascending: true });
+      const profPromise = supabase.from('profiles').select('*').order('full_name', { ascending: true });
+      const { data: profData, error: profErr } = (await Promise.race([profPromise, timeoutPromise])) as any;
 
       if (!profErr && profData && profData.length > 0) {
         setProfiles(profData as Profile[]);
       }
 
       // 3. Fetch Attendance Records (Real records from database)
-      const { data: recData, error: recErr } = await supabase
+      const recPromise = supabase
         .from('attendance_records')
         .select('*')
         .order('submitted_at', { ascending: false })
         .limit(200);
+      const { data: recData, error: recErr } = (await Promise.race([recPromise, timeoutPromise])) as any;
 
       if (!recErr && recData) {
-        // Map student name & activity name from relations if available
-        const currentProfiles = (profData && profData.length > 0 ? profData : profiles) as Profile[];
-        const currentActs = (actData && actData.length > 0 ? actData : activities) as Activity[];
+        const availableProfiles = (profData && profData.length > 0 ? profData : []) as Profile[];
+        const availableActs = (actData && actData.length > 0 ? actData : []) as Activity[];
 
         const mappedRecords: AttendanceRecord[] = (recData as any[]).map((r) => {
-          const student = currentProfiles.find((p) => p.id === r.student_id);
-          const act = currentActs.find((a) => a.id === r.activity_id);
+          const student = availableProfiles.find((p) => p.id === r.student_id);
+          const act = availableActs.find((a) => a.id === r.activity_id);
           return {
             ...r,
             student_name: r.student_name || student?.full_name || 'Santri',
@@ -201,11 +202,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 4. Fetch Audit Logs
-      const { data: audData, error: audErr } = await supabase
+      const audPromise = supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
+      const { data: audData, error: audErr } = (await Promise.race([audPromise, timeoutPromise])) as any;
 
       if (!audErr && audData) {
         setAuditLogs(audData as AuditLog[]);
@@ -213,7 +215,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn('Error syncing data from Supabase:', err);
     }
-  }, [activities, profiles]);
+  }, []);
 
   // Check connection to Supabase
   const checkConnection = useCallback(async () => {
@@ -252,7 +254,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (data.auditLogs?.length) setAuditLogs(data.auditLogs);
       }
 
-      // Check authentic logged-in user in localStorage
+      // Initial check authentic logged-in user in localStorage
       const storedUser = localStorage.getItem(AUTH_USER_KEY);
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
@@ -273,17 +275,73 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     // Check Supabase session & connection
     const initAuth = async () => {
-      setIsLoadingAuth(true);
-      const connStatus = await checkSupabaseConnection();
-      setIsSupabaseConnected(connStatus.connected);
-      setSupabaseStatusMessage(connStatus.message);
+      try {
+        setIsLoadingAuth(true);
+        const connStatus = await checkSupabaseConnection();
+        setIsSupabaseConnected(connStatus.connected);
+        setSupabaseStatusMessage(connStatus.message);
 
-      const supabase = getSupabase();
-      if (supabase && connStatus.connected) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            // Fetch profile
+        const supabase = getSupabase();
+        const config = getSupabaseConfig();
+
+        if (supabase && connStatus.connected) {
+          try {
+            // Check session with 3500ms timeout
+            const sessionPromise = supabase.auth.getSession();
+            const timeoutPromise = new Promise<{ data: { session: null }; error: Error }>((resolve) =>
+              setTimeout(() => resolve({ data: { session: null }, error: new Error('Session timeout') }), 3500)
+            );
+            const { data: sessionData } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
+            const session = sessionData?.session;
+
+            if (session?.user) {
+              // Valid session exists in Supabase! Fetch fresh profile
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
+
+              if (profile) {
+                setCurrentUserState(profile);
+                setIsAuthenticated(true);
+                localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+              } else {
+                // User has Supabase auth account but profile record is missing
+                setCurrentUserState(GUEST_USER);
+                setIsAuthenticated(false);
+                localStorage.removeItem(AUTH_USER_KEY);
+              }
+            } else {
+              // Sesi Supabase habis / expired token / logout
+              // Bersihkan user expired di localStorage agar kembali ke login
+              setCurrentUserState(GUEST_USER);
+              setIsAuthenticated(false);
+              localStorage.removeItem(AUTH_USER_KEY);
+            }
+
+            await syncSupabaseData();
+          } catch (err) {
+            console.error('Supabase auth session check failed:', err);
+          }
+        }
+      } catch (err) {
+        console.warn('initAuth caught error:', err);
+      } finally {
+        setIsLoadingAuth(false);
+        setIsLoaded(true);
+      }
+    };
+
+    initAuth();
+
+    // Listen to Supabase Auth State Changes
+    const supabase = getSupabase();
+    let authListener: { unsubscribe: () => void } | null = null;
+    if (supabase) {
+      const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          try {
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
@@ -295,39 +353,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               setIsAuthenticated(true);
               localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
             }
+          } catch (err) {
+            console.warn('onAuthStateChange profile fetch error:', err);
           }
-          await syncSupabaseData();
-        } catch (err) {
-          console.error('Supabase auth session check failed:', err);
-        }
-      }
-      setIsLoadingAuth(false);
-      setIsLoaded(true);
-    };
-
-    initAuth();
-
-    // Listen to Supabase Auth State Changes
-    const supabase = getSupabase();
-    let authListener: { unsubscribe: () => void } | null = null;
-    if (supabase) {
-      const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (profile) {
-            setCurrentUserState(profile);
-            setIsAuthenticated(true);
-            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
-          }
+          setIsLoadingAuth(false);
         } else if (event === 'SIGNED_OUT') {
           setCurrentUserState(GUEST_USER);
           setIsAuthenticated(false);
           localStorage.removeItem(AUTH_USER_KEY);
+          setIsLoadingAuth(false);
+        } else if (event === 'TOKEN_REFRESHED' && !session) {
+          // Token refresh failed -> session expired!
+          setCurrentUserState(GUEST_USER);
+          setIsAuthenticated(false);
+          localStorage.removeItem(AUTH_USER_KEY);
+          setIsLoadingAuth(false);
         }
       });
       authListener = sub.subscription;
@@ -336,7 +376,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authListener?.unsubscribe();
     };
-  }, [checkConnection, syncSupabaseData]);
+  }, [syncSupabaseData]);
 
   // Save changes to localStorage for offline fallback
   useEffect(() => {
