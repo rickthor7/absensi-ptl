@@ -37,8 +37,13 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
   const { currentUser, updateCurrentUserCredentials } = useStore();
 
   const [fullName, setFullName] = useState(currentUser.full_name || '');
+  const [nickname, setNickname] = useState(currentUser.nickname || '');
   const [studentNumber, setStudentNumber] = useState(currentUser.student_number || '');
-  const [groupName, setGroupName] = useState(currentUser.group_name || 'Kamar Al-Fatih 01');
+  const [generation, setGeneration] = useState(String(currentUser.generation || '2026'));
+  const [classTahfidzPagi, setClassTahfidzPagi] = useState(currentUser.class_tahfidz_pagi || 'A');
+  const [classTahfidzMalam, setClassTahfidzMalam] = useState(currentUser.class_tahfidz_malam || 'A');
+  const [lid, setLid] = useState(currentUser.lid || '');
+  const [groupName, setGroupName] = useState(currentUser.group_name || 'Angkatan 2026');
   const [phone, setPhone] = useState(currentUser.phone || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [newPassword, setNewPassword] = useState('');
@@ -53,8 +58,13 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
   useEffect(() => {
     if (isOpen) {
       setFullName(currentUser.full_name || '');
+      setNickname(currentUser.nickname || '');
       setStudentNumber(currentUser.student_number || '');
-      setGroupName(currentUser.group_name || 'Kamar Al-Fatih 01');
+      setGeneration(String(currentUser.generation || '2026'));
+      setClassTahfidzPagi(currentUser.class_tahfidz_pagi || 'A');
+      setClassTahfidzMalam(currentUser.class_tahfidz_malam || 'A');
+      setLid(currentUser.lid || '');
+      setGroupName(currentUser.group_name || 'Angkatan 2026');
       setPhone(currentUser.phone || '');
       setEmail(currentUser.email || '');
       setNewPassword('');
@@ -111,8 +121,13 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
     try {
       const result = await updateCurrentUserCredentials({
         fullName: fullName.trim(),
+        nickname: nickname.trim(),
         studentNumber: studentNumber.trim(),
         groupName: groupName.trim(),
+        generation: generation.trim(),
+        classTahfidzPagi: classTahfidzPagi,
+        classTahfidzMalam: classTahfidzMalam,
+        lid: lid.trim(),
         phone: phone.trim(),
         email: email.trim().toLowerCase(),
         newPassword: newPassword.trim() ? newPassword.trim() : undefined,
@@ -196,19 +211,34 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
               <span>Identitas & Biodata Santri</span>
             </span>
 
-            <div>
-              <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                Nama Lengkap Santri <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nama Lengkap Santri <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nama Lengkap Santri"
+                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nama Panggilan
+                </label>
                 <input
                   type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Nama Lengkap Santri"
-                  className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Panggilan"
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-[#D6A84F]/40 dark:border-[#D6A84F]/30 bg-white dark:bg-[#162B22] text-[#0D7B5F] dark:text-[#D6A84F] focus:ring-2 focus:ring-[#D6A84F]/30 outline-none transition"
                 />
               </div>
             </div>
@@ -225,7 +255,7 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
                     required
                     value={studentNumber}
                     onChange={(e) => setStudentNumber(e.target.value)}
-                    placeholder="Contoh: STR-2026-001"
+                    placeholder="Contoh: STR-2023-001"
                     className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
                   />
                 </div>
@@ -233,56 +263,80 @@ export default function SantriEditModal({ isOpen, onClose }: SantriEditModalProp
 
               <div>
                 <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                  Kamar Asrama / Kelompok
+                  Angkatan (Tahun Masuk)
+                </label>
+                <select
+                  value={generation}
+                  onChange={(e) => setGeneration(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="2023">Angkatan 2023</option>
+                  <option value="2024">Angkatan 2024</option>
+                  <option value="2025">Angkatan 2025</option>
+                  <option value="2026">Angkatan 2026</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Kelas Tahfidz Pagi
+                </label>
+                <select
+                  value={classTahfidzPagi}
+                  onChange={(e) => setClassTahfidzPagi(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="A">Kelas A</option>
+                  <option value="B">Kelas B</option>
+                  <option value="-">- (Tidak Ada)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Kelas Tahfidz Malam
+                </label>
+                <select
+                  value={classTahfidzMalam}
+                  onChange={(e) => setClassTahfidzMalam(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="A">Kelas A</option>
+                  <option value="B">Kelas B</option>
+                  <option value="-">- (Tidak Ada)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nomor Telepon / WhatsApp
                 </label>
                 <div className="relative">
-                  <Building className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                  <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    placeholder="Kamar Al-Fatih 01"
-                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="6282143863964"
+                    className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Quick Room Selectors */}
-            <div>
-              <span className="text-[10px] text-stone-500 dark:text-stone-400 block mb-1.5">
-                Pilih Cepat Asrama:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {PRESET_ROOMS.map((room) => (
-                  <button
-                    key={room}
-                    type="button"
-                    onClick={() => setGroupName(room)}
-                    className={`text-[10px] px-2.5 py-1 rounded-xl border transition cursor-pointer font-medium ${
-                      groupName === room
-                        ? 'bg-[#0D7B5F] text-white border-[#0D7B5F]'
-                        : 'bg-stone-50 dark:bg-[#162B22] text-stone-700 dark:text-stone-300 border-stone-200 dark:border-[#1C3A2E] hover:border-[#0D7B5F]/50'
-                    }`}
-                  >
-                    {room}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                Nomor Telepon / WhatsApp Santri / Wali
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nomor LID (WhatsApp ID)
+                </label>
                 <input
                   type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0812-3456-7890"
-                  className="w-full text-xs pl-10 pr-4 py-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none font-mono transition"
+                  value={lid}
+                  onChange={(e) => setLid(e.target.value)}
+                  placeholder="181041662808088@lid"
+                  className="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
                 />
               </div>
             </div>

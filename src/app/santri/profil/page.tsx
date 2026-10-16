@@ -187,8 +187,14 @@ export default function SantriProfilPage() {
           <div className="space-y-3 text-xs">
             <div className="flex justify-between py-0.5">
               <span className="text-stone-600 dark:text-stone-400">Nama Lengkap:</span>
-              <span className="font-bold text-stone-900 dark:text-stone-100">
+              <span className="font-bold text-stone-900 dark:text-stone-100 text-right">
                 {currentUser.full_name}
+              </span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="text-stone-600 dark:text-stone-400">Nama Panggilan:</span>
+              <span className="font-bold text-[#0D7B5F] dark:text-[#D4A24C] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                {currentUser.nickname || '-'}
               </span>
             </div>
             <div className="flex justify-between py-0.5">
@@ -198,21 +204,39 @@ export default function SantriProfilPage() {
               </span>
             </div>
             <div className="flex justify-between py-0.5">
-              <span className="text-stone-600 dark:text-stone-400">Email Akun Login:</span>
-              <span className="font-mono text-stone-800 dark:text-stone-200">
-                {currentUser.email || '-'}
+              <span className="text-stone-600 dark:text-stone-400">Angkatan:</span>
+              <span className="font-bold text-[#D4A24C]">
+                {currentUser.generation ? `Angkatan ${currentUser.generation}` : '-'}
               </span>
             </div>
             <div className="flex justify-between py-0.5">
-              <span className="text-stone-600 dark:text-stone-400">Kamar Asrama:</span>
-              <span className="font-bold text-[#0D7B5F] dark:text-emerald-400">
-                {currentUser.group_name || 'Umum'}
+              <span className="text-stone-600 dark:text-stone-400">Tahfidz Pagi:</span>
+              <span className="font-semibold text-stone-900 dark:text-stone-100">
+                Kelas {currentUser.class_tahfidz_pagi || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="text-stone-600 dark:text-stone-400">Tahfidz Malam:</span>
+              <span className="font-semibold text-stone-900 dark:text-stone-100">
+                Kelas {currentUser.class_tahfidz_malam || '-'}
               </span>
             </div>
             <div className="flex justify-between py-0.5">
               <span className="text-stone-600 dark:text-stone-400">Nomor Telepon:</span>
-              <span className="font-mono text-stone-800 dark:text-stone-200">
+              <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
                 {currentUser.phone || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="text-stone-600 dark:text-stone-400">No. LID:</span>
+              <span className="font-mono text-[11px] text-stone-600 dark:text-stone-400 truncate max-w-[180px]">
+                {currentUser.lid || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="text-stone-600 dark:text-stone-400">Email Akun Login:</span>
+              <span className="font-mono text-stone-800 dark:text-stone-200">
+                {currentUser.email || '-'}
               </span>
             </div>
             <div className="flex justify-between py-0.5">

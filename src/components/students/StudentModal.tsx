@@ -9,8 +9,13 @@ interface StudentModalProps {
   onClose: () => void;
   onSave: (data: {
     full_name: string;
+    nickname?: string;
     student_number: string;
     group_name: string;
+    generation?: string | number;
+    class_tahfidz_pagi?: string;
+    class_tahfidz_malam?: string;
+    lid?: string;
     phone: string;
     is_active: boolean;
     email: string;
@@ -20,14 +25,19 @@ interface StudentModalProps {
 
 export default function StudentModal({ student, onClose, onSave }: StudentModalProps) {
   const [fullName, setFullName] = useState(student?.full_name || '');
+  const [nickname, setNickname] = useState(student?.nickname || '');
   const [studentNumber, setStudentNumber] = useState(student?.student_number || '');
+  const [generation, setGeneration] = useState(String(student?.generation || '2026'));
+  const [classTahfidzPagi, setClassTahfidzPagi] = useState(student?.class_tahfidz_pagi || 'A');
+  const [classTahfidzMalam, setClassTahfidzMalam] = useState(student?.class_tahfidz_malam || 'A');
+  const [lid, setLid] = useState(student?.lid || '');
   const [email, setEmail] = useState(
     student?.email ||
       (student?.student_number
         ? `${student.student_number.toLowerCase().replace(/[^a-z0-9]/g, '')}@santri.nurulfalah.ac.id`
         : '')
   );
-  const [groupName, setGroupName] = useState(student?.group_name || 'Kamar Al-Fatih 01');
+  const [groupName, setGroupName] = useState(student?.group_name || 'Angkatan 2026');
   const [phone, setPhone] = useState(student?.phone || '');
   const [isActive, setIsActive] = useState(student ? student.is_active : true);
   const [password, setPassword] = useState('');
@@ -37,14 +47,19 @@ export default function StudentModal({ student, onClose, onSave }: StudentModalP
   // Sync state whenever student prop changes
   useEffect(() => {
     setFullName(student?.full_name || '');
+    setNickname(student?.nickname || '');
     setStudentNumber(student?.student_number || '');
+    setGeneration(String(student?.generation || '2026'));
+    setClassTahfidzPagi(student?.class_tahfidz_pagi || 'A');
+    setClassTahfidzMalam(student?.class_tahfidz_malam || 'A');
+    setLid(student?.lid || '');
     setEmail(
       student?.email ||
         (student?.student_number
           ? `${student.student_number.toLowerCase().replace(/[^a-z0-9]/g, '')}@santri.nurulfalah.ac.id`
           : '')
     );
-    setGroupName(student?.group_name || 'Kamar Al-Fatih 01');
+    setGroupName(student?.group_name || 'Angkatan 2026');
     setPhone(student?.phone || '');
     setIsActive(student ? student.is_active : true);
     setPassword('');
@@ -91,8 +106,13 @@ export default function StudentModal({ student, onClose, onSave }: StudentModalP
 
     onSave({
       full_name: fullName.trim(),
+      nickname: nickname.trim(),
       student_number: studentNumber.trim(),
       group_name: groupName.trim(),
+      generation: generation.trim(),
+      class_tahfidz_pagi: classTahfidzPagi,
+      class_tahfidz_malam: classTahfidzMalam,
+      lid: lid.trim(),
       phone: phone.trim(),
       is_active: isActive,
       email: finalEmail,
@@ -147,18 +167,33 @@ export default function StudentModal({ student, onClose, onSave }: StudentModalP
               <span>Data Identitas Santri</span>
             </span>
 
-            <div>
-              <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                Nama Lengkap Santri <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Contoh: Muhammad Ali Hasan"
-                className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nama Lengkap Santri <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Contoh: MUHAMMAD DLIYAAUL HAQ SHIDQEY"
+                  className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nama Panggilan
+                </label>
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="DLIYA'"
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-[#D6A84F]/40 dark:border-[#D6A84F]/30 bg-white dark:bg-[#162B22] text-[#0D7B5F] dark:text-[#D6A84F] focus:ring-2 focus:ring-[#D6A84F]/30 outline-none transition"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -171,36 +206,86 @@ export default function StudentModal({ student, onClose, onSave }: StudentModalP
                   required
                   value={studentNumber}
                   onChange={(e) => handleStudentNumberChange(e.target.value)}
-                  placeholder="STR-2026-050"
+                  placeholder="STR-2023-001"
                   className="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
                 />
               </div>
 
               <div>
                 <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                  Kamar / Kelompok Asrama
+                  Angkatan (Tahun Masuk)
                 </label>
-                <input
-                  type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Kamar Al-Fatih 01"
-                  className="w-full text-xs p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
-                />
+                <select
+                  value={generation}
+                  onChange={(e) => setGeneration(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="2023">Angkatan 2023</option>
+                  <option value="2024">Angkatan 2024</option>
+                  <option value="2025">Angkatan 2025</option>
+                  <option value="2026">Angkatan 2026</option>
+                </select>
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
-                Nomor Kontak / WhatsApp Santri / Wali
-              </label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0812-3456-7890"
-                className="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Kelas Tahfidz Pagi
+                </label>
+                <select
+                  value={classTahfidzPagi}
+                  onChange={(e) => setClassTahfidzPagi(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="A">Kelas A</option>
+                  <option value="B">Kelas B</option>
+                  <option value="-">- (Tidak Ada)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Kelas Tahfidz Malam
+                </label>
+                <select
+                  value={classTahfidzMalam}
+                  onChange={(e) => setClassTahfidzMalam(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                >
+                  <option value="A">Kelas A</option>
+                  <option value="B">Kelas B</option>
+                  <option value="-">- (Tidak Ada)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nomor HP / WhatsApp Santri
+                </label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="6282143863964"
+                  className="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 focus:border-[#0D7B5F] outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-800 dark:text-stone-200 mb-1">
+                  Nomor LID (WhatsApp ID)
+                </label>
+                <input
+                  type="text"
+                  value={lid}
+                  onChange={(e) => setLid(e.target.value)}
+                  placeholder="181041662808088@lid"
+                  className="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 dark:border-[#1C3A2E] bg-white dark:bg-[#162B22] text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-[#0D7B5F]/30 outline-none transition"
+                />
+              </div>
             </div>
           </div>
 

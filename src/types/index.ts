@@ -16,9 +16,14 @@ export interface Profile {
   email?: string;
   password_hash?: string;
   full_name: string;
+  nickname?: string; // Nama panggilan untuk Halo [Panggilan]
   role: Role;
   student_number?: string; // NIS
   group_name?: string; // Kamar / Kelompok
+  generation?: string | number; // Angkatan (2023, 2024, 2025, 2026)
+  class_tahfidz_pagi?: string; // Kelas Tahfidz Pagi (A, B, -)
+  class_tahfidz_malam?: string; // Kelas Tahfidz Malam (A, B, -)
+  lid?: string; // Nomor LID / WhatsApp LID
   is_active: boolean;
   avatar_url?: string;
   phone?: string;

@@ -86,11 +86,16 @@ interface StoreContextType {
   updateStudent: (student: Profile & { password?: string }) => Promise<void>;
   updateCurrentUserCredentials: (data: {
     fullName?: string;
+    nickname?: string;
     email?: string;
     newPassword?: string;
     phone?: string;
     studentNumber?: string;
     groupName?: string;
+    generation?: string | number;
+    classTahfidzPagi?: string;
+    classTahfidzMalam?: string;
+    lid?: string;
   }) => Promise<{ success: boolean; message: string }>;
   toggleStudentStatus: (id: string) => Promise<void>;
   addActivity: (activity: Omit<Activity, 'id'>) => Promise<void>;
@@ -1224,11 +1229,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Self-update username & password for the logged-in user (Musyrif, Admin, or Santri)
   const updateCurrentUserCredentials = async (data: {
     fullName?: string;
+    nickname?: string;
     email?: string;
     newPassword?: string;
     phone?: string;
     studentNumber?: string;
     groupName?: string;
+    generation?: string | number;
+    classTahfidzPagi?: string;
+    classTahfidzMalam?: string;
+    lid?: string;
   }): Promise<{ success: boolean; message: string }> => {
     if (!currentUser || currentUser.id === 'guest') {
       return { success: false, message: 'Anda belum masuk ke akun.' };
@@ -1237,10 +1247,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const updatedProfile: Profile = {
       ...currentUser,
       full_name: data.fullName?.trim() || currentUser.full_name,
+      nickname: data.nickname !== undefined ? data.nickname.trim() : currentUser.nickname,
       email: data.email?.trim().toLowerCase() || currentUser.email,
       phone: data.phone !== undefined ? data.phone.trim() : currentUser.phone,
       student_number: data.studentNumber !== undefined ? data.studentNumber.trim() : currentUser.student_number,
       group_name: data.groupName !== undefined ? data.groupName.trim() : currentUser.group_name,
+      generation: data.generation !== undefined ? data.generation : currentUser.generation,
+      class_tahfidz_pagi: data.classTahfidzPagi !== undefined ? data.classTahfidzPagi : currentUser.class_tahfidz_pagi,
+      class_tahfidz_malam: data.classTahfidzMalam !== undefined ? data.classTahfidzMalam : currentUser.class_tahfidz_malam,
+      lid: data.lid !== undefined ? data.lid.trim() : currentUser.lid,
       password_hash: data.newPassword?.trim() ? data.newPassword.trim() : currentUser.password_hash || 'password123',
     };
 

@@ -91,6 +91,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE IF EXISTS public.profiles ALTER COLUMN id TYPE TEXT;
 ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT 'password123';
 ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS nickname TEXT;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS generation TEXT;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS class_tahfidz_pagi TEXT;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS class_tahfidz_malam TEXT;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS lid TEXT;
 
 -- 5. TABEL ACTIVITIES (Jadwal Kegiatan Pondok)
 CREATE TABLE IF NOT EXISTS public.activities (
@@ -203,51 +208,66 @@ CREATE POLICY "Public Access attendance-photos" ON storage.objects FOR ALL USING
 -- 12. SEED DATA AKUN RESMI SANTRI & MUSYRIF PONDOK
 DELETE FROM public.profiles;
 
-INSERT INTO public.profiles (id, email, password_hash, full_name, role, student_number, group_name, phone, is_active)
+INSERT INTO public.profiles (id, email, password_hash, full_name, nickname, role, student_number, group_name, generation, class_tahfidz_pagi, class_tahfidz_malam, lid, phone, is_active)
 VALUES
-  -- Kamar Al-Fatih 01
-  ('usr-santri-1', 'fauzi@santri.nurulfalah.ac.id', 'password123', 'Ahmad Fauzi Rahman', 'santri', 'STR-2026-042', 'Kamar Al-Fatih 01', '0812-3456-7890', true),
-  ('usr-santri-2', 'rizky@santri.nurulfalah.ac.id', 'password123', 'Muhammad Rizky Pratama', 'santri', 'STR-2026-043', 'Kamar Al-Fatih 01', '0813-8822-1100', true),
-  ('usr-santri-6', 'hanif@santri.nurulfalah.ac.id', 'password123', 'Hanif Arsyad Robbani', 'santri', 'STR-2026-047', 'Kamar Al-Fatih 01', '0812-7711-2233', true),
-  ('usr-santri-7', 'daffa@santri.nurulfalah.ac.id', 'password123', 'Daffa Pratama Kusuma', 'santri', 'STR-2026-048', 'Kamar Al-Fatih 01', '0813-9944-5566', true),
+  -- Angkatan 2023
+  ('usr-santri-1', 'dliya@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD DLIYAAUL HAQ SHIDQEY', 'DLIYA''', 'santri', 'STR-2023-001', 'Angkatan 2023', '2023', 'B', 'A', '181041662808088@lid', '6282143863964', true),
+  ('usr-santri-2', 'akbar@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD AKBAR GALEH MAULANA', 'AKBAR', 'santri', 'STR-2023-002', 'Angkatan 2023', '2023', 'A', 'A', '70270631022704@lid', '6285726189100', true),
+  ('usr-santri-3', 'sakhowi@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD SAKHOWI AL WAHIDI', 'SAKHOWI', 'santri', 'STR-2023-003', 'Angkatan 2023', '2023', 'A', 'A', '100141759488198@lid', '6287715625085', true),
+  ('usr-santri-4', 'putra@santri.nurulfalah.ac.id', 'password123', 'RAHMAT HADI SAPUTRA', 'PUTRA', 'santri', 'STR-2023-004', 'Angkatan 2023', '2023', 'B', 'A', '124443053568081@lid', '6285728979999', true),
 
-  -- Kamar Shalahuddin 02
-  ('usr-santri-3', 'umar@santri.nurulfalah.ac.id', 'password123', 'Umar Al-Faruq', 'santri', 'STR-2026-044', 'Kamar Shalahuddin 02', '0857-9911-3322', true),
-  ('usr-santri-4', 'bilal@santri.nurulfalah.ac.id', 'password123', 'Bilal Habasyi', 'santri', 'STR-2026-045', 'Kamar Shalahuddin 02', '0819-2233-4455', true),
-  ('usr-santri-8', 'salman@santri.nurulfalah.ac.id', 'password123', 'Salman Al-Farisi', 'santri', 'STR-2026-049', 'Kamar Shalahuddin 02', '0852-3344-5566', true),
-  ('usr-santri-9', 'hamzah@santri.nurulfalah.ac.id', 'password123', 'Hamzah Asadullah', 'santri', 'STR-2026-050', 'Kamar Shalahuddin 02', '0877-6655-4433', true),
+  -- Angkatan 2024
+  ('usr-santri-5', 'yazid@santri.nurulfalah.ac.id', 'password123', 'ACHMAD YAZID AL BUSTHAMI', 'YAZID', 'santri', 'STR-2024-005', 'Angkatan 2024', '2024', 'B', 'A', '154335589728408@lid', '6282331468836', true),
+  ('usr-santri-6', 'dimas@santri.nurulfalah.ac.id', 'password123', 'DIMAS SATRIA SHOFIYULLAH', 'DIMAS', 'santri', 'STR-2024-006', 'Angkatan 2024', '2024', 'B', 'A', '183395472666764@lid', '6285704420656', true),
+  ('usr-santri-7', 'zuhdi@santri.nurulfalah.ac.id', 'password123', 'MOCHAMMAD ZUHDI FIRDAUS', 'ZUHDI', 'santri', 'STR-2024-007', 'Angkatan 2024', '2024', '-', '-', '117798621692111@lid', '62895351234556', true),
+  ('usr-santri-8', 'alfian@santri.nurulfalah.ac.id', 'password123', 'MOHAMMAD ALFIAN RAHMATULLAH', 'ALFIAN', 'santri', 'STR-2024-008', 'Angkatan 2024', '2024', 'B', 'A', '63862321733811@lid', '6281555433698', true),
+  ('usr-santri-9', 'thoriq@santri.nurulfalah.ac.id', 'password123', 'MOHAMMAD THORIQ DHIYA UL HAQ', 'THORIQ', 'santri', 'STR-2024-009', 'Angkatan 2024', '2024', 'B', 'A', '34317208150168@lid', '6281213338952', true),
+  ('usr-santri-10', 'fawwaz@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD FAWWAS SYIHAB EL MILLA', 'FAWWAZ', 'santri', 'STR-2024-010', 'Angkatan 2024', '2024', 'A', 'A', '263741258072161@lid', '6281252726705', true),
+  ('usr-santri-11', 'rifqi@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD RIFQI ARIFIN', 'RIFQI', 'santri', 'STR-2024-011', 'Angkatan 2024', '2024', 'A', 'A', '157934554226912@lid', '6285748877696', true),
 
-  -- Kamar Khalid 03
-  ('usr-santri-5', 'zaid@santri.nurulfalah.ac.id', 'password123', 'Zaid bin Tsabit', 'santri', 'STR-2026-046', 'Kamar Khalid 03', '0878-1122-9988', true),
-  ('usr-santri-10', 'ali@santri.nurulfalah.ac.id', 'password123', 'Ali Zainal Abidin', 'santri', 'STR-2026-051', 'Kamar Khalid 03', '0853-2211-4433', true),
-  ('usr-santri-11', 'fatih@santri.nurulfalah.ac.id', 'password123', 'Fatih Rabbani Al-Hafidz', 'santri', 'STR-2026-052', 'Kamar Khalid 03', '0812-4455-6677', true),
-  ('usr-santri-12', 'rayhan@santri.nurulfalah.ac.id', 'password123', 'Rayhan Al-Ghifari', 'santri', 'STR-2026-053', 'Kamar Khalid 03', '0813-2233-8899', true),
+  -- Angkatan 2025
+  ('usr-santri-12', 'adzin@santri.nurulfalah.ac.id', 'password123', 'ADZINNUHA ZHALIFUNNAS SANTOSO', 'ADZIN', 'santri', 'STR-2025-012', 'Angkatan 2025', '2025', 'B', 'A', '119782594638061@lid', '6281615946380', true),
+  ('usr-santri-13', 'zaki@santri.nurulfalah.ac.id', 'password123', 'AKHMAD ZAKKI UBAIDILLAH', 'ZAKI', 'santri', 'STR-2025-013', 'Angkatan 2025', '2025', 'B', 'A', '83786272399377@lid', '6289508045518', true),
+  ('usr-santri-14', 'dika@santri.nurulfalah.ac.id', 'password123', 'DIKA AHMAD SAPUTRA', 'DIKA', 'santri', 'STR-2025-014', 'Angkatan 2025', '2025', 'B', 'A', '41580165595169@lid', '6281234205845', true),
+  ('usr-santri-15', 'fakih@santri.nurulfalah.ac.id', 'password123', 'DIN NUR FAKIH', 'FAKIH', 'santri', 'STR-2025-015', 'Angkatan 2025', '2025', 'A', 'B', '163024140816636@lid', '6289649866299', true),
+  ('usr-santri-16', 'hisyam@santri.nurulfalah.ac.id', 'password123', 'HISYAM AL HAKIM', 'HISYAM', 'santri', 'STR-2025-016', 'Angkatan 2025', '2025', 'A', 'B', '18154893893886@lid', '6285853901706', true),
+  ('usr-santri-17', 'najib@santri.nurulfalah.ac.id', 'password123', 'M. NAJIB ROSYADI AL HASANI', 'NAJIB', 'santri', 'STR-2025-017', 'Angkatan 2025', '2025', 'A', 'A', '206060216426707@lid', '628981718123', true),
+  ('usr-santri-18', 'rival@santri.nurulfalah.ac.id', 'password123', 'MOCHAMAD RIVAL SURYA ARDHANA', 'RIVAL', 'santri', 'STR-2025-018', 'Angkatan 2025', '2025', 'A', 'B', '141012718592193@lid', '6281515316851', true),
+  ('usr-santri-19', 'dafiq@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD AGUS DAFIQUL ULUM', 'DAFIQ', 'santri', 'STR-2025-019', 'Angkatan 2025', '2025', 'B', 'A', '32530753441998@lid', '62895351707079', true),
+  ('usr-santri-20', 'jihad@santri.nurulfalah.ac.id', 'password123', 'MUHAMMAD JIHAD BISMA GHANI', 'JIHAD', 'santri', 'STR-2025-020', 'Angkatan 2025', '2025', 'A', 'B', '277262234607737@lid', '6282124516336', true),
 
-  -- Kamar Thariq 04
-  ('usr-santri-13', 'thariq@santri.nurulfalah.ac.id', 'password123', 'Thariq bin Ziyad', 'santri', 'STR-2026-054', 'Kamar Thariq 04', '0856-1122-3344', true),
-  ('usr-santri-14', 'usamah@santri.nurulfalah.ac.id', 'password123', 'Usamah bin Zaid', 'santri', 'STR-2026-055', 'Kamar Thariq 04', '0878-3344-5566', true),
-  ('usr-santri-15', 'ibnusina@santri.nurulfalah.ac.id', 'password123', 'Ibnu Sina Ramadhan', 'santri', 'STR-2026-056', 'Kamar Thariq 04', '0812-9900-1122', true),
-  ('usr-santri-16', 'farhan@santri.nurulfalah.ac.id', 'password123', 'Farhan Kamil Hakim', 'santri', 'STR-2026-057', 'Kamar Thariq 04', '0813-7788-9900', true),
-
-  -- Kamar Ali 05
-  ('usr-santri-17', 'hasan@santri.nurulfalah.ac.id', 'password123', 'Hasan Al-Bashri', 'santri', 'STR-2026-058', 'Kamar Ali 05', '0852-1199-8877', true),
-  ('usr-santri-18', 'husain@santri.nurulfalah.ac.id', 'password123', 'Husain Al-Baqir', 'santri', 'STR-2026-059', 'Kamar Ali 05', '0812-5566-7788', true),
-  ('usr-santri-19', 'luqman@santri.nurulfalah.ac.id', 'password123', 'Luqman Hakim An-Nafi', 'santri', 'STR-2026-060', 'Kamar Ali 05', '0877-2233-4455', true),
-  ('usr-santri-20', 'ihsan@santri.nurulfalah.ac.id', 'password123', 'Ihsan Maulana Syarif', 'santri', 'STR-2026-061', 'Kamar Ali 05', '0813-6677-8899', true),
+  -- Angkatan 2026
+  ('usr-santri-21', 'alam@santri.nurulfalah.ac.id', 'password123', 'A. FAQIH ALAM', 'ALAM', 'santri', 'STR-2026-021', 'Angkatan 2026', '2026', 'B', 'B', '6281334838725', '6281334838725', true),
+  ('usr-santri-22', 'hidayat@santri.nurulfalah.ac.id', 'password123', 'A. HIDAYAT YULIAL F', 'HIDAYAT', 'santri', 'STR-2026-022', 'Angkatan 2026', '2026', 'B', 'B', '6283861968833', '6283861968833', true),
+  ('usr-santri-23', 'yusuf@santri.nurulfalah.ac.id', 'password123', 'A. YUSUF BAHARUDDIN', 'YUSUF', 'santri', 'STR-2026-023', 'Angkatan 2026', '2026', 'A', 'B', '6289653698927', '6289653698927', true),
+  ('usr-santri-24', 'nizar@santri.nurulfalah.ac.id', 'password123', 'A. NIZZAR FAIZ', 'NIZAR', 'santri', 'STR-2026-024', 'Angkatan 2026', '2026', 'A', 'B', '6282250112053', '6282250112053', true),
+  ('usr-santri-25', 'linggar@santri.nurulfalah.ac.id', 'password123', 'LINGGAR HANGGAR BIANTORO', 'LINGGAR', 'santri', 'STR-2026-025', 'Angkatan 2026', '2026', 'B', 'B', '6282334962512', '6282334962512', true),
+  ('usr-santri-26', 'abyan@santri.nurulfalah.ac.id', 'password123', 'M. ABYAN RAFIF ATILLA', 'ABYAN', 'santri', 'STR-2026-026', 'Angkatan 2026', '2026', 'B', 'B', '6285856413122', '6285856413122', true),
+  ('usr-santri-27', 'arjuna@santri.nurulfalah.ac.id', 'password123', 'M. ARJUNA ROHMAN', 'ARJUNA', 'santri', 'STR-2026-027', 'Angkatan 2026', '2026', 'A', 'B', '6285655703193', '6285655703193', true),
+  ('usr-santri-28', 'bahrus@santri.nurulfalah.ac.id', 'password123', 'M. BAHRUSSALAM', 'BAHRUS', 'santri', 'STR-2026-028', 'Angkatan 2026', '2026', 'A', 'B', '62895634390675', '62895634390675', true),
+  ('usr-santri-29', 'afif@santri.nurulfalah.ac.id', 'password123', 'M. KHOLIL AFIFUDDIN', 'AFIF', 'santri', 'STR-2026-029', 'Angkatan 2026', '2026', 'B', 'B', '6289524866062', '6289524866062', true),
+  ('usr-santri-30', 'rizky@santri.nurulfalah.ac.id', 'password123', 'M. RIZKY PUTRA PRATAMA', 'RIZKY', 'santri', 'STR-2026-030', 'Angkatan 2026', '2026', 'A', 'B', '6285784991590', '6285784991590', true),
+  ('usr-santri-31', 'wahyu@santri.nurulfalah.ac.id', 'password123', 'M. DIMAS WAHYU', 'WAHYU', 'santri', 'STR-2026-031', 'Angkatan 2026', '2026', 'B', 'B', '6285726132542', '6285726132542', true),
+  ('usr-santri-32', 'nailul@santri.nurulfalah.ac.id', 'password123', 'NAILUL AUTHOR', 'NAILUL', 'santri', 'STR-2026-032', 'Angkatan 2026', '2026', 'A', 'B', '6285737023580', '6285737023580', true),
 
   -- Musyrif & Pengasuhan
-  ('usr-musyrif-1', 'mansur@nurulfalah.ac.id', 'password123', 'Ustadz Mansur Hidayat, M.Ag', 'musyrif', null, 'Pengasuhan Asrama Putra', '0812-9988-7766', true),
-  ('usr-musyrif-2', 'abdullah@nurulfalah.ac.id', 'password123', 'Ustadz Abdullah Robbani, S.Pd.I', 'musyrif', null, 'Bidang Kedisiplinan & Tahfidz', '0813-5544-3322', true),
-  ('usr-musyrif-3', 'fauzan@nurulfalah.ac.id', 'password123', 'Ustadz Fauzan Adzima, Lc', 'musyrif', null, 'Bidang Ta’lim & Bahasa Arab', '0812-3344-5577', true),
-  ('usr-musyrif-4', 'nurul@nurulfalah.ac.id', 'password123', 'Ustadzah Nurul Hidayati, S.Pd', 'musyrif', null, 'Biro Administrasi & Perizinan', '0813-7788-2233', true)
+  ('usr-musyrif-1', 'mansur@nurulfalah.ac.id', 'password123', 'Ustadz Mansur Hidayat, M.Ag', 'Ustadz Mansur', 'musyrif', null, 'Pengasuhan Asrama Putra', null, null, null, null, '0812-9988-7766', true),
+  ('usr-musyrif-2', 'abdullah@nurulfalah.ac.id', 'password123', 'Ustadz Abdullah Robbani, S.Pd.I', 'Ustadz Abdullah', 'musyrif', null, 'Bidang Kedisiplinan & Tahfidz', null, null, null, null, '0813-5544-3322', true),
+  ('usr-musyrif-3', 'fauzan@nurulfalah.ac.id', 'password123', 'Ustadz Fauzan Adzima, Lc', 'Ustadz Fauzan', 'musyrif', null, 'Bidang Ta’lim & Bahasa Arab', null, null, null, null, '0812-3344-5577', true),
+  ('usr-musyrif-4', 'nurul@nurulfalah.ac.id', 'password123', 'Ustadzah Nurul Hidayati, S.Pd', 'Ustadzah Nurul', 'musyrif', null, 'Biro Administrasi & Perizinan', null, null, null, null, '0813-7788-2233', true)
 ON CONFLICT (id) DO UPDATE
 SET
   email = EXCLUDED.email,
   password_hash = EXCLUDED.password_hash,
   full_name = EXCLUDED.full_name,
+  nickname = EXCLUDED.nickname,
   role = EXCLUDED.role,
   student_number = EXCLUDED.student_number,
   group_name = EXCLUDED.group_name,
+  generation = EXCLUDED.generation,
+  class_tahfidz_pagi = EXCLUDED.class_tahfidz_pagi,
+  class_tahfidz_malam = EXCLUDED.class_tahfidz_malam,
+  lid = EXCLUDED.lid,
   phone = EXCLUDED.phone;
 
 -- 13. SEED JADWAL KEGIATAN RUTIN PONDOK

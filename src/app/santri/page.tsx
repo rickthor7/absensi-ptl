@@ -87,11 +87,28 @@ export default function SantriHomePage() {
                   <span>{getEstimatedHijriDate(effectiveTime)}</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                  Assalamu&apos;alaikum, {currentUser.full_name.split(' ')[0]}
+                  Halo, {currentUser.nickname || currentUser.full_name.split(' ')[0]}! 👋
                 </h1>
-                <p className="text-[11px] text-emerald-200/60">
-                  {currentUser.student_number} • {currentUser.group_name}
+                <p className="text-xs text-emerald-100/90 font-medium">
+                  {currentUser.full_name}
                 </p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-emerald-200/80">
+                  <span className="px-2 py-0.5 rounded-md bg-white/10 font-mono text-white">
+                    {currentUser.student_number || 'Santri'}
+                  </span>
+                  <span>•</span>
+                  <span className="px-2 py-0.5 rounded-md bg-[#D4A24C]/20 text-[#F5D78E] font-semibold">
+                    Angkatan {currentUser.generation || '2026'}
+                  </span>
+                  <span>•</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-100">
+                    WA: {currentUser.phone || '-'}
+                  </span>
+                  <span>•</span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-400/20">
+                    Tahfidz: Pagi ({currentUser.class_tahfidz_pagi || '-'}) • Malam ({currentUser.class_tahfidz_malam || '-'})
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 bg-black/20 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/8">
