@@ -13,7 +13,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://absensi-santri.nurulfalah.ac.id'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.absenptl.web.id'),
   title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP Terpadu',
   description:
     'Sistem presensi santri terpadu Pondok Pesantren Nurul Falah, Ketintang, Surabaya berbasis selfie kamera, geotag GPS presisi, pembayaran SPP bulanan, dan transparansi keuangan kas terbuka.',
@@ -24,7 +24,11 @@ export const metadata: Metadata = {
     'SPP Santri',
     'Transparansi Keuangan Pesantren',
     'Presensi GPS',
+    'Absen PTL',
   ],
+  alternates: {
+    canonical: 'https://www.absenptl.web.id',
+  },
   icons: {
     icon: [
       { url: '/icon.jpg', sizes: '512x512', type: 'image/jpeg' },
@@ -37,7 +41,7 @@ export const metadata: Metadata = {
     title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP',
     description:
       'Sistem presensi santri terpadu berbasis selfie kamera & validasi koordinat GPS pondok, pembayaran SPP bulanan, dan transparansi keuangan publik.',
-    url: 'https://absensi-santri.nurulfalah.ac.id',
+    url: 'https://www.absenptl.web.id',
     siteName: 'Pesantren Nurul Falah Ketintang',
     images: [
       {
