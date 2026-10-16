@@ -32,7 +32,8 @@ DO $$ BEGIN
     'izin_ditolak',
     'perlu_tinjauan',
     'ditolak_lokasi',
-    'belum_absen'
+    'belum_absen',
+    'alpa'
   );
 EXCEPTION
   WHEN duplicate_object THEN null;
@@ -153,6 +154,14 @@ CREATE TABLE IF NOT EXISTS public.attendance_records (
   reviewed_by TEXT NULL,
   reviewed_at TIMESTAMPTZ NULL,
   review_note TEXT NULL,
+  musyrif_status TEXT NULL,
+  santri_status attendance_status NULL,
+  has_discrepancy BOOLEAN DEFAULT FALSE,
+  discrepancy_reason TEXT NULL,
+  is_verified BOOLEAN DEFAULT FALSE,
+  verified_at TIMESTAMPTZ NULL,
+  verified_by TEXT NULL,
+  verification_note TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 

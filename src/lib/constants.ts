@@ -79,6 +79,13 @@ export const STATUS_META: Record<
     borderClass: 'border-stone-200 dark:border-stone-800',
     dotClass: 'bg-stone-400',
   },
+  alpa: {
+    label: 'Alpa / Tidak Hadir',
+    bgClass: 'bg-rose-50 dark:bg-rose-950/40',
+    textClass: 'text-rose-700 dark:text-rose-400',
+    borderClass: 'border-rose-200 dark:border-rose-800',
+    dotClass: 'bg-rose-600',
+  },
 };
 
 // Seed Activities per prd.md section 5
@@ -792,6 +799,57 @@ export const SAMPLE_SELFIES = [
 
 // Initial Seed Attendance Records (Bulan Oktober 2026)
 export const SEED_ATTENDANCE_RECORDS: AttendanceRecord[] = [
+  // --- DEMO DISCREPANCY (Ketidaksamaan Santri vs Musyrif) ---
+  {
+    id: 'att-disc-01',
+    session_id: 'sess-2026-10-16-shubuh',
+    student_id: 'usr-santri-2',
+    student_name: 'MUHAMMAD AKBAR GALEH MAULANA',
+    student_number: 'STR-2023-002',
+    group_name: 'Angkatan 2023',
+    activity_id: 'act-2',
+    activity_name: 'Shubuh Berjamaah',
+    operational_date: '2026-10-16',
+    attendance_type: 'hadir',
+    status: 'perlu_tinjauan',
+    santri_status: 'hadir_valid',
+    musyrif_status: 'alpa',
+    has_discrepancy: true,
+    discrepancy_reason: 'Santri melakukan absen mandiri selfie Hadir (04:25 WIB, jarak 14m), namun Musyrif menandai Alpa saat pengecekan shaf sholat.',
+    is_verified: false,
+    photo_path: SAMPLE_SELFIES[1],
+    latitude: PONDOK_DEFAULT_COORDINATES.latitude + 0.0001,
+    longitude: PONDOK_DEFAULT_COORDINATES.longitude + 0.0001,
+    gps_accuracy_m: 11,
+    location_captured_at: '2026-10-16T04:25:12+07:00',
+    distance_from_site_m: 14.2,
+    submitted_at: '2026-10-16T04:25:20+07:00',
+  },
+  {
+    id: 'att-disc-02',
+    session_id: 'sess-2026-10-16-shubuh',
+    student_id: 'usr-santri-1',
+    student_name: 'MUHAMMAD DLIYAAUL HAQ SHIDQEY',
+    student_number: 'STR-2023-001',
+    group_name: 'Angkatan 2023',
+    activity_id: 'act-2',
+    activity_name: 'Shubuh Berjamaah',
+    operational_date: '2026-10-16',
+    attendance_type: 'hadir',
+    status: 'perlu_tinjauan',
+    santri_status: 'belum_absen',
+    musyrif_status: 'hadir',
+    has_discrepancy: true,
+    discrepancy_reason: 'Santri belum melakukan absen selfie mandiri, tetapi dicatat Hadir oleh musyrif karena terlihat di masjid.',
+    is_verified: false,
+    photo_path: SAMPLE_SELFIES[0],
+    latitude: PONDOK_DEFAULT_COORDINATES.latitude,
+    longitude: PONDOK_DEFAULT_COORDINATES.longitude,
+    gps_accuracy_m: 10,
+    location_captured_at: '2026-10-16T04:30:00+07:00',
+    distance_from_site_m: 0,
+    submitted_at: '2026-10-16T04:30:00+07:00',
+  },
   // --- AHMAD FAUZI RAHMAN (Score: 93.8% - Sangat Baik) ---
   {
     id: 'att-101',

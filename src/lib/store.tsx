@@ -82,6 +82,21 @@ interface StoreContextType {
   }) => Promise<{ success: boolean; record: AttendanceRecord; message: string }>;
   reviewPermission: (recordId: string, status: AttendanceStatus, reviewNote?: string) => Promise<void>;
   correctAttendance: (recordId: string, newStatus: AttendanceStatus, reason: string) => Promise<void>;
+  submitManualBatchAttendance: (params: {
+    activityId: string;
+    operationalDate: string;
+    entries: { studentId: string; status: 'hadir' | 'izin' | 'alpa'; note?: string }[];
+  }) => Promise<{
+    success: boolean;
+    discrepancyCount: number;
+    totalUpdated: number;
+    message: string;
+  }>;
+  verifyDiscrepancy: (
+    recordId: string,
+    finalStatus: AttendanceStatus,
+    verificationNote?: string
+  ) => Promise<{ success: boolean; message: string }>;
   addStudent: (student: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => Promise<void>;
   updateStudent: (student: Profile & { password?: string }) => Promise<void>;
   updateCurrentUserCredentials: (data: {
@@ -203,6 +218,73 @@ async function uploadSppProofToStorage(proofDataUrl: string, studentId: string):
     console.warn('Upload SPP proof failed, using raw dataUrl:', err);
     return proofDataUrl;
   }
+}
+
+// Helper: Cek ketidaksamaan antara absensi mandiri santri dan catatan manual musyrif
+export function checkDiscrepancy(
+  santriStatus?: AttendanceStatus,
+  musyrifStatus?: 'hadir' | 'izin' | 'alpa'
+): { hasDiscrepancy: boolean; reason?: string } {
+  if (!musyrifStatus) return { hasDiscrepancy: false };
+
+  // 1. Santri belum absen mandiri
+  if (!santriStatus || santriStatus === 'belum_absen') {
+    if (musyrifStatus === 'hadir') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Santri belum melakukan selfie absen mandiri, namun dicatat Hadir oleh musyrif.',
+      };
+    }
+    // Jika musyrif mencatat Alpa atau Izin untuk yang belum absen, ini pencatatan wajar
+    return { hasDiscrepancy: false };
+  }
+
+  // 2. Santri absen mandiri Hadir (hadir_valid / perlu_tinjauan)
+  if (santriStatus === 'hadir_valid' || santriStatus === 'perlu_tinjauan') {
+    if (musyrifStatus === 'alpa') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Santri telah melakukan selfie Hadir, namun Musyrif menandai Alpa.',
+      };
+    }
+    if (musyrifStatus === 'izin') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Santri telah melakukan selfie Hadir, namun Musyrif menandai Izin.',
+      };
+    }
+    return { hasDiscrepancy: false };
+  }
+
+  // 3. Santri absen mandiri tapi ditolak lokasi
+  if (santriStatus === 'ditolak_lokasi') {
+    if (musyrifStatus === 'hadir') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Selfie santri di luar radius pondok (ditolak lokasi), namun dicatat Hadir oleh musyrif.',
+      };
+    }
+    return { hasDiscrepancy: false };
+  }
+
+  // 4. Santri mengajukan Izin mandiri
+  if (santriStatus === 'izin_diajukan' || santriStatus === 'izin_disetujui') {
+    if (musyrifStatus === 'hadir') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Santri mengajukan izin mandiri, namun dicatat Hadir fisik oleh musyrif.',
+      };
+    }
+    if (musyrifStatus === 'alpa') {
+      return {
+        hasDiscrepancy: true,
+        reason: 'Santri mengajukan izin mandiri, namun Musyrif menandai Alpa.',
+      };
+    }
+    return { hasDiscrepancy: false };
+  }
+
+  return { hasDiscrepancy: false };
 }
 
 const INDO_MONTH_NAMES = [
@@ -856,18 +938,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const todayStr = effectiveTime.toISOString().split('T')[0];
 
-    // Idempotency check: 1 attendance per student per activity per day
+    // Check if an existing record exists for this activity & date
     const existing = attendanceRecords.find(
       (r) =>
         r.student_id === currentUser.id &&
         r.activity_id === activityId &&
         r.operational_date === todayStr
     );
-    if (existing) {
+
+    // If santri has ALREADY submitted a selfie / self-attendance, prevent duplicate
+    if (existing && existing.santri_status && existing.santri_status !== 'belum_absen') {
       return {
         success: false,
         record: existing,
-        message: `Anda sudah mengirimkan absensi untuk ${activity.name} hari ini (${existing.status}).`,
+        message: `Anda sudah mengirimkan absensi mandiri untuk ${activity.name} hari ini (${existing.status}).`,
       };
     }
 
@@ -880,23 +964,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       coords.accuracy
     );
 
-    let status: AttendanceStatus = 'hadir_valid';
-    let message = 'Absensi berhasil diverifikasi!';
+    let calculatedStatus: AttendanceStatus = 'hadir_valid';
+    let message = 'Absensi mandiri berhasil diverifikasi!';
 
     if (type === 'izin') {
-      status = 'izin_diajukan';
+      calculatedStatus = 'izin_diajukan';
       message = 'Pengajuan izin berhasil dikirim dan menunggu persetujuan musyrif.';
     } else {
       if (!geoValidation.isAccuracyAcceptable) {
-        status = 'perlu_tinjauan';
+        calculatedStatus = 'perlu_tinjauan';
         message = 'Akurasi GPS rendah. Absensi tercatat namun perlu tinjauan musyrif.';
       } else if (!geoValidation.isWithinRadius) {
-        status = 'ditolak_lokasi';
+        calculatedStatus = 'ditolak_lokasi';
         message = `Anda berada di luar radius pondok (${Math.round(
           geoValidation.distanceMeters
         )}m). Absensi ditolak oleh sistem.`;
       } else {
-        status = 'hadir_valid';
+        calculatedStatus = 'hadir_valid';
         message = `Alhamdulillah! Kehadiran ${activity.name} berhasil divalidasi.`;
       }
     }
@@ -904,11 +988,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // 1. Upload photo to Supabase Storage bucket
     const publicPhotoUrl = await uploadSelfieToStorage(photoDataUrl, currentUser.id);
 
-    const newRecordId = `att-${Date.now()}`;
-    const sessionId = `sess-${todayStr}-${activity.code.toLowerCase()}`;
+    const targetRecordId = existing ? existing.id : `att-${Date.now()}`;
+    const sessionId = existing ? existing.session_id : `sess-${todayStr}-${activity.code.toLowerCase()}`;
 
-    const newRecord: AttendanceRecord = {
-      id: newRecordId,
+    // Discrepancy detection if Musyrif already recorded manual attendance
+    const disc = checkDiscrepancy(calculatedStatus, existing?.musyrif_status);
+    const finalStatus: AttendanceStatus = disc.hasDiscrepancy ? 'perlu_tinjauan' : calculatedStatus;
+
+    if (disc.hasDiscrepancy) {
+      message += ` (Perhatian: Data berbeda dengan catatan musyrif: "${disc.reason}")`;
+    }
+
+    const updatedOrNewRecord: AttendanceRecord = {
+      ...(existing || {}),
+      id: targetRecordId,
       session_id: sessionId,
       student_id: currentUser.id,
       student_name: currentUser.full_name,
@@ -918,7 +1011,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       activity_name: activity.name,
       operational_date: todayStr,
       attendance_type: type,
-      status,
+      status: finalStatus,
+      santri_status: calculatedStatus,
+      musyrif_status: existing?.musyrif_status,
+      has_discrepancy: disc.hasDiscrepancy,
+      discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
+      is_verified: !disc.hasDiscrepancy,
       photo_path: publicPhotoUrl,
       latitude: coords.latitude,
       longitude: coords.longitude,
@@ -930,13 +1028,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Update local state
-    setAttendanceRecords((prev) => [newRecord, ...prev]);
+    if (existing) {
+      setAttendanceRecords((prev) =>
+        prev.map((r) => (r.id === existing.id ? updatedOrNewRecord : r))
+      );
+    } else {
+      setAttendanceRecords((prev) => [updatedOrNewRecord, ...prev]);
+    }
 
     // Send to Supabase Database if connected
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        // Ensure session exists
         await supabase.from('attendance_sessions').upsert({
           id: sessionId,
           activity_id: activity.id,
@@ -946,13 +1049,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           status: 'open',
         });
 
-        // Insert attendance record
-        await supabase.from('attendance_records').insert({
-          id: newRecordId,
+        await supabase.from('attendance_records').upsert({
+          id: targetRecordId,
           session_id: sessionId,
           student_id: currentUser.id,
           attendance_type: type,
-          status,
+          status: finalStatus,
+          santri_status: calculatedStatus,
+          musyrif_status: existing?.musyrif_status || null,
+          has_discrepancy: disc.hasDiscrepancy,
+          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
+          is_verified: !disc.hasDiscrepancy,
           photo_path: publicPhotoUrl,
           latitude: coords.latitude,
           longitude: coords.longitude,
@@ -968,8 +1075,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     return {
-      success: status === 'hadir_valid' || status === 'izin_diajukan',
-      record: newRecord,
+      success: calculatedStatus === 'hadir_valid' || calculatedStatus === 'izin_diajukan',
+      record: updatedOrNewRecord,
       message,
     };
   };
@@ -1112,6 +1219,293 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         console.warn('Failed to correct record in Supabase:', err);
       }
     }
+  };
+
+  // Absensi manual batch oleh musyrif untuk seluruh santri pada suatu kegiatan
+  const submitManualBatchAttendance = async ({
+    activityId,
+    operationalDate,
+    entries,
+  }: {
+    activityId: string;
+    operationalDate: string;
+    entries: { studentId: string; status: 'hadir' | 'izin' | 'alpa'; note?: string }[];
+  }) => {
+    const activity = activities.find((a) => a.id === activityId);
+    if (!activity) {
+      return { success: false, discrepancyCount: 0, totalUpdated: 0, message: 'Kegiatan tidak ditemukan.' };
+    }
+
+    let discrepancyCount = 0;
+    const nowIso = effectiveTime.toISOString();
+    const sessionId = `sess-${operationalDate}-${activity.code.toLowerCase()}`;
+
+    const updatedRecordsMap = new Map<string, AttendanceRecord>();
+    attendanceRecords.forEach((r) => {
+      updatedRecordsMap.set(r.id, r);
+    });
+
+    const recordsToUpsertInDb: any[] = [];
+
+    entries.forEach((entry) => {
+      // Cari catatan presensi yang sudah ada untuk santri ini di tanggal & kegiatan tsb
+      const existing = attendanceRecords.find(
+        (r) =>
+          r.student_id === entry.studentId &&
+          r.activity_id === activityId &&
+          r.operational_date === operationalDate
+      );
+
+      const student = profiles.find((p) => p.id === entry.studentId);
+      const studentName = student?.full_name || 'Santri';
+      const studentNumber = student?.student_number;
+      const groupName = student?.group_name;
+
+      const santriStatus: AttendanceStatus = existing?.santri_status || existing?.status || 'belum_absen';
+      const disc = checkDiscrepancy(santriStatus, entry.status);
+      if (disc.hasDiscrepancy) {
+        discrepancyCount++;
+      }
+
+      let finalStatus: AttendanceStatus;
+      if (disc.hasDiscrepancy) {
+        finalStatus = 'perlu_tinjauan';
+      } else {
+        if (entry.status === 'hadir') {
+          finalStatus = 'hadir_valid';
+        } else if (entry.status === 'izin') {
+          finalStatus = 'izin_disetujui';
+        } else {
+          finalStatus = 'alpa';
+        }
+      }
+
+      if (existing) {
+        const updated: AttendanceRecord = {
+          ...existing,
+          musyrif_status: entry.status,
+          santri_status: santriStatus,
+          has_discrepancy: disc.hasDiscrepancy,
+          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
+          is_verified: !disc.hasDiscrepancy,
+          status: finalStatus,
+          reviewed_by: currentUser.id,
+          reviewed_by_name: currentUser.full_name,
+          reviewed_at: nowIso,
+          review_note: entry.note || existing.review_note,
+        };
+        updatedRecordsMap.set(existing.id, updated);
+        recordsToUpsertInDb.push({
+          id: existing.id,
+          session_id: existing.session_id,
+          student_id: existing.student_id,
+          attendance_type: entry.status,
+          status: finalStatus,
+          musyrif_status: entry.status,
+          santri_status: santriStatus,
+          has_discrepancy: disc.hasDiscrepancy,
+          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
+          is_verified: !disc.hasDiscrepancy,
+          reviewed_by: currentUser.id,
+          reviewed_at: nowIso,
+          review_note: entry.note || null,
+        });
+      } else {
+        const newId = `att-m-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const fallbackSelfie = student?.avatar_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
+        const newRecord: AttendanceRecord = {
+          id: newId,
+          session_id: sessionId,
+          student_id: entry.studentId,
+          student_name: studentName,
+          student_number: studentNumber,
+          group_name: groupName,
+          activity_id: activity.id,
+          activity_name: activity.name,
+          operational_date: operationalDate,
+          attendance_type: entry.status,
+          status: finalStatus,
+          santri_status: 'belum_absen',
+          musyrif_status: entry.status,
+          has_discrepancy: disc.hasDiscrepancy,
+          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
+          is_verified: !disc.hasDiscrepancy,
+          photo_path: fallbackSelfie,
+          latitude: activity.location_lat,
+          longitude: activity.location_lng,
+          distance_from_site_m: 0,
+          gps_accuracy_m: 10,
+          location_captured_at: nowIso,
+          submitted_at: nowIso,
+          reviewed_by: currentUser.id,
+          reviewed_by_name: currentUser.full_name,
+          reviewed_at: nowIso,
+          review_note: entry.note,
+        };
+        updatedRecordsMap.set(newId, newRecord);
+        recordsToUpsertInDb.push({
+          id: newId,
+          session_id: sessionId,
+          student_id: entry.studentId,
+          attendance_type: entry.status,
+          status: finalStatus,
+          musyrif_status: entry.status,
+          santri_status: 'belum_absen',
+          has_discrepancy: disc.hasDiscrepancy,
+          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
+          is_verified: !disc.hasDiscrepancy,
+          photo_path: newRecord.photo_path,
+          latitude: activity.location_lat,
+          longitude: activity.location_lng,
+          submitted_at: nowIso,
+          reviewed_by: currentUser.id,
+          reviewed_at: nowIso,
+          review_note: entry.note || null,
+        });
+      }
+    });
+
+    const newRecordsList = Array.from(updatedRecordsMap.values()).sort(
+      (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+    );
+
+    setAttendanceRecords(newRecordsList);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'MANUAL_BATCH_ATTENDANCE',
+      entity_type: 'attendance_session',
+      entity_id: sessionId,
+      before_data: null,
+      after_data: { total: entries.length, discrepancies: discrepancyCount },
+      reason: `Musyrif mencatat absensi manual untuk ${entries.length} santri pada ${activity.name}`,
+      created_at: nowIso,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    // Sinkronisasi ke Supabase jika terhubung
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('attendance_sessions').upsert({
+          id: sessionId,
+          activity_id: activity.id,
+          operational_date: operationalDate,
+          opens_at: `${operationalDate}T${activity.start_time}:00Z`,
+          closes_at: `${operationalDate}T${activity.end_time}:00Z`,
+          status: 'open',
+        });
+
+        for (const rec of recordsToUpsertInDb) {
+          await supabase.from('attendance_records').upsert(rec);
+        }
+
+        await supabase.from('audit_logs').insert(audit);
+      } catch (err) {
+        console.warn('Failed to sync batch attendance to Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      discrepancyCount,
+      totalUpdated: entries.length,
+      message:
+        discrepancyCount > 0
+          ? `Absensi manual tersimpan. Ditemukan ${discrepancyCount} santri dengan ketidaksamaan data yang perlu diverifikasi.`
+          : `Alhamdulillah! Presensi manual untuk ${entries.length} santri berhasil disimpan dengan rapi.`,
+    };
+  };
+
+  // Verifikasi hasil ketidaksamaan data santri vs musyrif
+  const verifyDiscrepancy = async (
+    recordId: string,
+    finalStatus: AttendanceStatus,
+    verificationNote?: string
+  ) => {
+    const record = attendanceRecords.find((r) => r.id === recordId);
+    if (!record) {
+      return { success: false, message: 'Catatan presensi tidak ditemukan.' };
+    }
+
+    const nowIso = effectiveTime.toISOString();
+    const updated = attendanceRecords.map((r) => {
+      if (r.id === recordId) {
+        return {
+          ...r,
+          status: finalStatus,
+          has_discrepancy: false,
+          is_verified: true,
+          verified_at: nowIso,
+          verified_by: currentUser.id,
+          verified_by_name: currentUser.full_name,
+          verification_note: verificationNote || r.verification_note,
+        };
+      }
+      return r;
+    });
+
+    setAttendanceRecords(updated);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'VERIFY_DISCREPANCY',
+      entity_type: 'attendance_record',
+      entity_id: recordId,
+      before_data: {
+        status: record.status,
+        santri_status: record.santri_status,
+        musyrif_status: record.musyrif_status,
+        has_discrepancy: record.has_discrepancy,
+      },
+      after_data: {
+        status: finalStatus,
+        has_discrepancy: false,
+        is_verified: true,
+        verification_note: verificationNote,
+      },
+      reason: verificationNote || 'Verifikasi ketidaksamaan data santri vs musyrif',
+      created_at: nowIso,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase
+          .from('attendance_records')
+          .update({
+            status: finalStatus,
+            has_discrepancy: false,
+            is_verified: true,
+            verified_at: nowIso,
+            verified_by: currentUser.id,
+            verification_note: verificationNote || null,
+          })
+          .eq('id', recordId);
+
+        await supabase.from('audit_logs').insert(audit);
+      } catch (err) {
+        console.warn('Failed to update Supabase discrepancy verification:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Presensi ${record.student_name} berhasil diverifikasi menjadi ${
+        finalStatus === 'hadir_valid'
+          ? 'Hadir'
+          : finalStatus === 'izin_disetujui'
+          ? 'Izin'
+          : finalStatus === 'alpa'
+          ? 'Alpa'
+          : finalStatus
+      }.`,
+    };
   };
 
   // Student management with real credential support (Username/Email & Password)
@@ -1875,6 +2269,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         submitAttendance,
         reviewPermission,
         correctAttendance,
+        submitManualBatchAttendance,
+        verifyDiscrepancy,
         addStudent,
         updateStudent,
         updateCurrentUserCredentials,

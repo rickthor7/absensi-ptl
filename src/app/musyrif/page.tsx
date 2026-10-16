@@ -85,6 +85,9 @@ export default function MusyrifDashboardPage() {
     (r) => r.status === 'izin_diajukan' || r.status === 'perlu_tinjauan'
   );
 
+  // Santri dengan ketidaksamaan presensi (Santri vs Musyrif)
+  const discrepancyRecords = attendanceRecords.filter((r) => r.has_discrepancy);
+
   // Perhitungan Rekap Bulanan Terpadu (Hadir=1, Izin=0.5, Alpa=0)
   const currentMonthKey = effectiveTime.toISOString().substring(0, 7);
   const monthlyStats = calculateMonthlyScores(
@@ -185,17 +188,43 @@ export default function MusyrifDashboardPage() {
               </button>
 
               <div className="flex items-center gap-3 bg-black/20 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/8">
-              <Clock className="w-4 h-4 text-[#D4A24C]" />
-              <div>
-                <span className="text-lg font-bold font-mono text-white tabular-nums">
-                  {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <span className="text-[10px] text-emerald-200/50 ml-1">WIB</span>
+                <Clock className="w-4 h-4 text-[#D4A24C]" />
+                <div>
+                  <span className="text-lg font-bold font-mono text-white tabular-nums">
+                    {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <span className="text-[10px] text-emerald-200/50 ml-1">WIB</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* ── Discrepancy Alert Banner ── */}
+        {discrepancyRecords.length > 0 && (
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 dark:border-amber-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-amber-950 dark:text-amber-100">
+                  Perhatian: Ditemukan {discrepancyRecords.length} Ketidaksamaan Data Presensi!
+                </h3>
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  Terdapat perbedaan antara catatan mandiri (selfie/izin) santri dan absen manual musyrif.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/musyrif/absensi"
+              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-black transition shadow-sm self-start sm:self-auto shrink-0 flex items-center gap-1.5"
+            >
+              <span>Cek Bukti & Verifikasi</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
 
         {/* ── 4 Metric Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

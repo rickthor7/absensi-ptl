@@ -1,6 +1,6 @@
 export type Role = 'santri' | 'musyrif' | 'admin';
 
-export type AttendanceType = 'hadir' | 'izin';
+export type AttendanceType = 'hadir' | 'izin' | 'alpa';
 
 export type AttendanceStatus =
   | 'hadir_valid'
@@ -9,7 +9,8 @@ export type AttendanceStatus =
   | 'izin_ditolak'
   | 'perlu_tinjauan'
   | 'ditolak_lokasi'
-  | 'belum_absen';
+  | 'belum_absen'
+  | 'alpa';
 
 export interface Profile {
   id: string;
@@ -78,6 +79,16 @@ export interface AttendanceRecord {
     corrected_by: string;
     corrected_at: string;
   }[];
+  // Data integrasi absen manual Musyrif & deteksi ketidaksamaan
+  musyrif_status?: 'hadir' | 'izin' | 'alpa';
+  santri_status?: AttendanceStatus;
+  has_discrepancy?: boolean;
+  discrepancy_reason?: string;
+  is_verified?: boolean;
+  verified_at?: string;
+  verified_by?: string;
+  verified_by_name?: string;
+  verification_note?: string;
 }
 
 export interface AuditLog {
