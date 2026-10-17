@@ -79,6 +79,9 @@ interface StoreContextType {
     photoDataUrl: string;
     coords: { latitude: number; longitude: number; accuracy: number };
     permissionReason?: string;
+    tahfidzJuz?: number;
+    tahfidzHalaman?: number;
+    tahfidzNotes?: string;
   }) => Promise<{ success: boolean; record: AttendanceRecord; message: string }>;
   reviewPermission: (recordId: string, status: AttendanceStatus, reviewNote?: string) => Promise<void>;
   correctAttendance: (recordId: string, newStatus: AttendanceStatus, reason: string) => Promise<void>;
@@ -97,6 +100,13 @@ interface StoreContextType {
     finalStatus: AttendanceStatus,
     verificationNote?: string
   ) => Promise<{ success: boolean; message: string }>;
+  validateTahfidzSetoran: (params: {
+    recordId: string;
+    juz?: number;
+    halaman?: number;
+    status: import('@/types').TahfidzValidationStatus;
+    note?: string;
+  }) => Promise<{ success: boolean; message: string }>;
   addStudent: (student: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => Promise<void>;
   updateStudent: (student: Profile & { password?: string }) => Promise<void>;
   updateCurrentUserCredentials: (data: {
@@ -920,12 +930,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     photoDataUrl,
     coords,
     permissionReason,
+    tahfidzJuz,
+    tahfidzHalaman,
+    tahfidzNotes,
   }: {
     activityId: string;
     type: AttendanceType;
     photoDataUrl: string;
     coords: { latitude: number; longitude: number; accuracy: number };
     permissionReason?: string;
+    tahfidzJuz?: number;
+    tahfidzHalaman?: number;
+    tahfidzNotes?: string;
   }) => {
     const activity = activities.find((a) => a.id === activityId);
     if (!activity) {
@@ -1025,6 +1041,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       distance_from_site_m: geoValidation.distanceMeters,
       submitted_at: effectiveTime.toISOString(),
       permission_reason: type === 'izin' ? permissionReason : undefined,
+      tahfidz_juz: tahfidzJuz !== undefined ? tahfidzJuz : existing?.tahfidz_juz,
+      tahfidz_halaman: tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman,
+      tahfidz_notes: tahfidzNotes || existing?.tahfidz_notes,
+      tahfidz_status: tahfidzJuz ? (existing?.tahfidz_status || 'menunggu_validasi') : existing?.tahfidz_status,
     };
 
     // Update local state
@@ -1068,6 +1088,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           distance_from_site_m: geoValidation.distanceMeters,
           submitted_at: effectiveTime.toISOString(),
           permission_reason: type === 'izin' ? permissionReason : null,
+          tahfidz_juz: tahfidzJuz || null,
+          tahfidz_halaman: tahfidzHalaman || null,
+          tahfidz_notes: tahfidzNotes || null,
+          tahfidz_status: tahfidzJuz ? 'menunggu_validasi' : null,
         });
       } catch (err) {
         console.warn('Failed to insert attendance into Supabase:', err);
@@ -1505,6 +1529,97 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ? 'Alpa'
           : finalStatus
       }.`,
+    };
+  };
+
+  // Validasi Setoran Tahfidz oleh Musyrif
+  const validateTahfidzSetoran = async ({
+    recordId,
+    juz,
+    halaman,
+    status,
+    note,
+  }: {
+    recordId: string;
+    juz?: number;
+    halaman?: number;
+    status: import('@/types').TahfidzValidationStatus;
+    note?: string;
+  }) => {
+    const record = attendanceRecords.find((r) => r.id === recordId);
+    if (!record) {
+      return { success: false, message: 'Catatan presensi tidak ditemukan.' };
+    }
+
+    const nowIso = effectiveTime.toISOString();
+    const targetJuz = juz !== undefined ? juz : record.tahfidz_juz;
+    const targetHalaman = halaman !== undefined ? halaman : record.tahfidz_halaman;
+
+    const updated = attendanceRecords.map((r) => {
+      if (r.id === recordId) {
+        return {
+          ...r,
+          tahfidz_juz: targetJuz,
+          tahfidz_halaman: targetHalaman,
+          tahfidz_status: status,
+          tahfidz_validated_by: currentUser.id,
+          tahfidz_validated_by_name: currentUser.full_name,
+          tahfidz_validated_at: nowIso,
+          tahfidz_validation_note: note || r.tahfidz_validation_note,
+        };
+      }
+      return r;
+    });
+
+    setAttendanceRecords(updated);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'VALIDATE_TAHFIDZ',
+      entity_type: 'attendance_record',
+      entity_id: recordId,
+      before_data: {
+        tahfidz_status: record.tahfidz_status,
+        tahfidz_juz: record.tahfidz_juz,
+        tahfidz_halaman: record.tahfidz_halaman,
+      },
+      after_data: {
+        tahfidz_status: status,
+        tahfidz_juz: targetJuz,
+        tahfidz_halaman: targetHalaman,
+        note,
+      },
+      reason: note || `Validasi setoran tahfidz santri ${record.student_name}: ${status}`,
+      created_at: nowIso,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase
+          .from('attendance_records')
+          .update({
+            tahfidz_juz: targetJuz,
+            tahfidz_halaman: targetHalaman,
+            tahfidz_status: status,
+            tahfidz_validated_by: currentUser.id,
+            tahfidz_validated_at: nowIso,
+            tahfidz_validation_note: note || null,
+          })
+          .eq('id', recordId);
+
+        await supabase.from('audit_logs').insert(audit);
+      } catch (err) {
+        console.warn('Failed to update Supabase tahfidz validation:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Setoran ${record.student_name} (${targetJuz ? `Juz ${targetJuz}` : ''}${targetHalaman ? ` Hal ${targetHalaman}` : ''}) berhasil divalidasi!`,
     };
   };
 
@@ -2271,6 +2386,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         correctAttendance,
         submitManualBatchAttendance,
         verifyDiscrepancy,
+        validateTahfidzSetoran,
         addStudent,
         updateStudent,
         updateCurrentUserCredentials,

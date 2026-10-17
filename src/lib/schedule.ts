@@ -152,3 +152,20 @@ export function getEstimatedHijriDate(date: Date): string {
     return '1448 H';
   }
 }
+
+/**
+ * Checks whether an activity is a Tahfidz / Setoran activity (Pagi / Malam)
+ */
+export function isTahfidzActivity(activity?: { code?: string; name?: string } | null): boolean {
+  if (!activity) return false;
+  const code = (activity.code || '').toUpperCase();
+  const name = (activity.name || '').toLowerCase();
+  return (
+    code === 'SETORAN_PAGI' ||
+    code === 'SETORAN_MALAM' ||
+    code.includes('SETORAN') ||
+    code.includes('TAHFIDZ') ||
+    name.includes('setoran') ||
+    name.includes('tahfidz')
+  );
+}

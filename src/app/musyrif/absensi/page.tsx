@@ -8,6 +8,7 @@ import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal
 import CorrectionModal from '@/components/attendance/CorrectionModal';
 import DiscrepancyVerificationModal from '@/components/attendance/DiscrepancyVerificationModal';
 import ManualAttendanceSheet from '@/components/attendance/ManualAttendanceSheet';
+import TahfidzValidationModal from '@/components/attendance/TahfidzValidationModal';
 import {
   CheckCircle2,
   Search,
@@ -28,6 +29,7 @@ import {
   UserX,
   FileText,
   ShieldAlert,
+  BookOpen,
 } from 'lucide-react';
 
 export default function MusyrifAbsensiPage() {
@@ -36,6 +38,7 @@ export default function MusyrifAbsensiPage() {
     activities,
     correctAttendance,
     verifyDiscrepancy,
+    validateTahfidzSetoran,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'manual' | 'discrepancy' | 'history'>('manual');
@@ -43,6 +46,7 @@ export default function MusyrifAbsensiPage() {
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [correctRecord, setCorrectRecord] = useState<AttendanceRecord | null>(null);
   const [discrepancyRecord, setDiscrepancyRecord] = useState<AttendanceRecord | null>(null);
+  const [selectedTahfidzRecord, setSelectedTahfidzRecord] = useState<AttendanceRecord | null>(null);
 
   const [filterActivity, setFilterActivity] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -449,6 +453,38 @@ export default function MusyrifAbsensiPage() {
                       </span>
                     </div>
 
+                    {/* Tahfidz Setoran Info if available */}
+                    {r.tahfidz_juz && (
+                      <div className="flex items-center justify-between p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-[#146B50] dark:text-[#D6A84F] flex-wrap">
+                          <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                          <span>Juz {r.tahfidz_juz} Hal {r.tahfidz_halaman || 1}</span>
+                          {r.tahfidz_status === 'lancar' && (
+                            <span className="text-[10px] bg-emerald-200/80 dark:bg-emerald-900 px-1.5 py-0.5 rounded-md text-emerald-800 dark:text-emerald-200">
+                              Lancar
+                            </span>
+                          )}
+                          {r.tahfidz_status === 'perlu_diulang' && (
+                            <span className="text-[10px] bg-amber-200/80 dark:bg-amber-900 px-1.5 py-0.5 rounded-md text-amber-800 dark:text-amber-200">
+                              Ulang
+                            </span>
+                          )}
+                          {r.tahfidz_status === 'tidak_lancar' && (
+                            <span className="text-[10px] bg-rose-200/80 dark:bg-rose-900 px-1.5 py-0.5 rounded-md text-rose-800 dark:text-rose-200">
+                              Belum Lancar
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTahfidzRecord(r)}
+                          className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10px] font-bold cursor-pointer transition shadow-xs shrink-0"
+                        >
+                          {r.tahfidz_status && r.tahfidz_status !== 'menunggu_validasi' ? 'Ubah Nilai' : 'Validasi'}
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 pt-1">
                       <button
                         type="button"
@@ -532,7 +568,33 @@ export default function MusyrifAbsensiPage() {
                             </p>
                           </td>
                           <td className="py-3 px-4 font-semibold text-stone-800 dark:text-stone-200">
-                            {r.activity_name}
+                            <div>{r.activity_name}</div>
+                            {r.tahfidz_juz && (
+                              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-[#146B50] dark:text-[#D6A84F] flex-wrap">
+                                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                                <span>Juz {r.tahfidz_juz} Hal {r.tahfidz_halaman || 1}</span>
+                                {r.tahfidz_status === 'lancar' && (
+                                  <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-300">
+                                    Lancar
+                                  </span>
+                                )}
+                                {r.tahfidz_status === 'perlu_diulang' && (
+                                  <span className="text-[9px] bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 px-1.5 py-0.2 rounded border border-amber-300">
+                                    Ulang
+                                  </span>
+                                )}
+                                {r.tahfidz_status === 'tidak_lancar' && (
+                                  <span className="text-[9px] bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 px-1.5 py-0.2 rounded border border-rose-300">
+                                    Belum Lancar
+                                  </span>
+                                )}
+                                {(!r.tahfidz_status || r.tahfidz_status === 'menunggu_validasi') && (
+                                  <span className="text-[9px] bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 px-1.5 py-0.2 rounded border border-blue-300">
+                                    Menunggu
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-stone-500 font-mono text-[11px]">
                             {r.operational_date}
@@ -569,6 +631,17 @@ export default function MusyrifAbsensiPage() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              {r.tahfidz_juz && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTahfidzRecord(r)}
+                                  className="p-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-[#146B50] dark:text-emerald-300 hover:bg-emerald-100 active:scale-95 transition cursor-pointer"
+                                  title="Validasi Setoran Tahfidz"
+                                >
+                                  <BookOpen className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
                               <button
                                 type="button"
                                 onClick={() => setSelectedRecord(r)}
@@ -632,6 +705,16 @@ export default function MusyrifAbsensiPage() {
           onClose={() => setDiscrepancyRecord(null)}
           onVerify={async (recordId, finalStatus, note) => {
             await verifyDiscrepancy(recordId, finalStatus, note);
+          }}
+        />
+      )}
+
+      {selectedTahfidzRecord && (
+        <TahfidzValidationModal
+          record={selectedTahfidzRecord}
+          onClose={() => setSelectedTahfidzRecord(null)}
+          onValidate={async (params) => {
+            await validateTahfidzSetoran(params);
           }}
         />
       )}

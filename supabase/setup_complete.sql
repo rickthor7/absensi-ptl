@@ -162,6 +162,14 @@ CREATE TABLE IF NOT EXISTS public.attendance_records (
   verified_at TIMESTAMPTZ NULL,
   verified_by TEXT NULL,
   verification_note TEXT NULL,
+  tahfidz_juz INT NULL CHECK (tahfidz_juz IS NULL OR (tahfidz_juz >= 1 AND tahfidz_juz <= 30)),
+  tahfidz_halaman INT NULL CHECK (tahfidz_halaman IS NULL OR (tahfidz_halaman >= 1 AND tahfidz_halaman <= 20)),
+  tahfidz_notes TEXT NULL,
+  tahfidz_status TEXT DEFAULT 'menunggu_validasi',
+  tahfidz_validated_by TEXT NULL,
+  tahfidz_validated_by_name TEXT NULL,
+  tahfidz_validated_at TIMESTAMPTZ NULL,
+  tahfidz_validation_note TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
@@ -169,6 +177,14 @@ ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN session_id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN student_id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN reviewed_by TYPE TEXT;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_juz INT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_halaman INT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_notes TEXT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_status TEXT DEFAULT 'menunggu_validasi';
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_validated_by TEXT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_validated_by_name TEXT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_validated_at TIMESTAMPTZ NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_validation_note TEXT NULL;
 
 -- 8. TABEL AUDIT LOGS (Riwayat Koreksi Musyrif)
 CREATE TABLE IF NOT EXISTS public.audit_logs (

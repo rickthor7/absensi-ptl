@@ -89,7 +89,18 @@ export interface AttendanceRecord {
   verified_by?: string;
   verified_by_name?: string;
   verification_note?: string;
+  // Data Setoran Tahfidz (khusus kegiatan setoran pagi/malam)
+  tahfidz_juz?: number; // 1 - 30
+  tahfidz_halaman?: number; // 1 - 20
+  tahfidz_notes?: string;
+  tahfidz_status?: TahfidzValidationStatus;
+  tahfidz_validated_by?: string;
+  tahfidz_validated_by_name?: string;
+  tahfidz_validated_at?: string;
+  tahfidz_validation_note?: string;
 }
+
+export type TahfidzValidationStatus = 'menunggu_validasi' | 'lancar' | 'perlu_diulang' | 'tidak_lancar';
 
 export interface AuditLog {
   id: string;
