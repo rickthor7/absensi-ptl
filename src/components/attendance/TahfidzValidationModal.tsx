@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AttendanceRecord, TahfidzValidationStatus } from '@/types';
+import { AttendanceRecord, TahfidzValidationStatus, TahfidzMode } from '@/types';
 import {
   X,
   BookOpen,
@@ -22,8 +22,10 @@ interface TahfidzValidationModalProps {
   onClose: () => void;
   onValidate: (params: {
     recordId: string;
+    mode?: TahfidzMode;
     juz?: number;
     halaman?: number;
+    halamanEnd?: number;
     status: TahfidzValidationStatus;
     note?: string;
   }) => Promise<unknown> | void;
@@ -34,8 +36,12 @@ export default function TahfidzValidationModal({
   onClose,
   onValidate,
 }: TahfidzValidationModalProps) {
+  const [mode, setMode] = useState<TahfidzMode>(record.tahfidz_mode || 'ziyadah');
   const [juz, setJuz] = useState<number>(record.tahfidz_juz || 30);
   const [halaman, setHalaman] = useState<number>(record.tahfidz_halaman || 1);
+  const [halamanEnd, setHalamanEnd] = useState<number>(
+    record.tahfidz_halaman_end || record.tahfidz_halaman || 1
+  );
   const [status, setStatus] = useState<TahfidzValidationStatus>(
     record.tahfidz_status === 'menunggu_validasi' ? 'lancar' : (record.tahfidz_status || 'lancar')
   );
@@ -56,8 +62,10 @@ export default function TahfidzValidationModal({
     try {
       await onValidate({
         recordId: record.id,
+        mode,
         juz,
         halaman,
+        halamanEnd,
         status,
         note: note.trim() || undefined,
       });
@@ -140,17 +148,51 @@ export default function TahfidzValidationModal({
             </div>
           )}
 
-          {/* Juz & Halaman Selectors */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Mode Setoran (Ziyadah vs Murojaah) */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+              Tipe / Mode Setoran:
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode('ziyadah')}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'ziyadah'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-[#146B50] dark:text-emerald-300 border-[#146B50] ring-1 ring-[#146B50]'
+                    : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#D6A84F]" />
+                <span>Ziyadah (Baru)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode('murojaah')}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'murojaah'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-500 ring-1 ring-blue-500'
+                    : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                <span>Muroja&apos;ah (Ulang)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Juz, Halaman Mulai & Halaman Selesai Selectors */}
+          <div className="grid grid-cols-3 gap-2.5">
             {/* Juz Selector (1 - 30) */}
             <div>
-              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
-                Juz Al-Qur&apos;an (1 - 30):
+              <label className="block text-[11px] font-bold text-stone-700 dark:text-stone-300 mb-1">
+                Juz (1 - 30):
               </label>
               <select
                 value={juz}
                 onChange={(e) => setJuz(Number(e.target.value))}
-                className="w-full text-xs font-extrabold p-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
+                className="w-full text-xs font-extrabold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
               >
                 {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => (
                   <option key={j} value={j}>
@@ -160,21 +202,45 @@ export default function TahfidzValidationModal({
               </select>
             </div>
 
-            {/* Halaman Selector (1 - 20) */}
+            {/* Halaman Mulai (1 - 20) */}
             <div>
-              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
-                Halaman ke- (1 - 20):
+              <label className="block text-[11px] font-bold text-stone-700 dark:text-stone-300 mb-1">
+                Dari Hal:
               </label>
               <select
                 value={halaman}
-                onChange={(e) => setHalaman(Number(e.target.value))}
-                className="w-full text-xs font-extrabold p-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setHalaman(val);
+                  if (halamanEnd < val) setHalamanEnd(val);
+                }}
+                className="w-full text-xs font-extrabold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
               >
                 {Array.from({ length: 20 }, (_, i) => i + 1).map((h) => (
                   <option key={h} value={h}>
-                    Halaman {h}
+                    Hal {h}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Halaman Selesai (1 - 20) */}
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 dark:text-stone-300 mb-1">
+                Sampai Hal:
+              </label>
+              <select
+                value={halamanEnd}
+                onChange={(e) => setHalamanEnd(Number(e.target.value))}
+                className="w-full text-xs font-extrabold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
+              >
+                {Array.from({ length: 20 }, (_, i) => i + 1)
+                  .filter((h) => h >= halaman)
+                  .map((h) => (
+                    <option key={h} value={h}>
+                      Hal {h}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

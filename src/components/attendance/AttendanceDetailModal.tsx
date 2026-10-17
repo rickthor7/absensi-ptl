@@ -138,15 +138,17 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
 
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-2.5 rounded-xl bg-white dark:bg-stone-900 border border-emerald-100 dark:border-emerald-900/40">
-                  <span className="text-[10px] uppercase font-bold text-stone-400 block">Juz Al-Qur'an</span>
-                  <span className="text-base font-extrabold text-[#146B50] dark:text-[#D6A84F]">
-                    Juz {record.tahfidz_juz}
+                  <span className="text-[10px] uppercase font-bold text-stone-400 block">Tipe &amp; Juz</span>
+                  <span className="text-sm font-extrabold text-[#146B50] dark:text-[#D6A84F] block">
+                    {record.tahfidz_mode === 'murojaah' ? 'Muroja\'ah' : 'Ziyadah'} • Juz {record.tahfidz_juz}
                   </span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white dark:bg-stone-900 border border-emerald-100 dark:border-emerald-900/40">
-                  <span className="text-[10px] uppercase font-bold text-stone-400 block">Halaman Ke</span>
-                  <span className="text-base font-extrabold text-[#146B50] dark:text-[#D6A84F]">
-                    Halaman {record.tahfidz_halaman || 1}
+                  <span className="text-[10px] uppercase font-bold text-stone-400 block">Rentang Halaman</span>
+                  <span className="text-sm font-extrabold text-[#146B50] dark:text-[#D6A84F] block">
+                    {record.tahfidz_halaman_end && record.tahfidz_halaman_end !== record.tahfidz_halaman
+                      ? `Hal ${record.tahfidz_halaman} - ${record.tahfidz_halaman_end}`
+                      : `Halaman ${record.tahfidz_halaman || 1}`}
                   </span>
                 </div>
               </div>

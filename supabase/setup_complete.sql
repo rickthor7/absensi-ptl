@@ -162,8 +162,10 @@ CREATE TABLE IF NOT EXISTS public.attendance_records (
   verified_at TIMESTAMPTZ NULL,
   verified_by TEXT NULL,
   verification_note TEXT NULL,
+  tahfidz_mode TEXT DEFAULT 'ziyadah' CHECK (tahfidz_mode IS NULL OR tahfidz_mode IN ('ziyadah', 'murojaah')),
   tahfidz_juz INT NULL CHECK (tahfidz_juz IS NULL OR (tahfidz_juz >= 1 AND tahfidz_juz <= 30)),
   tahfidz_halaman INT NULL CHECK (tahfidz_halaman IS NULL OR (tahfidz_halaman >= 1 AND tahfidz_halaman <= 20)),
+  tahfidz_halaman_end INT NULL CHECK (tahfidz_halaman_end IS NULL OR (tahfidz_halaman_end >= 1 AND tahfidz_halaman_end <= 20)),
   tahfidz_notes TEXT NULL,
   tahfidz_status TEXT DEFAULT 'menunggu_validasi',
   tahfidz_validated_by TEXT NULL,
@@ -177,8 +179,10 @@ ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN session_id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN student_id TYPE TEXT;
 ALTER TABLE IF EXISTS public.attendance_records ALTER COLUMN reviewed_by TYPE TEXT;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_mode TEXT DEFAULT 'ziyadah';
 ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_juz INT NULL;
 ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_halaman INT NULL;
+ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_halaman_end INT NULL;
 ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_notes TEXT NULL;
 ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_status TEXT DEFAULT 'menunggu_validasi';
 ALTER TABLE IF EXISTS public.attendance_records ADD COLUMN IF NOT EXISTS tahfidz_validated_by TEXT NULL;

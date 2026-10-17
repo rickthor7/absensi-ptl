@@ -73,14 +73,20 @@ interface StoreContextType {
   sppPayments: SppPayment[];
   financialTransactions: FinancialTransaction[];
   effectiveTime: Date;
+  getLastTahfidzRecord: (
+    studentId?: string,
+    mode?: import('@/types').TahfidzMode
+  ) => AttendanceRecord | undefined;
   submitAttendance: (params: {
     activityId: string;
     type: AttendanceType;
     photoDataUrl: string;
     coords: { latitude: number; longitude: number; accuracy: number };
     permissionReason?: string;
+    tahfidzMode?: import('@/types').TahfidzMode;
     tahfidzJuz?: number;
     tahfidzHalaman?: number;
+    tahfidzHalamanEnd?: number;
     tahfidzNotes?: string;
   }) => Promise<{ success: boolean; record: AttendanceRecord; message: string }>;
   reviewPermission: (recordId: string, status: AttendanceStatus, reviewNote?: string) => Promise<void>;
@@ -102,8 +108,10 @@ interface StoreContextType {
   ) => Promise<{ success: boolean; message: string }>;
   validateTahfidzSetoran: (params: {
     recordId: string;
+    mode?: import('@/types').TahfidzMode;
     juz?: number;
     halaman?: number;
+    halamanEnd?: number;
     status: import('@/types').TahfidzValidationStatus;
     note?: string;
   }) => Promise<{ success: boolean; message: string }>;
@@ -923,6 +931,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(AUTH_USER_KEY);
   };
 
+  // Helper: Ambil riwayat setoran tahfidz terakhir santri (bisa difilter per santri atau mode ziyadah/murojaah)
+  const getLastTahfidzRecord = (
+    studentId?: string,
+    mode?: import('@/types').TahfidzMode
+  ): AttendanceRecord | undefined => {
+    const targetStudentId = studentId || currentUser.id;
+    return attendanceRecords
+      .filter((r) => {
+        if (r.student_id !== targetStudentId) return false;
+        if (!r.tahfidz_juz) return false;
+        if (mode && r.tahfidz_mode && r.tahfidz_mode !== mode) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())[0];
+  };
+
   // Real Attendance Submission with Supabase Storage upload, DB Insert & Geovalidation
   const submitAttendance = async ({
     activityId,
@@ -930,8 +954,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     photoDataUrl,
     coords,
     permissionReason,
+    tahfidzMode,
     tahfidzJuz,
     tahfidzHalaman,
+    tahfidzHalamanEnd,
     tahfidzNotes,
   }: {
     activityId: string;
@@ -939,8 +965,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     photoDataUrl: string;
     coords: { latitude: number; longitude: number; accuracy: number };
     permissionReason?: string;
+    tahfidzMode?: import('@/types').TahfidzMode;
     tahfidzJuz?: number;
     tahfidzHalaman?: number;
+    tahfidzHalamanEnd?: number;
     tahfidzNotes?: string;
   }) => {
     const activity = activities.find((a) => a.id === activityId);
@@ -1041,8 +1069,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       distance_from_site_m: geoValidation.distanceMeters,
       submitted_at: effectiveTime.toISOString(),
       permission_reason: type === 'izin' ? permissionReason : undefined,
+      tahfidz_mode: tahfidzMode || (tahfidzJuz ? (existing?.tahfidz_mode || 'ziyadah') : undefined),
       tahfidz_juz: tahfidzJuz !== undefined ? tahfidzJuz : existing?.tahfidz_juz,
       tahfidz_halaman: tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman,
+      tahfidz_halaman_end: tahfidzHalamanEnd !== undefined ? tahfidzHalamanEnd : (tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman_end),
       tahfidz_notes: tahfidzNotes || existing?.tahfidz_notes,
       tahfidz_status: tahfidzJuz ? (existing?.tahfidz_status || 'menunggu_validasi') : existing?.tahfidz_status,
     };
@@ -1088,8 +1118,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           distance_from_site_m: geoValidation.distanceMeters,
           submitted_at: effectiveTime.toISOString(),
           permission_reason: type === 'izin' ? permissionReason : null,
+          tahfidz_mode: tahfidzMode || (tahfidzJuz ? 'ziyadah' : null),
           tahfidz_juz: tahfidzJuz || null,
           tahfidz_halaman: tahfidzHalaman || null,
+          tahfidz_halaman_end: tahfidzHalamanEnd || tahfidzHalaman || null,
           tahfidz_notes: tahfidzNotes || null,
           tahfidz_status: tahfidzJuz ? 'menunggu_validasi' : null,
         });
@@ -1535,14 +1567,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Validasi Setoran Tahfidz oleh Musyrif
   const validateTahfidzSetoran = async ({
     recordId,
+    mode,
     juz,
     halaman,
+    halamanEnd,
     status,
     note,
   }: {
     recordId: string;
+    mode?: import('@/types').TahfidzMode;
     juz?: number;
     halaman?: number;
+    halamanEnd?: number;
     status: import('@/types').TahfidzValidationStatus;
     note?: string;
   }) => {
@@ -1552,15 +1588,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     const nowIso = effectiveTime.toISOString();
+    const targetMode = mode || record.tahfidz_mode || 'ziyadah';
     const targetJuz = juz !== undefined ? juz : record.tahfidz_juz;
     const targetHalaman = halaman !== undefined ? halaman : record.tahfidz_halaman;
+    const targetHalamanEnd =
+      halamanEnd !== undefined
+        ? halamanEnd
+        : (record.tahfidz_halaman_end || targetHalaman);
 
     const updated = attendanceRecords.map((r) => {
       if (r.id === recordId) {
         return {
           ...r,
+          tahfidz_mode: targetMode,
           tahfidz_juz: targetJuz,
           tahfidz_halaman: targetHalaman,
+          tahfidz_halaman_end: targetHalamanEnd,
           tahfidz_status: status,
           tahfidz_validated_by: currentUser.id,
           tahfidz_validated_by_name: currentUser.full_name,
@@ -1581,14 +1624,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       entity_type: 'attendance_record',
       entity_id: recordId,
       before_data: {
+        tahfidz_mode: record.tahfidz_mode,
         tahfidz_status: record.tahfidz_status,
         tahfidz_juz: record.tahfidz_juz,
         tahfidz_halaman: record.tahfidz_halaman,
+        tahfidz_halaman_end: record.tahfidz_halaman_end,
       },
       after_data: {
+        tahfidz_mode: targetMode,
         tahfidz_status: status,
         tahfidz_juz: targetJuz,
         tahfidz_halaman: targetHalaman,
+        tahfidz_halaman_end: targetHalamanEnd,
         note,
       },
       reason: note || `Validasi setoran tahfidz santri ${record.student_name}: ${status}`,
@@ -1602,8 +1649,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await supabase
           .from('attendance_records')
           .update({
+            tahfidz_mode: targetMode,
             tahfidz_juz: targetJuz,
             tahfidz_halaman: targetHalaman,
+            tahfidz_halaman_end: targetHalamanEnd,
             tahfidz_status: status,
             tahfidz_validated_by: currentUser.id,
             tahfidz_validated_at: nowIso,
@@ -1617,9 +1666,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const halStr =
+      targetHalaman && targetHalamanEnd && targetHalamanEnd !== targetHalaman
+        ? ` Hal ${targetHalaman}-${targetHalamanEnd}`
+        : targetHalaman
+        ? ` Hal ${targetHalaman}`
+        : '';
+
     return {
       success: true,
-      message: `Setoran ${record.student_name} (${targetJuz ? `Juz ${targetJuz}` : ''}${targetHalaman ? ` Hal ${targetHalaman}` : ''}) berhasil divalidasi!`,
+      message: `Setoran ${record.student_name} (${targetMode === 'murojaah' ? 'Murojaah' : 'Ziyadah'} ${
+        targetJuz ? `Juz ${targetJuz}` : ''
+      }${halStr}) berhasil divalidasi!`,
     };
   };
 
@@ -2381,6 +2439,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         sppPayments,
         financialTransactions,
         effectiveTime,
+        getLastTahfidzRecord,
         submitAttendance,
         reviewPermission,
         correctAttendance,

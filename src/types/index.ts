@@ -90,8 +90,10 @@ export interface AttendanceRecord {
   verified_by_name?: string;
   verification_note?: string;
   // Data Setoran Tahfidz (khusus kegiatan setoran pagi/malam)
+  tahfidz_mode?: TahfidzMode; // 'ziyadah' | 'murojaah'
   tahfidz_juz?: number; // 1 - 30
-  tahfidz_halaman?: number; // 1 - 20
+  tahfidz_halaman?: number; // 1 - 20 (halaman awal)
+  tahfidz_halaman_end?: number; // 1 - 20 (halaman akhir jika range)
   tahfidz_notes?: string;
   tahfidz_status?: TahfidzValidationStatus;
   tahfidz_validated_by?: string;
@@ -100,6 +102,7 @@ export interface AttendanceRecord {
   tahfidz_validation_note?: string;
 }
 
+export type TahfidzMode = 'ziyadah' | 'murojaah';
 export type TahfidzValidationStatus = 'menunggu_validasi' | 'lancar' | 'perlu_diulang' | 'tidak_lancar';
 
 export interface AuditLog {

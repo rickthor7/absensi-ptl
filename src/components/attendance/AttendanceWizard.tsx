@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Activity, AttendanceType, AttendanceRecord } from '@/types';
+import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
 import { isTahfidzActivity } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
@@ -23,6 +23,7 @@ import {
   Camera,
   BookOpen,
   Bookmark,
+  RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
@@ -35,7 +36,7 @@ interface AttendanceWizardProps {
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function AttendanceWizard({ activity, onFinished }: AttendanceWizardProps) {
-  const { currentUser, submitAttendance, effectiveTime } = useStore();
+  const { currentUser, submitAttendance, effectiveTime, getLastTahfidzRecord } = useStore();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [attendanceType, setAttendanceType] = useState<AttendanceType>('hadir');
@@ -49,11 +50,51 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
     isPass: boolean;
   } | null>(null);
 
-  // Tahfidz setoran state
+  // Tahfidz setoran state (Ziyadah vs Murojaah, Juz 1-30, Halaman Mulai & Akhir 1-20)
   const isTahfidz = isTahfidzActivity(activity) && attendanceType === 'hadir';
+  const [tahfidzMode, setTahfidzMode] = useState<TahfidzMode>('ziyadah');
   const [tahfidzJuz, setTahfidzJuz] = useState<number>(30);
   const [tahfidzHalaman, setTahfidzHalaman] = useState<number>(1);
+  const [tahfidzHalamanEnd, setTahfidzHalamanEnd] = useState<number>(1);
   const [tahfidzNotes, setTahfidzNotes] = useState<string>('');
+  const [hasInitializedTahfidz, setHasInitializedTahfidz] = useState(false);
+
+  // Ambil riwayat setoran terakhir santri untuk auto-continue
+  const lastTahfidz = getLastTahfidzRecord(currentUser.id, tahfidzMode) || getLastTahfidzRecord(currentUser.id);
+
+  // Auto-hitung halaman lanjutan dari setoran kemarin
+  const applyContinuedDefault = (modeToUse: TahfidzMode = tahfidzMode) => {
+    const last = getLastTahfidzRecord(currentUser.id, modeToUse) || getLastTahfidzRecord(currentUser.id);
+    if (last && last.tahfidz_juz) {
+      const lastEnd = last.tahfidz_halaman_end || last.tahfidz_halaman || 1;
+      let nextJuz = last.tahfidz_juz;
+      let nextPage = lastEnd + 1;
+      if (lastEnd >= 20) {
+        nextJuz = last.tahfidz_juz < 30 ? last.tahfidz_juz + 1 : 1;
+        nextPage = 1;
+      }
+      setTahfidzJuz(nextJuz);
+      setTahfidzHalaman(nextPage);
+      setTahfidzHalamanEnd(nextPage);
+    } else {
+      setTahfidzJuz(30);
+      setTahfidzHalaman(1);
+      setTahfidzHalamanEnd(1);
+    }
+  };
+
+  // Inisialisasi default otomatis saat wizard tahfidz pertama kali dibuka
+  React.useEffect(() => {
+    if (isTahfidz && !hasInitializedTahfidz) {
+      applyContinuedDefault('ziyadah');
+      setHasInitializedTahfidz(true);
+    }
+  }, [isTahfidz, hasInitializedTahfidz]);
+
+  const handleModeChange = (newMode: TahfidzMode) => {
+    setTahfidzMode(newMode);
+    applyContinuedDefault(newMode);
+  };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
@@ -89,8 +130,10 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
         accuracy: locationData.accuracy,
       },
       permissionReason: attendanceType === 'izin' ? permissionReason : undefined,
+      tahfidzMode: isTahfidz ? tahfidzMode : undefined,
       tahfidzJuz: isTahfidz ? tahfidzJuz : undefined,
       tahfidzHalaman: isTahfidz ? tahfidzHalaman : undefined,
+      tahfidzHalamanEnd: isTahfidz ? tahfidzHalamanEnd : undefined,
       tahfidzNotes: isTahfidz && tahfidzNotes.trim() ? tahfidzNotes.trim() : undefined,
     });
 
@@ -365,30 +408,130 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
           </div>
         )}
 
-        {/* STEP 4 (KHUSUS TAHFIDZ): Input Data Setoran Juz 1-30 & Halaman 1-20 */}
+        {/* STEP 4 (KHUSUS TAHFIDZ): Input Data Setoran Ziyadah / Murojaah, Juz 1-30 & Halaman 1-20 */}
         {currentStep === 4 && isTahfidz && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="text-center space-y-1">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-[#146B50] dark:text-[#D6A84F] text-xs font-extrabold mb-1">
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>Setoran Hafalan Al-Qur&apos;an</span>
               </div>
               <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
-                Pilih Juz &amp; Halaman Setoran
+                Pilih Mode &amp; Halaman Setoran
               </h3>
               <p className="text-xs text-stone-500">
-                Tentukan target hafalan yang Anda setorkan pada sesi ini. Musyrif akan memvalidasi kelancaran Anda.
+                Pilih tipe setoran (Ziyadah atau Muroja&apos;ah) serta rentang halaman yang disetorkan.
               </p>
             </div>
 
-            {/* Input Card */}
+            {/* Input Card Container */}
             <div className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-800/40 p-4 sm:p-5 space-y-5">
-              {/* Select Juz (1 - 30) */}
+              {/* 1. Tipe / Mode Setoran: Ziyadah vs Murojaah */}
               <div className="space-y-2">
+                <label className="text-xs font-extrabold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#D6A84F]" />
+                  <span>1. Pilih Tipe / Mode Setoran:</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('ziyadah')}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition cursor-pointer relative ${
+                      tahfidzMode === 'ziyadah'
+                        ? 'border-[#146B50] bg-emerald-50 dark:bg-emerald-950/50 shadow-sm ring-2 ring-emerald-600/20'
+                        : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-emerald-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-[#146B50] flex items-center justify-center font-bold text-xs">
+                          ✨
+                        </span>
+                        <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100">
+                          Ziyadah (Hafalan Baru)
+                        </span>
+                      </div>
+                      {tahfidzMode === 'ziyadah' && (
+                        <CheckCircle2 className="w-4 h-4 text-[#146B50]" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 pl-8">
+                      Menambah hafalan baru, otomatis melanjutkan halaman terakhir.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('murojaah')}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition cursor-pointer relative ${
+                      tahfidzMode === 'murojaah'
+                        ? 'border-[#146B50] bg-emerald-50 dark:bg-emerald-950/50 shadow-sm ring-2 ring-emerald-600/20'
+                        : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-emerald-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 flex items-center justify-center font-bold text-xs">
+                          🔄
+                        </span>
+                        <span className="font-extrabold text-xs text-stone-900 dark:text-stone-100">
+                          Muroja&apos;ah (Pengulangan)
+                        </span>
+                      </div>
+                      {tahfidzMode === 'murojaah' && (
+                        <CheckCircle2 className="w-4 h-4 text-[#146B50]" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 pl-8">
+                      Mengulang dan melancarkan hafalan lampau agar mutqin.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Banner Riwayat Setoran Terakhir & Auto-Continue */}
+              {lastTahfidz && (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-[#D6A84F]/10 to-transparent border border-emerald-200/80 dark:border-emerald-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#146B50] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Bookmark className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#146B50] dark:text-[#D6A84F] bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
+                          Setoran Kemarin ({lastTahfidz.tahfidz_mode === 'murojaah' ? 'Murojaah' : 'Ziyadah'})
+                        </span>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          {lastTahfidz.operational_date}
+                        </span>
+                      </div>
+                      <p className="text-xs font-black text-stone-900 dark:text-stone-100 mt-0.5">
+                        Juz {lastTahfidz.tahfidz_juz} • Halaman {lastTahfidz.tahfidz_halaman}
+                        {lastTahfidz.tahfidz_halaman_end && lastTahfidz.tahfidz_halaman_end !== lastTahfidz.tahfidz_halaman
+                          ? ` - ${lastTahfidz.tahfidz_halaman_end}`
+                          : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => applyContinuedDefault()}
+                    className="px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 text-[11px] font-bold text-[#146B50] dark:text-emerald-300 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-xs active:scale-95"
+                    title="Lanjutkan otomatis dari halaman berikutnya"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-[#146B50]" />
+                    <span>Terapkan Halaman Lanjutan</span>
+                  </button>
+                </div>
+              )}
+
+              {/* 3. Select Juz (1 - 30) */}
+              <div className="space-y-2 pt-2 border-t border-stone-200 dark:border-stone-700/60">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-extrabold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                     <Bookmark className="w-4 h-4 text-[#146B50]" />
-                    <span>Juz Al-Qur&apos;an (1 - 30):</span>
+                    <span>2. Juz Al-Qur&apos;an (1 - 30):</span>
                   </label>
                   <span className="text-xs font-extrabold text-[#146B50] dark:text-[#D6A84F] bg-white dark:bg-stone-900 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800 font-mono">
                     Juz {tahfidzJuz}
@@ -427,38 +570,116 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                 </div>
               </div>
 
-              {/* Select Halaman (1 - 20) */}
-              <div className="space-y-2 pt-2 border-t border-stone-200 dark:border-stone-700/60">
+              {/* 4. Select Halaman Mulai & Halaman Selesai (1 - 20) */}
+              <div className="space-y-3 pt-2 border-t border-stone-200 dark:border-stone-700/60">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-extrabold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-[#D6A84F]" />
-                    <span>Halaman ke- (1 - 20):</span>
+                    <span>3. Halaman Mulai s/d Halaman Selesai (1 - 20):</span>
                   </label>
                   <span className="text-xs font-extrabold text-[#146B50] dark:text-[#D6A84F] bg-white dark:bg-stone-900 px-2.5 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800 font-mono">
-                    Halaman {tahfidzHalaman}
+                    {tahfidzHalaman === tahfidzHalamanEnd
+                      ? `Halaman ${tahfidzHalaman}`
+                      : `Halaman ${tahfidzHalaman} - ${tahfidzHalamanEnd} (${tahfidzHalamanEnd - tahfidzHalaman + 1} Hal)`}
                   </span>
                 </div>
 
-                {/* 20 Numeric Buttons Grid */}
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-                  {Array.from({ length: 20 }, (_, i) => i + 1).map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      onClick={() => setTahfidzHalaman(h)}
-                      className={`py-2 rounded-xl text-xs font-black transition cursor-pointer active:scale-95 ${
-                        tahfidzHalaman === h
-                          ? 'bg-gradient-to-br from-[#146B50] to-[#0B3D2E] text-white shadow-md'
-                          : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800'
-                      }`}
-                    >
-                      {h}
-                    </button>
-                  ))}
+                {/* Sub: Halaman Mulai */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block">
+                    Dari Halaman Ke:
+                  </span>
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => {
+                          setTahfidzHalaman(h);
+                          if (tahfidzHalamanEnd < h) setTahfidzHalamanEnd(h);
+                        }}
+                        className={`py-2 rounded-xl text-xs font-black transition cursor-pointer active:scale-95 ${
+                          tahfidzHalaman === h
+                            ? 'bg-gradient-to-br from-[#146B50] to-[#0B3D2E] text-white shadow-md'
+                            : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800'
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sub: Sampai Halaman */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                      Sampai Halaman Ke:
+                    </span>
+                    {/* Quick Presets */}
+                    <div className="flex items-center gap-1 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setTahfidzHalamanEnd(tahfidzHalaman)}
+                        className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-700 hover:bg-stone-300 text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                      >
+                        1 Hal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTahfidzHalamanEnd(Math.min(20, tahfidzHalaman + 1))}
+                        className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-700 hover:bg-stone-300 text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                      >
+                        +2 Hal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTahfidzHalamanEnd(Math.min(20, tahfidzHalaman + 4))}
+                        className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-700 hover:bg-stone-300 text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                      >
+                        +5 Hal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTahfidzHalamanEnd(20)}
+                        className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-700 hover:bg-stone-300 text-stone-700 dark:text-stone-200 font-bold transition cursor-pointer"
+                      >
+                        Akhir (20)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((h) => {
+                      const isSelected = tahfidzHalamanEnd === h;
+                      const isInRange = h >= tahfidzHalaman && h <= tahfidzHalamanEnd;
+                      const isBeforeStart = h < tahfidzHalaman;
+
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          disabled={isBeforeStart}
+                          onClick={() => setTahfidzHalamanEnd(h)}
+                          className={`py-2 rounded-xl text-xs font-black transition cursor-pointer active:scale-95 ${
+                            isSelected
+                              ? 'bg-gradient-to-br from-[#D6A84F] to-amber-700 text-white shadow-md'
+                              : isInRange
+                              ? 'bg-emerald-100 dark:bg-emerald-950/80 text-[#146B50] dark:text-emerald-300 border border-emerald-300'
+                              : isBeforeStart
+                              ? 'opacity-30 bg-stone-100 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
+                              : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:bg-stone-100'
+                          }`}
+                        >
+                          {h}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Catatan / Ayat (Opsional) */}
+              {/* 5. Catatan / Ayat (Opsional) */}
               <div className="space-y-1.5 pt-2 border-t border-stone-200 dark:border-stone-700/60">
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
                   Rincian Surat / Ayat (Opsional):
@@ -472,15 +693,24 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                 />
               </div>
 
-              {/* Selected Summary Badge */}
-              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between text-xs text-emerald-900 dark:text-emerald-200">
+              {/* Selected Summary Live Badge */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-emerald-900 dark:text-emerald-200">
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-[#146B50] shrink-0" />
                   <span>
-                    Target: <strong>Juz {tahfidzJuz}</strong> • <strong>Halaman {tahfidzHalaman}</strong>
+                    Target:{' '}
+                    <strong className="text-emerald-900 dark:text-emerald-100">
+                      [{tahfidzMode === 'murojaah' ? 'Murojaah' : 'Ziyadah'}] Juz {tahfidzJuz}
+                    </strong>{' '}
+                    • Halaman{' '}
+                    <strong>
+                      {tahfidzHalaman === tahfidzHalamanEnd
+                        ? `${tahfidzHalaman}`
+                        : `${tahfidzHalaman} s/d ${tahfidzHalamanEnd} (${tahfidzHalamanEnd - tahfidzHalaman + 1} Hal)`}
+                    </strong>
                   </span>
                 </div>
-                <span className="text-[10px] font-bold bg-white/70 dark:bg-stone-900/70 px-2 py-0.5 rounded-md border border-emerald-300">
+                <span className="text-[10px] font-bold bg-white/80 dark:bg-stone-900/80 px-2 py-0.5 rounded-md border border-emerald-300 self-start sm:self-auto">
                   Menunggu Validasi Musyrif
                 </span>
               </div>
@@ -585,7 +815,10 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     <BookOpen className="w-4 h-4 text-[#146B50] shrink-0" />
                     <div>
                       <span className="font-extrabold block">
-                        Setoran: Juz {tahfidzJuz} • Halaman {tahfidzHalaman}
+                        Setoran: [{tahfidzMode === 'murojaah' ? 'Murojaah' : 'Ziyadah'}] Juz {tahfidzJuz} • Halaman{' '}
+                        {tahfidzHalaman === tahfidzHalamanEnd
+                          ? `${tahfidzHalaman}`
+                          : `${tahfidzHalaman} - ${tahfidzHalamanEnd} (${tahfidzHalamanEnd - tahfidzHalaman + 1} Halaman)`}
                       </span>
                       {tahfidzNotes && (
                         <p className="text-[11px] text-emerald-700 dark:text-emerald-300 italic">
@@ -594,8 +827,8 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 text-[#146B50] border border-emerald-300">
-                    Menunggu Validasi Musyrif
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 text-[#146B50] border border-emerald-300 shrink-0">
+                    Menunggu Validasi
                   </span>
                 </div>
               )}

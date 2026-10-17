@@ -458,7 +458,15 @@ export default function MusyrifAbsensiPage() {
                       <div className="flex items-center justify-between p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
                         <div className="flex items-center gap-1.5 font-bold text-[#146B50] dark:text-[#D6A84F] flex-wrap">
                           <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                          <span>Juz {r.tahfidz_juz} Hal {r.tahfidz_halaman || 1}</span>
+                          <span className="text-[10px] bg-white/80 dark:bg-stone-900/80 px-1.5 py-0.5 rounded border border-emerald-300">
+                            {r.tahfidz_mode === 'murojaah' ? 'Muroja\'ah' : 'Ziyadah'}
+                          </span>
+                          <span>
+                            Juz {r.tahfidz_juz} Hal{' '}
+                            {r.tahfidz_halaman_end && r.tahfidz_halaman_end !== r.tahfidz_halaman
+                              ? `${r.tahfidz_halaman}-${r.tahfidz_halaman_end}`
+                              : (r.tahfidz_halaman || 1)}
+                          </span>
                           {r.tahfidz_status === 'lancar' && (
                             <span className="text-[10px] bg-emerald-200/80 dark:bg-emerald-900 px-1.5 py-0.5 rounded-md text-emerald-800 dark:text-emerald-200">
                               Lancar
@@ -572,7 +580,15 @@ export default function MusyrifAbsensiPage() {
                             {r.tahfidz_juz && (
                               <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-[#146B50] dark:text-[#D6A84F] flex-wrap">
                                 <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                                <span>Juz {r.tahfidz_juz} Hal {r.tahfidz_halaman || 1}</span>
+                                <span className="text-[9px] bg-white/80 dark:bg-stone-900/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                  {r.tahfidz_mode === 'murojaah' ? 'Muroja\'ah' : 'Ziyadah'}
+                                </span>
+                                <span>
+                                  Juz {r.tahfidz_juz} Hal{' '}
+                                  {r.tahfidz_halaman_end && r.tahfidz_halaman_end !== r.tahfidz_halaman
+                                    ? `${r.tahfidz_halaman}-${r.tahfidz_halaman_end}`
+                                    : (r.tahfidz_halaman || 1)}
+                                </span>
                                 {r.tahfidz_status === 'lancar' && (
                                   <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-300">
                                     Lancar
