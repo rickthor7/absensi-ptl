@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import {
@@ -24,6 +24,9 @@ import {
   Send,
   Building2,
   HelpCircle,
+  Image as ImageIcon,
+  Camera,
+  Trash2,
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -53,9 +56,17 @@ export default function SantriSppPage() {
   );
   const [notes, setNotes] = useState<string>('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{
+    name: string;
+    sizeKb: number;
+    type: string;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Modal View Receipt State
   const [viewPayment, setViewPayment] = useState<any | null>(null);
@@ -78,7 +89,7 @@ export default function SantriSppPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setSubmitError('Format file harus berupa gambar (JPG, PNG, atau WebP).');
+      setSubmitError('Format file tidak didukung! Khusus upload gambar (JPG, JPEG, PNG, atau WebP).');
       return;
     }
 
@@ -88,11 +99,18 @@ export default function SantriSppPage() {
     }
 
     setSubmitError('');
+    setSelectedFile({
+      name: file.name,
+      sizeKb: Math.round(file.size / 1024),
+      type: file.type,
+    });
+
     const reader = new FileReader();
     reader.onload = () => {
       setPreviewImage(reader.result as string);
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // Open modal for specific month
@@ -101,6 +119,7 @@ export default function SantriSppPage() {
     setUploadYear(selectedYear);
     setUploadAmount(sppSettings.monthly_amount);
     setPreviewImage(null);
+    setSelectedFile(null);
     setNotes('');
     setSubmitError('');
     setSubmitSuccess(false);
@@ -648,44 +667,157 @@ export default function SantriSppPage() {
                   </div>
                 </div>
 
-                {/* File / Camera Upload Area */}
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Foto Struk / Tangkapan Layar M-Banking *
-                  </label>
+                {/* File / Camera Upload Area (Media Picker & Camera Option, Image Only) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
+                      Foto Bukti Transfer *
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      Gambar Only (JPG, PNG, WebP)
+                    </span>
+                  </div>
+
+                  {/* Input Media (Galeri/File) */}
+                  <input
+                    ref={mediaInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  {/* Input Kamera Langsung */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    capture="environment"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
 
                   {previewImage ? (
-                    <div className="relative rounded-2xl border border-stone-300 dark:border-stone-700 overflow-hidden bg-black/5 dark:bg-black/20">
-                      <img
-                        src={previewImage}
-                        alt="Bukti Transfer"
-                        className="w-full max-h-56 object-contain mx-auto"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPreviewImage(null)}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                    <div className="rounded-2xl border border-stone-300 dark:border-stone-700 overflow-hidden bg-stone-50 dark:bg-[#152922]/50 p-3 space-y-3">
+                      <div className="relative rounded-xl border border-stone-200 dark:border-stone-700/80 overflow-hidden bg-black/5 dark:bg-black/30 flex items-center justify-center max-h-60">
+                        <img
+                          src={previewImage}
+                          alt="Bukti Transfer"
+                          className="w-full max-h-56 object-contain mx-auto"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewImage(null);
+                            setSelectedFile(null);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition shadow-md cursor-pointer"
+                          title="Hapus gambar"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Info & Action Buttons */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-stone-200/80 dark:border-stone-700/60 text-xs">
+                        <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300 min-w-0">
+                          <ImageIcon className="w-4 h-4 text-[#0D7B5F] shrink-0" />
+                          <span className="truncate font-semibold text-[11px]">
+                            {selectedFile?.name || 'Bukti transfer terlampir'}
+                          </span>
+                          {selectedFile && (
+                            <span className="text-[10px] text-stone-400 shrink-0">
+                              ({selectedFile.sizeKb} KB)
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => mediaInputRef.current?.click()}
+                            className="px-2.5 py-1.5 rounded-lg bg-stone-200/80 hover:bg-stone-300/80 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>Pilih Media</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="px-2.5 py-1.5 rounded-lg bg-stone-200/80 hover:bg-stone-300/80 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>Kamera</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-stone-300 dark:border-stone-700 hover:border-[#0D7B5F] rounded-2xl p-6 cursor-pointer bg-stone-50/50 dark:bg-[#152922]/40 transition-colors">
-                      <Upload className="w-8 h-8 text-stone-400 mb-2" />
-                      <span className="text-xs font-bold text-stone-700 dark:text-stone-200">
-                        Klik untuk memilih foto / kamera
-                      </span>
-                      <span className="text-[10px] text-stone-400 mt-1">
-                        JPG, PNG, atau WebP (Maksimal 5MB)
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="space-y-2.5">
+                      {/* Drag & Drop or Click Area */}
+                      <div
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) {
+                            if (!file.type.startsWith('image/')) {
+                              setSubmitError('Format file tidak didukung! Hanya file gambar (JPG, PNG, WebP) yang diizinkan.');
+                              return;
+                            }
+                            if (file.size > 5 * 1024 * 1024) {
+                              setSubmitError('Ukuran file maksimal 5MB.');
+                              return;
+                            }
+                            setSubmitError('');
+                            setSelectedFile({
+                              name: file.name,
+                              sizeKb: Math.round(file.size / 1024),
+                              type: file.type,
+                            });
+                            const reader = new FileReader();
+                            reader.onload = () => setPreviewImage(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="border-2 border-dashed border-stone-300 dark:border-stone-700 rounded-2xl p-5 text-center bg-stone-50/50 dark:bg-[#152922]/30 space-y-3"
+                      >
+                        <div className="flex justify-center gap-2 text-stone-400">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#0D7B5F] flex items-center justify-center shadow-xs">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                            Pilih atau Tarik File Bukti Pembayaran
+                          </p>
+                          <p className="text-[11px] text-stone-400 mt-0.5">
+                            Format gambar yang didukung: JPG, JPEG, PNG, WebP (Maksimal 5MB)
+                          </p>
+                        </div>
+
+                        {/* Dua Tombol Pilihan: Media (Galeri) vs Kamera Langsung */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-w-sm mx-auto">
+                          <button
+                            type="button"
+                            onClick={() => mediaInputRef.current?.click()}
+                            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#0D7B5F] to-[#082F23] hover:from-[#146B50] hover:to-[#0B3D2E] text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-[#D4A24C]/25"
+                          >
+                            <ImageIcon className="w-4 h-4 text-[#D4A24C]" />
+                            <span>Pilih Media / Galeri</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="w-full py-2.5 px-3 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                          >
+                            <Camera className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+                            <span>Ambil Kamera</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
 
