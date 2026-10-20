@@ -36,7 +36,25 @@ interface AttendanceWizardProps {
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function AttendanceWizard({ activity, onFinished }: AttendanceWizardProps) {
-  const { currentUser, submitAttendance, effectiveTime, getLastTahfidzRecord } = useStore();
+  const {
+    currentUser,
+    submitAttendance,
+    effectiveTime,
+    getLastTahfidzRecord,
+    attendanceRecords,
+    deleteSantriAttendance,
+  } = useStore();
+
+  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const existingAttendance = attendanceRecords.find(
+    (r) =>
+      r.student_id === currentUser.id &&
+      r.activity_id === activity.id &&
+      r.operational_date === todayStr
+  );
+
+  const [isRetaking, setIsRetaking] = useState(false);
+  const [retakeNotification, setRetakeNotification] = useState<string | null>(null);
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [attendanceType, setAttendanceType] = useState<AttendanceType>('hadir');
@@ -113,6 +131,31 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
       });
     } catch {
       // Ignore
+    }
+  };
+
+  const handleRetake = async (recordIdToRetake: string) => {
+    if (
+      !window.confirm(
+        `Apakah Anda yakin ingin menghapus data absensi kegiatan "${activity.name}" untuk mengambil ulang presensi (retake)?`
+      )
+    ) {
+      return;
+    }
+    setIsRetaking(true);
+    const res = await deleteSantriAttendance(recordIdToRetake);
+    setIsRetaking(false);
+    if (res.success) {
+      setCurrentStep(1);
+      setAttendanceType('hadir');
+      setPermissionReason('');
+      setPhotoUrl(null);
+      setLocationData(null);
+      setSubmissionResult(null);
+      setRetakeNotification(res.message);
+      applyContinuedDefault('ziyadah');
+    } else {
+      alert(res.message);
     }
   };
 
@@ -226,6 +269,47 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
         {/* STEP 1: Pilih Status (Hadir vs Izin) */}
         {currentStep === 1 && (
           <div className="space-y-6">
+            {/* Banner jika santri sudah presensi di kegiatan ini hari ini */}
+            {existingAttendance && !submissionResult && (
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 space-y-2.5 animate-in fade-in">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                      Anda Sudah Melakukan Presensi Hari Ini
+                    </h4>
+                    <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                      Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> tercatat pada pukul{' '}
+                      {new Date(existingAttendance.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB.
+                    </p>
+                    <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90">
+                      Foto selfie kurang jelas, salah pilih juz/halaman tahfidz, atau koordinat perlu diperbaiki? Anda dapat menghapus data absensi kegiatan ini untuk keperluan retake (ambil ulang).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    disabled={isRetaking}
+                    onClick={() => handleRetake(existingAttendance.id)}
+                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${isRetaking ? 'animate-spin' : ''}`} />
+                    <span>{isRetaking ? 'Menghapus Data...' : 'Hapus & Ambil Ulang Absen (Retake)'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {retakeNotification && (
+              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{retakeNotification}</span>
+              </div>
+            )}
+
             <div className="text-center space-y-1">
               <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
                 Pilih Jenis Absensi
@@ -939,6 +1023,15 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2.5 justify-center pt-2">
+              <button
+                type="button"
+                disabled={isRetaking}
+                onClick={() => handleRetake(submissionResult.record.id)}
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <RotateCcw className={`w-4 h-4 text-amber-600 dark:text-amber-400 ${isRetaking ? 'animate-spin' : ''}`} />
+                <span>{isRetaking ? 'Memproses...' : 'Retake / Ambil Ulang'}</span>
+              </button>
               <Link
                 href="/santri/kalender"
                 className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#146B50] hover:bg-[#0B3D2E] text-white text-xs font-bold transition shadow-md active:scale-95"

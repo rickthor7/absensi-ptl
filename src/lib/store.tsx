@@ -115,6 +115,9 @@ interface StoreContextType {
     status: import('@/types').TahfidzValidationStatus;
     note?: string;
   }) => Promise<{ success: boolean; message: string }>;
+  deleteSantriAttendance: (
+    recordId: string
+  ) => Promise<{ success: boolean; message: string }>;
   addStudent: (student: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => Promise<void>;
   updateStudent: (student: Profile & { password?: string }) => Promise<void>;
   updateCurrentUserCredentials: (data: {
@@ -1681,6 +1684,75 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // Menghapus/reset data absensi santri pada kegiatan tertentu (untuk keperluan retake absen)
+  const deleteSantriAttendance = async (
+    recordId: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const record = attendanceRecords.find((r) => r.id === recordId);
+    if (!record) {
+      return { success: false, message: 'Data absensi tidak ditemukan.' };
+    }
+
+    // Pastikan hanya santri pemilik atau musyrif/admin yang bisa menghapus
+    const isOwner = currentUser.id === record.student_id;
+    const isStaff = currentUser.role === 'admin' || currentUser.role === 'musyrif';
+    if (!isOwner && !isStaff) {
+      return { success: false, message: 'Anda tidak memiliki hak akses untuk menghapus presensi ini.' };
+    }
+
+    const nowIso = effectiveTime.toISOString();
+
+    // Hapus dari state memori lokal (hanya catatan kegiatan ini yang dihapus)
+    setAttendanceRecords((prev) => prev.filter((r) => r.id !== recordId));
+
+    // Audit log penghapusan untuk retake
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'RETAKE_ATTENDANCE',
+      entity_type: 'attendance_record',
+      entity_id: recordId,
+      before_data: {
+        id: record.id,
+        activity_id: record.activity_id,
+        activity_name: record.activity_name,
+        operational_date: record.operational_date,
+        student_id: record.student_id,
+        student_name: record.student_name,
+        status: record.status,
+      },
+      after_data: null,
+      reason: `Santri / Pengguna menghapus presensi untuk retake (ambil ulang) absensi kegiatan ${record.activity_name}`,
+      created_at: nowIso,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    // Hapus dari Supabase jika terhubung
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        const { error } = await supabase
+          .from('attendance_records')
+          .delete()
+          .eq('id', recordId);
+
+        if (error) {
+          console.warn('Gagal menghapus catatan presensi di Supabase:', error);
+        }
+
+        await supabase.from('audit_logs').insert(audit);
+      } catch (err) {
+        console.warn('Exception deleting attendance record in Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Presensi kegiatan ${record.activity_name} berhasil dihapus. Silakan ambil ulang absensi Anda.`,
+    };
+  };
+
   // Student management with real credential support (Username/Email & Password)
   const addStudent = async (studentData: Omit<Profile, 'id' | 'created_at'> & { password?: string }) => {
     const rawPass = studentData.password?.trim() || studentData.password_hash || 'password123';
@@ -2446,6 +2518,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         submitManualBatchAttendance,
         verifyDiscrepancy,
         validateTahfidzSetoran,
+        deleteSantriAttendance,
         addStudent,
         updateStudent,
         updateCurrentUserCredentials,

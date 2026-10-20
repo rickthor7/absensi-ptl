@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
 import {
@@ -22,10 +23,12 @@ import {
   User,
   CreditCard,
   Wallet,
+  RotateCcw,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
 
 export default function SantriHomePage() {
+  const router = useRouter();
   const {
     currentUser,
     activities,
@@ -33,6 +36,7 @@ export default function SantriHomePage() {
     effectiveTime,
     sppPayments,
     sppSettings,
+    deleteSantriAttendance,
   } = useStore();
 
   const activeResult = determineActiveActivity(activities, effectiveTime);
@@ -195,12 +199,35 @@ export default function SantriHomePage() {
                     </p>
                   </div>
                 </div>
-                <Link
-                  href="/santri/riwayat"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition btn-press text-center"
-                >
-                  Lihat Detail
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (
+                        window.confirm(
+                          `Hapus catatan absensi "${activeActivity?.name || 'kegiatan ini'}" untuk mengambil ulang (retake)?`
+                        )
+                      ) {
+                        const res = await deleteSantriAttendance(todayAttendance.id);
+                        if (res.success) {
+                          router.push('/santri/absensi');
+                        } else {
+                          alert(res.message);
+                        }
+                      }
+                    }}
+                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold rounded-lg transition btn-press flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Retake Absen</span>
+                  </button>
+                  <Link
+                    href="/santri/riwayat"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition btn-press text-center"
+                  >
+                    Lihat Detail
+                  </Link>
+                </div>
               </div>
             ) : isWindowOpen ? (
               <Link

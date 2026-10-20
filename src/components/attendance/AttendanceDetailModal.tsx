@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AttendanceRecord } from '@/types';
+import { useStore } from '@/lib/store';
 import { STATUS_META } from '@/lib/constants';
-import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw } from 'lucide-react';
 
 interface AttendanceDetailModalProps {
   record: AttendanceRecord;
@@ -11,7 +13,15 @@ interface AttendanceDetailModalProps {
 }
 
 export default function AttendanceDetailModal({ record, onClose }: AttendanceDetailModalProps) {
+  const router = useRouter();
+  const { currentUser, deleteSantriAttendance } = useStore();
+  const [isDeleting, setIsDeleting] = useState(false);
   const meta = STATUS_META[record.status];
+
+  const canDelete =
+    currentUser.id === record.student_id ||
+    currentUser.role === 'admin' ||
+    currentUser.role === 'musyrif';
 
   // Close on Escape key
   useEffect(() => {
@@ -224,10 +234,39 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
             </div>
           )}
 
-          <div className="flex justify-end pt-3 border-t border-stone-200 dark:border-stone-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stone-200 dark:border-stone-800">
+            {canDelete ? (
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (
+                    window.confirm(
+                      `Apakah Anda yakin ingin menghapus data presensi kegiatan "${record.activity_name}" tanggal ${record.operational_date} untuk keperluan retake (ambil ulang)?`
+                    )
+                  ) {
+                    setIsDeleting(true);
+                    const res = await deleteSantriAttendance(record.id);
+                    setIsDeleting(false);
+                    if (res.success) {
+                      onClose();
+                      if (currentUser.role === 'santri') {
+                        router.push('/santri/absensi');
+                      }
+                    } else {
+                      alert(res.message);
+                    }
+                  }
+                }}
+                className="px-4 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold transition flex items-center gap-1.5 border border-rose-200 dark:border-rose-800/80 cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Menghapus...' : 'Hapus & Retake Absen'}</span>
+              </button>
+            ) : <div />}
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-300 transition"
+              className="px-5 py-2.5 rounded-xl bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-300 transition cursor-pointer"
             >
               Tutup
             </button>

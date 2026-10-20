@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { AttendanceRecord } from '@/types';
 import { STATUS_META } from '@/lib/constants';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
+import { useRouter } from 'next/navigation';
 import {
   History,
   Search,
@@ -18,10 +19,13 @@ import {
   ShieldCheck,
   AlertCircle,
   FileQuestion,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function SantriRiwayatPage() {
-  const { currentUser, attendanceRecords, activities } = useStore();
+  const router = useRouter();
+  const { currentUser, attendanceRecords, activities, effectiveTime, deleteSantriAttendance } = useStore();
+  const todayStr = effectiveTime.toISOString().split('T')[0];
 
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [filterActivity, setFilterActivity] = useState<string>('all');
@@ -188,12 +192,36 @@ export default function SantriRiwayatPage() {
                 </div>
 
                 {/* Status Badge & Eye Action */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 dark:border-stone-800">
+                <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 dark:border-stone-800">
                   <span
                     className={`px-3 py-1 rounded-full text-[11px] font-bold border shadow-xs ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
                   >
                     {meta.label}
                   </span>
+                  {rec.operational_date === todayStr && (
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            `Hapus data absensi kegiatan "${rec.activity_name}" untuk keperluan retake (ambil ulang)?`
+                          )
+                        ) {
+                          const res = await deleteSantriAttendance(rec.id);
+                          if (res.success) {
+                            router.push('/santri/absensi');
+                          } else {
+                            alert(res.message);
+                          }
+                        }
+                      }}
+                      className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 transition cursor-pointer"
+                      title="Retake / Ambil Ulang Absensi"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 group-hover:bg-[#146B50] group-hover:text-white transition"
