@@ -20,7 +20,7 @@ export function getSupabaseConfig(): { url: string; anonKey: string; isConfigure
     }
   }
 
-  let rawUrl = (customUrl || envUrl).trim();
+  const rawUrl = (customUrl || envUrl).trim();
   const anonKey = (customKey || envKey).trim();
   // Strip /rest/v1 or trailing slashes if present
   const url = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
