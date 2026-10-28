@@ -24,9 +24,19 @@ import {
   BookOpen,
   Bookmark,
   RotateCcw,
+  Layers,
+  CalendarDays,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
+
+const QUICK_PERMIT_REASONS = [
+  'Sakit demam & istirahat di UKS / Kamar',
+  'Izin rawat medis / periksa ke dokter RS',
+  'Izin pulang urusan keluarga mendesak',
+  'Dispensasi tugas khidmah pondok pesantren',
+  'Terkendala keterlambatan perjalanan balik pondok',
+];
 
 interface AttendanceWizardProps {
   activity: Activity;
@@ -38,7 +48,9 @@ type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 export default function AttendanceWizard({ activity, onFinished }: AttendanceWizardProps) {
   const {
     currentUser,
+    activities,
     submitAttendance,
+    submitMultiPermission,
     effectiveTime,
     getLastTahfidzRecord,
     attendanceRecords,
@@ -46,6 +58,21 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   } = useStore();
 
   const todayStr = effectiveTime.toISOString().split('T')[0];
+  const tomorrow = new Date(effectiveTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  const activeActivities = activities.filter((a) => a.is_active);
+
+  // Multi-activity selection state for Izin: array of `${activityId}_${dateStr}`
+  const [selectedIzinKeys, setSelectedIzinKeys] = useState<string[]>([`${activity.id}_${todayStr}`]);
+  const [izinDateTab, setIzinDateTab] = useState<'today' | 'tomorrow'>('today');
+
+  // Synchronize when parent changes the selected activity
+  React.useEffect(() => {
+    const key = `${activity.id}_${todayStr}`;
+    setSelectedIzinKeys((prev) => (prev.includes(key) ? prev : [key, ...prev]));
+  }, [activity.id, todayStr]);
   const existingAttendance = attendanceRecords.find(
     (r) =>
       r.student_id === currentUser.id &&
@@ -118,6 +145,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     record: AttendanceRecord;
+    records?: AttendanceRecord[];
     message: string;
   } | null>(null);
 
@@ -163,6 +191,40 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
     if (!photoUrl || !locationData) return;
     setIsSubmitting(true);
 
+    if (attendanceType === 'izin') {
+      const targets = selectedIzinKeys.map((key) => {
+        const [actId, dateStr] = key.split('_');
+        return { activityId: actId, operationalDate: dateStr };
+      });
+
+      const result = await submitMultiPermission({
+        targets,
+        photoDataUrl: photoUrl,
+        coords: {
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          accuracy: locationData.accuracy,
+        },
+        permissionReason,
+      });
+
+      setSubmissionResult({
+        success: result.success,
+        record: result.records[0] || ({} as AttendanceRecord),
+        records: result.records,
+        message: result.message,
+      });
+      setIsSubmitting(false);
+
+      // Jump to review result step (Step 5 for normal wizard)
+      setCurrentStep(5 as WizardStep);
+
+      if (onFinished) {
+        onFinished();
+      }
+      return;
+    }
+
     const result = await submitAttendance({
       activityId: activity.id,
       type: attendanceType,
@@ -172,7 +234,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
         longitude: locationData.longitude,
         accuracy: locationData.accuracy,
       },
-      permissionReason: attendanceType === 'izin' ? permissionReason : undefined,
+      permissionReason: undefined,
       tahfidzMode: isTahfidz ? tahfidzMode : undefined,
       tahfidzJuz: isTahfidz ? tahfidzJuz : undefined,
       tahfidzHalaman: isTahfidz ? tahfidzHalaman : undefined,
@@ -180,7 +242,10 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
       tahfidzNotes: isTahfidz && tahfidzNotes.trim() ? tahfidzNotes.trim() : undefined,
     });
 
-    setSubmissionResult(result);
+    setSubmissionResult({
+      ...result,
+      records: [result.record],
+    });
     setIsSubmitting(false);
 
     // Jump to final step (Step 6 if Tahfidz, Step 5 if normal)
@@ -379,31 +444,209 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
 
             {/* If Izin selected */}
             {attendanceType === 'izin' && (
-              <div className="space-y-2 p-4 bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/70 animate-in fade-in duration-200">
-                <label className="block text-xs font-bold text-amber-900 dark:text-amber-200">
-                  Alasan Izin (Wajib Diisi):
-                </label>
-                <textarea
-                  rows={3}
-                  value={permissionReason}
-                  onChange={(e) => setPermissionReason(e.target.value)}
-                  placeholder="Contoh: Sakit demam beristirahat di kamar/UKS, urusan keluarga duka cita..."
-                  className="w-full text-xs p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
-                />
-                <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80">
-                  *Lampirkan alasan jelas agar musyrif dapat menyetujui dispensasi kehadiran Anda.
-                </p>
+              <div className="space-y-4 p-4 sm:p-5 bg-gradient-to-br from-amber-50/90 via-amber-50/50 to-orange-50/40 dark:from-amber-950/40 dark:via-stone-900/60 dark:to-stone-900/40 rounded-3xl border border-amber-200/90 dark:border-amber-800/70 shadow-sm animate-in fade-in duration-200">
+                {/* 1. Multi-Kegiatan Selector */}
+                <div className="space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-extrabold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span>1. Pilih Kegiatan yang Diajukan Izin:</span>
+                    </label>
+                    <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-2.5 py-0.5 rounded-full self-start sm:self-auto border border-amber-200 dark:border-amber-800">
+                      {selectedIzinKeys.length} Kegiatan Terpilih
+                    </span>
+                  </div>
+
+                  {/* Quick Select Buttons */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-stone-500 font-semibold py-1">Pilih Cepat:</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIzinKeys([`${activity.id}_${todayStr}`])}
+                      className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition cursor-pointer active:scale-95 border ${
+                        selectedIzinKeys.length === 1 && selectedIzinKeys[0] === `${activity.id}_${todayStr}`
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                          : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:border-amber-400'
+                      }`}
+                    >
+                      Hanya {activity.name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const remaining = activeActivities
+                          .filter((a) => a.start_time >= activity.start_time)
+                          .map((a) => `${a.id}_${todayStr}`);
+                        setSelectedIzinKeys(remaining.length > 0 ? remaining : [`${activity.id}_${todayStr}`]);
+                      }}
+                      className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400 transition cursor-pointer active:scale-95"
+                    >
+                      Sisa Hari Ini
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIzinKeys(activeActivities.map((a) => `${a.id}_${todayStr}`))}
+                      className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400 transition cursor-pointer active:scale-95"
+                    >
+                      Semua Hari Ini ({activeActivities.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedIzinKeys([
+                          ...activeActivities.map((a) => `${a.id}_${todayStr}`),
+                          ...activeActivities.map((a) => `${a.id}_${tomorrowStr}`),
+                        ])
+                      }
+                      className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400 transition cursor-pointer active:scale-95"
+                    >
+                      Hari Ini &amp; Besok ({activeActivities.length * 2})
+                    </button>
+                  </div>
+
+                  {/* Date Tabs (Hari Ini vs Besok) */}
+                  <div className="flex items-center gap-2 pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIzinDateTab('today')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        izinDateTab === 'today'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:bg-stone-50'
+                      }`}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Hari Ini ({todayStr})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIzinDateTab('tomorrow')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        izinDateTab === 'tomorrow'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:bg-stone-50'
+                      }`}
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span>Besok ({tomorrowStr})</span>
+                    </button>
+                  </div>
+
+                  {/* List of activities for the active tab */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1">
+                    {activeActivities.map((act) => {
+                      const curDate = izinDateTab === 'today' ? todayStr : tomorrowStr;
+                      const key = `${act.id}_${curDate}`;
+                      const isSelected = selectedIzinKeys.includes(key);
+
+                      const exist = attendanceRecords.find(
+                        (r) =>
+                          r.student_id === currentUser.id &&
+                          r.activity_id === act.id &&
+                          r.operational_date === curDate
+                      );
+
+                      return (
+                        <div
+                          key={key}
+                          onClick={() => {
+                            setSelectedIzinKeys((prev) =>
+                              prev.includes(key)
+                                ? prev.filter((k) => k !== key)
+                                : [...prev, key]
+                            );
+                          }}
+                          className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between gap-2.5 ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-100/70 dark:bg-amber-950/60 shadow-xs ring-1 ring-amber-500/20'
+                              : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-amber-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 overflow-hidden">
+                            <div
+                              className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition ${
+                                isSelected
+                                  ? 'bg-amber-600 text-white'
+                                  : 'border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                              }`}
+                            >
+                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            </div>
+                            <div className="truncate">
+                              <p className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+                                {act.name}
+                              </p>
+                              <p className="text-[10px] text-stone-500 font-mono">
+                                {act.start_time} - {act.end_time} WIB
+                              </p>
+                            </div>
+                          </div>
+
+                          {exist && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 uppercase shrink-0">
+                              {exist.status.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Alasan Izin & Quick Chips */}
+                <div className="space-y-2 pt-3 border-t border-amber-200 dark:border-amber-800/60">
+                  <label className="block text-xs font-extrabold text-amber-950 dark:text-amber-200">
+                    2. Alasan Izin (Wajib Diisi):
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={permissionReason}
+                    onChange={(e) => setPermissionReason(e.target.value)}
+                    placeholder="Contoh: Sakit demam beristirahat di kamar/UKS, urusan keluarga mendesak..."
+                    className="w-full text-xs p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                  />
+
+                  {/* Quick Reason Chips */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold text-stone-500 block">
+                      Saran Alasan Cepat (Klik untuk memilih):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_PERMIT_REASONS.map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setPermissionReason(chip)}
+                          className={`text-[10px] px-2.5 py-1 rounded-xl font-semibold transition cursor-pointer active:scale-95 ${
+                            permissionReason === chip
+                              ? 'bg-amber-600 text-white font-bold shadow-xs'
+                              : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400'
+                          }`}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
             <div className="flex justify-end pt-4 border-t border-stone-100 dark:border-stone-800">
               <button
                 type="button"
-                disabled={attendanceType === 'izin' && !permissionReason.trim()}
+                disabled={
+                  attendanceType === 'izin' &&
+                  (!permissionReason.trim() || selectedIzinKeys.length === 0)
+                }
                 onClick={() => setCurrentStep(2)}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold transition shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border border-[#D6A84F]/30"
               >
-                <span>Lanjut ke Foto Selfie</span>
+                <span>
+                  {attendanceType === 'izin' && selectedIzinKeys.length > 1
+                    ? `Lanjut (${selectedIzinKeys.length} Kegiatan Dipilih)`
+                    : 'Lanjut ke Foto Selfie / Bukti'}
+                </span>
                 <ArrowRight className="w-4 h-4 text-[#D6A84F]" />
               </button>
             </div>
@@ -415,10 +658,14 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
           <div className="space-y-6">
             <div className="text-center space-y-1">
               <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
-                Validasi Wajah (Selfie)
+                {attendanceType === 'izin'
+                  ? 'Foto Bukti / Selfie Santri'
+                  : 'Validasi Wajah (Selfie)'}
               </h3>
               <p className="text-xs text-stone-500">
-                Posisikan wajah Anda pada area bingkai panduan kamera
+                {attendanceType === 'izin'
+                  ? 'Posisikan wajah Anda atau foto surat izin/keterangan dokter di depan kamera'
+                  : 'Posisikan wajah Anda pada area bingkai panduan kamera'}
               </p>
             </div>
 
@@ -859,7 +1106,13 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                   </div>
                   <div className="flex justify-between py-1 border-b border-stone-200 dark:border-stone-700/60">
                     <span className="text-stone-500">Kegiatan:</span>
-                    <span className="font-bold text-[#146B50]">{activity.name}</span>
+                    {attendanceType === 'izin' && selectedIzinKeys.length > 1 ? (
+                      <span className="font-bold text-amber-700 dark:text-amber-300">
+                        {selectedIzinKeys.length} Kegiatan Terpilih
+                      </span>
+                    ) : (
+                      <span className="font-bold text-[#146B50]">{activity.name}</span>
+                    )}
                   </div>
                   <div className="flex justify-between py-1 border-b border-stone-200 dark:border-stone-700/60">
                     <span className="text-stone-500">Jenis Absen:</span>
@@ -918,9 +1171,43 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
               )}
 
               {attendanceType === 'izin' && (
-                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200">
-                  <span className="font-bold block text-[11px] mb-0.5">Alasan Izin:</span>
-                  <p className="italic">{permissionReason}</p>
+                <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-amber-600" />
+                      <span>
+                        Daftar Kegiatan ({selectedIzinKeys.length} Sesi Terpilih):
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-100">
+                      Diajukan Bersamaan
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                    {selectedIzinKeys.map((key) => {
+                      const [actId, dateStr] = key.split('_');
+                      const act = activities.find((a) => a.id === actId);
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between text-[11px] py-1 border-b border-amber-200/50 dark:border-amber-800/40 last:border-none"
+                        >
+                          <span className="font-semibold text-stone-900 dark:text-stone-100">
+                            {act?.name || actId}
+                          </span>
+                          <span className="text-stone-500 dark:text-stone-400 font-mono text-[10px]">
+                            {dateStr === todayStr ? 'Hari Ini' : 'Besok'} ({act?.start_time} - {act?.end_time} WIB)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-200/70 dark:border-amber-800/70">
+                    <span className="font-bold block text-[11px] mb-0.5">Alasan Izin:</span>
+                    <p className="italic text-stone-800 dark:text-stone-200">&quot;{permissionReason}&quot;</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -942,7 +1229,13 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#146B50] via-[#1A7F60] to-[#0B3D2E] text-white text-xs font-bold transition shadow-lg shadow-emerald-950/25 active:scale-95 cursor-pointer border border-[#D6A84F]/40"
               >
                 <Send className="w-4 h-4 text-[#D6A84F]" />
-                <span>{isSubmitting ? 'Memproses Data...' : 'Kirim Absensi Sekarang'}</span>
+                <span>
+                  {isSubmitting
+                    ? 'Memproses Data...'
+                    : attendanceType === 'izin' && selectedIzinKeys.length > 1
+                    ? `Kirim Izin (${selectedIzinKeys.length} Kegiatan) Sekaligus`
+                    : 'Kirim Absensi Sekarang'}
+                </span>
               </button>
             </div>
           </div>
@@ -976,6 +1269,8 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
               <h3 className="text-xl font-extrabold text-stone-900 dark:text-stone-100">
                 {submissionResult.record.status === 'hadir_valid'
                   ? 'Alhamdulillah, Presensi Sah!'
+                  : submissionResult.records && submissionResult.records.length > 1
+                  ? `Pengajuan Izin (${submissionResult.records.length} Kegiatan) Berhasil!`
                   : submissionResult.record.status === 'izin_diajukan'
                   ? 'Pengajuan Izin Berhasil Dikirim'
                   : 'Presensi Di Luar Radius'}
@@ -985,13 +1280,41 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
               </p>
             </div>
 
-            {/* Receipt Card */}
+            {/* If Multi-Activity Permit, show batch receipt */}
+            {submissionResult.records && submissionResult.records.length > 1 && (
+              <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/80 text-left text-xs max-w-sm mx-auto space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-extrabold pb-1 border-b border-amber-200 dark:border-amber-800">
+                  <Layers className="w-4 h-4 text-amber-600" />
+                  <span>Daftar {submissionResult.records.length} Kegiatan Izin yang Diajukan:</span>
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {submissionResult.records.map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between py-1 border-b border-amber-100 dark:border-amber-800/40 last:border-none text-[11px]"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="font-bold text-stone-800 dark:text-stone-200">{r.activity_name}</span>
+                      </div>
+                      <span className="text-[10px] text-stone-500 font-mono">
+                        {r.operational_date}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Standard Receipt Card */}
             <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/60 text-left text-xs max-w-sm mx-auto space-y-2">
               <div className="flex justify-between">
                 <span className="text-stone-500">Status Kehadiran:</span>
                 <span className="font-bold text-[#146B50]">
                   {submissionResult.record.status === 'hadir_valid'
                     ? 'Hadir Valid'
+                    : submissionResult.record.status === 'izin_diajukan'
+                    ? 'Izin Diajukan'
                     : submissionResult.record.status}
                 </span>
               </div>

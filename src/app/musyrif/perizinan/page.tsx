@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  Layers,
 } from 'lucide-react';
 
 export default function MusyrifPerizinanPage() {
@@ -143,9 +144,29 @@ export default function MusyrifPerizinanPage() {
                       </span>
                     </div>
 
-                    <p className="text-xs font-bold text-[#146B50] dark:text-emerald-400">
-                      {rec.activity_name} ({rec.operational_date})
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-bold text-[#146B50] dark:text-emerald-400">
+                        {rec.activity_name} ({rec.operational_date})
+                      </p>
+                      {(() => {
+                        const batchCount = rec.permission_batch_id
+                          ? attendanceRecords.filter(
+                              (r) =>
+                                r.permission_batch_id === rec.permission_batch_id &&
+                                r.student_id === rec.student_id
+                            ).length
+                          : 0;
+                        if (batchCount > 1) {
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300/40">
+                              <Layers className="w-3 h-3" />
+                              Multi-Kegiatan ({batchCount} sesi)
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-3 text-[11px] text-stone-500 dark:text-stone-400">
                       <span className="flex items-center gap-1 font-medium">
@@ -221,8 +242,8 @@ export default function MusyrifPerizinanPage() {
         <PermissionReviewModal
           record={reviewRecord}
           onClose={() => setReviewRecord(null)}
-          onApprove={(id, note) => reviewPermission(id, 'izin_disetujui', note)}
-          onReject={(id, note) => reviewPermission(id, 'izin_ditolak', note)}
+          onApprove={(id, note, applyToBatch) => reviewPermission(id, 'izin_disetujui', note, applyToBatch)}
+          onReject={(id, note, applyToBatch) => reviewPermission(id, 'izin_ditolak', note, applyToBatch)}
         />
       )}
 

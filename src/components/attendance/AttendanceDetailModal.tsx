@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
 import { STATUS_META } from '@/lib/constants';
-import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw } from 'lucide-react';
+import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw, Layers } from 'lucide-react';
 
 interface AttendanceDetailModalProps {
   record: AttendanceRecord;
@@ -192,10 +192,18 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
 
           {/* Permission Reason if any */}
           {record.permission_reason && (
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 text-xs">
-              <span className="font-bold text-amber-900 dark:text-amber-200 block mb-1">
-                Alasan Pengajuan Izin:
-              </span>
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-900 dark:text-amber-200">
+                  Alasan Pengajuan Izin:
+                </span>
+                {record.permission_batch_id && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300/40">
+                    <Layers className="w-3 h-3 text-amber-600" />
+                    Izin Multi-Kegiatan
+                  </span>
+                )}
+              </div>
               <p className="text-stone-700 dark:text-stone-300 italic">
                 &quot;{record.permission_reason}&quot;
               </p>

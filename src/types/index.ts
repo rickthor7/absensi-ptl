@@ -68,6 +68,7 @@ export interface AttendanceRecord {
   distance_from_site_m: number;
   submitted_at: string;
   permission_reason?: string;
+  permission_batch_id?: string;
   reviewed_by?: string;
   reviewed_by_name?: string;
   reviewed_at?: string;

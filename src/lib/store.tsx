@@ -89,7 +89,23 @@ interface StoreContextType {
     tahfidzHalamanEnd?: number;
     tahfidzNotes?: string;
   }) => Promise<{ success: boolean; record: AttendanceRecord; message: string }>;
-  reviewPermission: (recordId: string, status: AttendanceStatus, reviewNote?: string) => Promise<void>;
+  submitMultiPermission: (params: {
+    targets: { activityId: string; operationalDate?: string }[];
+    photoDataUrl: string;
+    coords: { latitude: number; longitude: number; accuracy: number };
+    permissionReason: string;
+  }) => Promise<{
+    success: boolean;
+    records: AttendanceRecord[];
+    batchId: string;
+    message: string;
+  }>;
+  reviewPermission: (
+    recordId: string,
+    status: AttendanceStatus,
+    reviewNote?: string,
+    applyToBatch?: boolean
+  ) => Promise<void>;
   correctAttendance: (recordId: string, newStatus: AttendanceStatus, reason: string) => Promise<void>;
   submitManualBatchAttendance: (params: {
     activityId: string;
@@ -1072,6 +1088,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       distance_from_site_m: geoValidation.distanceMeters,
       submitted_at: effectiveTime.toISOString(),
       permission_reason: type === 'izin' ? permissionReason : undefined,
+      permission_batch_id: type === 'izin' ? (existing?.permission_batch_id || `batch-${Date.now()}`) : undefined,
       tahfidz_mode: tahfidzMode || (tahfidzJuz ? (existing?.tahfidz_mode || 'ziyadah') : undefined),
       tahfidz_juz: tahfidzJuz !== undefined ? tahfidzJuz : existing?.tahfidz_juz,
       tahfidz_halaman: tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman,
@@ -1121,6 +1138,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           distance_from_site_m: geoValidation.distanceMeters,
           submitted_at: effectiveTime.toISOString(),
           permission_reason: type === 'izin' ? permissionReason : null,
+          permission_batch_id: type === 'izin' ? (existing?.permission_batch_id || `batch-${Date.now()}`) : null,
           tahfidz_mode: tahfidzMode || (tahfidzJuz ? 'ziyadah' : null),
           tahfidz_juz: tahfidzJuz || null,
           tahfidz_halaman: tahfidzHalaman || null,
@@ -1140,17 +1158,170 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  // Review permission (Approve / Reject) by Musyrif
+  // Submit multi-activity permission in a single request
+  const submitMultiPermission = async ({
+    targets,
+    photoDataUrl,
+    coords,
+    permissionReason,
+  }: {
+    targets: { activityId: string; operationalDate?: string }[];
+    photoDataUrl: string;
+    coords: { latitude: number; longitude: number; accuracy: number };
+    permissionReason: string;
+  }) => {
+    if (!targets || targets.length === 0) {
+      return {
+        success: false,
+        records: [],
+        batchId: '',
+        message: 'Tidak ada kegiatan yang dipilih untuk izin.',
+      };
+    }
+
+    const todayStr = effectiveTime.toISOString().split('T')[0];
+    const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    // Upload photo to Supabase storage once
+    const publicPhotoUrl = await uploadSelfieToStorage(photoDataUrl, currentUser.id);
+
+    const createdOrUpdatedRecords: AttendanceRecord[] = [];
+    const supabase = getSupabase();
+
+    for (const target of targets) {
+      const activity = activities.find((a) => a.id === target.activityId);
+      if (!activity) continue;
+
+      const targetDate = target.operationalDate || todayStr;
+
+      const existing = attendanceRecords.find(
+        (r) =>
+          r.student_id === currentUser.id &&
+          r.activity_id === target.activityId &&
+          r.operational_date === targetDate
+      );
+
+      const targetRecordId = existing
+        ? existing.id
+        : `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const sessionId = existing
+        ? existing.session_id
+        : `sess-${targetDate}-${activity.code.toLowerCase()}`;
+
+      const geoValidation = validateAttendanceLocation(
+        { latitude: coords.latitude, longitude: coords.longitude },
+        { latitude: activity.location_lat, longitude: activity.location_lng },
+        activity.radius_m,
+        activity.max_gps_accuracy_m,
+        coords.accuracy
+      );
+
+      const newRecord: AttendanceRecord = {
+        ...(existing || {}),
+        id: targetRecordId,
+        session_id: sessionId,
+        student_id: currentUser.id,
+        student_name: currentUser.full_name,
+        student_number: currentUser.student_number,
+        group_name: currentUser.group_name,
+        activity_id: activity.id,
+        activity_name: activity.name,
+        operational_date: targetDate,
+        attendance_type: 'izin',
+        status: 'izin_diajukan',
+        santri_status: 'izin_diajukan',
+        musyrif_status: existing?.musyrif_status,
+        has_discrepancy: false,
+        is_verified: true,
+        photo_path: publicPhotoUrl,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        gps_accuracy_m: coords.accuracy,
+        location_captured_at: effectiveTime.toISOString(),
+        distance_from_site_m: geoValidation.distanceMeters,
+        submitted_at: effectiveTime.toISOString(),
+        permission_reason: permissionReason,
+        permission_batch_id: batchId,
+      };
+
+      createdOrUpdatedRecords.push(newRecord);
+
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase.from('attendance_sessions').upsert({
+            id: sessionId,
+            activity_id: activity.id,
+            operational_date: targetDate,
+            opens_at: `${targetDate}T${activity.start_time}:00Z`,
+            closes_at: `${targetDate}T${activity.end_time}:00Z`,
+            status: 'open',
+          });
+
+          await supabase.from('attendance_records').upsert({
+            id: targetRecordId,
+            session_id: sessionId,
+            student_id: currentUser.id,
+            attendance_type: 'izin',
+            status: 'izin_diajukan',
+            santri_status: 'izin_diajukan',
+            musyrif_status: existing?.musyrif_status || null,
+            has_discrepancy: false,
+            is_verified: true,
+            photo_path: publicPhotoUrl,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            gps_accuracy_m: coords.accuracy,
+            location_captured_at: effectiveTime.toISOString(),
+            distance_from_site_m: geoValidation.distanceMeters,
+            submitted_at: effectiveTime.toISOString(),
+            permission_reason: permissionReason,
+            permission_batch_id: batchId,
+          });
+        } catch (err) {
+          console.warn('Failed to insert batch permission into Supabase:', err);
+        }
+      }
+    }
+
+    // Update local state in one go
+    setAttendanceRecords((prev) => {
+      const recordMap = new Map(createdOrUpdatedRecords.map((r) => [r.id, r]));
+      const updatedList = prev.map((r) => (recordMap.has(r.id) ? recordMap.get(r.id)! : r));
+      const newItems = createdOrUpdatedRecords.filter((r) => !prev.some((p) => p.id === r.id));
+      return [...newItems, ...updatedList];
+    });
+
+    return {
+      success: true,
+      records: createdOrUpdatedRecords,
+      batchId,
+      message: `Alhamdulillah! Pengajuan izin untuk ${createdOrUpdatedRecords.length} kegiatan berhasil dikirim dan menunggu persetujuan musyrif.`,
+    };
+  };
+
+  // Review permission (Approve / Reject) by Musyrif with optional batch support
   const reviewPermission = async (
     recordId: string,
     status: AttendanceStatus,
-    reviewNote?: string
+    reviewNote?: string,
+    applyToBatch?: boolean
   ) => {
     const record = attendanceRecords.find((r) => r.id === recordId);
     if (!record) return;
 
+    const targetRecords =
+      applyToBatch && record.permission_batch_id
+        ? attendanceRecords.filter(
+            (r) =>
+              r.permission_batch_id === record.permission_batch_id &&
+              r.student_id === record.student_id
+          )
+        : [record];
+
+    const targetIds = new Set(targetRecords.map((r) => r.id));
+
     const updated = attendanceRecords.map((r) => {
-      if (r.id === recordId) {
+      if (targetIds.has(r.id)) {
         return {
           ...r,
           status,
@@ -1165,49 +1336,58 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     setAttendanceRecords(updated);
 
-    const audit: AuditLog = {
-      id: `aud-${Date.now()}`,
-      actor_id: currentUser.id,
-      actor_name: currentUser.full_name,
-      action: 'REVIEW_PERMISSION',
-      entity_type: 'attendance_record',
-      entity_id: recordId,
-      before_data: { status: record.status },
-      after_data: { status, review_note: reviewNote },
-      reason: reviewNote || 'Tinjauan izin musyrif',
-      created_at: effectiveTime.toISOString(),
-    };
-    setAuditLogs((prev) => [audit, ...prev]);
-
-    // Send to Supabase
     const supabase = getSupabase();
-    if (supabase && isSupabaseConnected) {
-      try {
-        await supabase
-          .from('attendance_records')
-          .update({
-            status,
-            reviewed_by: currentUser.id,
-            reviewed_at: effectiveTime.toISOString(),
-            review_note: reviewNote,
-          })
-          .eq('id', recordId);
+    const newAudits: AuditLog[] = [];
 
-        await supabase.from('audit_logs').insert({
-          id: audit.id,
-          actor_id: currentUser.id,
-          action: 'REVIEW_PERMISSION',
-          entity_type: 'attendance_record',
-          entity_id: recordId,
-          before_data: { status: record.status },
-          after_data: { status, review_note: reviewNote },
-          reason: reviewNote || 'Tinjauan izin musyrif',
-          created_at: effectiveTime.toISOString(),
-        });
-      } catch (err) {
-        console.warn('Failed to update Supabase permission:', err);
+    for (const tr of targetRecords) {
+      const audit: AuditLog = {
+        id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        actor_id: currentUser.id,
+        actor_name: currentUser.full_name,
+        action: 'REVIEW_PERMISSION',
+        entity_type: 'attendance_record',
+        entity_id: tr.id,
+        before_data: { status: tr.status },
+        after_data: { status, review_note: reviewNote },
+        reason:
+          reviewNote ||
+          (targetRecords.length > 1
+            ? `Tinjauan izin multi-kegiatan (${targetRecords.length} sesi) oleh musyrif`
+            : 'Tinjauan izin musyrif'),
+        created_at: effectiveTime.toISOString(),
+      };
+      newAudits.push(audit);
+
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase
+            .from('attendance_records')
+            .update({
+              status,
+              reviewed_by: currentUser.id,
+              reviewed_at: effectiveTime.toISOString(),
+              review_note: reviewNote,
+            })
+            .eq('id', tr.id);
+
+          await supabase.from('audit_logs').insert({
+            id: audit.id,
+            actor_id: currentUser.id,
+            action: 'REVIEW_PERMISSION',
+            entity_type: 'attendance_record',
+            entity_id: tr.id,
+            before_data: { status: tr.status },
+            after_data: { status, review_note: reviewNote },
+            reason: audit.reason,
+            created_at: effectiveTime.toISOString(),
+          });
+        } catch (err) {
+          console.warn('Failed to update Supabase permission:', err);
+        }
       }
     }
+
+    setAuditLogs((prev) => [...newAudits, ...prev]);
   };
 
   // Manual correction by musyrif
@@ -2513,6 +2693,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         effectiveTime,
         getLastTahfidzRecord,
         submitAttendance,
+        submitMultiPermission,
         reviewPermission,
         correctAttendance,
         submitManualBatchAttendance,
