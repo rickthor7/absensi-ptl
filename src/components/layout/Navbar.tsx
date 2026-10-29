@@ -32,6 +32,14 @@ import {
 import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
+  badge?: number;
+}
+
 export default function Navbar() {
   const {
     currentUser,
@@ -52,12 +60,21 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close menus on click-outside or ESC key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setShowUserMenu(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
+        // Also don't close if clicking hamburger button
+        const isHamburger = (event.target as HTMLElement)?.closest('[aria-label="Toggle menu"]');
+        if (!isHamburger) {
+          setMobileMenuOpen(false);
+        }
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -85,21 +102,14 @@ export default function Navbar() {
   const handleLogout = async () => {
     await logout();
     setShowUserMenu(false);
+    setMobileMenuOpen(false);
     router.push('/');
   };
 
-  interface NavItem {
-    href: string;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    highlight?: boolean;
-    badge?: number;
-  }
-
   const santriNav: NavItem[] = [
     { href: '/santri', label: 'Beranda', icon: Compass },
-    { href: '/santri/absensi', label: 'Mulai Absensi', icon: CheckCircle2, highlight: true },
-    { href: '/santri/spp', label: 'SPP Bulanan', icon: CreditCard },
+    { href: '/santri/absensi', label: 'Absensi', icon: CheckCircle2, highlight: true },
+    { href: '/santri/spp', label: 'SPP', icon: CreditCard },
     { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
     { href: '/santri/riwayat', label: 'Riwayat', icon: History },
     { href: '/transparansi', label: 'Transparansi', icon: Wallet },
@@ -112,25 +122,26 @@ export default function Navbar() {
     { href: '/musyrif/keuangan', label: 'Keuangan & SPP', icon: Wallet, badge: pendingSppCount },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },
-    { href: '/musyrif/kegiatan', label: 'Kegiatan & Jadwal', icon: Settings },
-    { href: '/musyrif/laporan', label: 'Rekap Laporan', icon: BarChart3 },
+    { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
+    { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
   ];
 
   const navLinks = isMusyrif ? musyrifNav : santriNav;
 
+  // Desktop shows all nav items for musyrif (8 items fit with short labels)
+  // For santri desktop, show inline nav too (7 items with short labels)
+  const desktopNavLinks = navLinks;
+
   return (
     <header className="sticky top-0 z-40 transition-all duration-300">
-      {/* Main Navbar — Slim h-12, Glass Effect, no info bar above */}
+      {/* Main Navbar — Slim h-12, Glass Effect */}
       <div className="bg-[#082F23]/95 backdrop-blur-xl border-b border-[#0D7B5F]/25 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-12">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center h-12 gap-2">
 
-            {/* Brand Logo + "Nurul Falah" + Live chip */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 group shrink-0"
-            >
+            {/* ── Brand Logo ── */}
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[1.5px] shadow-lg shadow-emerald-900/30 overflow-hidden shrink-0">
                 <img
                   src="/icon.jpg"
@@ -138,14 +149,14 @@ export default function Navbar() {
                   className="w-full h-full object-cover rounded-[9px]"
                 />
               </div>
-              <div className="hidden sm:flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm text-white tracking-tight leading-none">
+                  <span className="font-bold text-sm text-white tracking-tight leading-none whitespace-nowrap">
                     Nurul Falah
                   </span>
-                  {/* Live chip with dot-pulse when supabase connected */}
+                  {/* Live / Lokal chip */}
                   <span
-                    className={`flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                    className={`hidden sm:flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
                       isSupabaseConnected
                         ? 'bg-[#D4A24C]/15 text-[#D4A24C] border-[#D4A24C]/30'
                         : 'bg-white/5 text-stone-400 border-white/10'
@@ -154,47 +165,42 @@ export default function Navbar() {
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        isSupabaseConnected
-                          ? 'bg-[#D4A24C] dot-pulse'
-                          : 'bg-stone-500'
+                        isSupabaseConnected ? 'bg-[#D4A24C] dot-pulse' : 'bg-stone-500'
                       }`}
                     />
                     {isSupabaseConnected ? 'Live' : 'Lokal'}
                   </span>
                 </div>
-                {/* Compact date + time row */}
-                <span className="text-[9px] text-emerald-300/50 leading-none mt-0.5 font-mono tabular-nums hidden md:block">
-                  {formatIndonesianDate(effectiveTime)} &nbsp;
-                  {effectiveTime.toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                {/* Compact date + time — only md+ */}
+                <span className="hidden md:block text-[9px] text-emerald-300/50 leading-none mt-0.5 font-mono tabular-nums whitespace-nowrap">
+                  {formatIndonesianDate(effectiveTime)}&nbsp;
+                  {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation Links */}
+            {/* ── Desktop Navigation Links — shown lg+ ── */}
             {isAuthenticated ? (
-              <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center px-4">
-                {navLinks.map((item) => {
+              <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center min-w-0 overflow-hidden">
+                {desktopNavLinks.map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 relative ${
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
                         item.highlight
-                          ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm shadow-amber-900/20 hover:shadow-md btn-press'
+                          ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm hover:shadow-md btn-press'
                           : isActive
-                          ? 'bg-[#0D7B5F] text-white font-semibold shadow-inner shadow-emerald-900/30'
-                          : 'text-emerald-200/70 hover:text-white hover:underline underline-offset-4 decoration-emerald-400/40'
+                          ? 'bg-[#0D7B5F] text-white font-semibold'
+                          : 'text-emerald-200/70 hover:text-white hover:bg-white/8'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <Icon className="w-3 h-3 shrink-0" />
                       <span>{item.label}</span>
                       {item.badge && item.badge > 0 ? (
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white shadow-sm">
+                        <span className="px-1 py-0.5 rounded-full text-[8px] font-black bg-amber-500 text-white leading-none">
                           {item.badge}
                         </span>
                       ) : null}
@@ -203,20 +209,46 @@ export default function Navbar() {
                 })}
               </nav>
             ) : (
-              <div className="hidden sm:flex items-center gap-2 flex-1 justify-center">
+              <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
+                <Link
+                  href="/"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+                    pathname === '/'
+                      ? 'bg-white/10 text-white font-bold'
+                      : 'text-emerald-200/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Beranda</span>
+                </Link>
                 <Link
                   href="/transparansi"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[#D4A24C] border border-[#D4A24C]/30 hover:bg-white/5 transition-colors"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+                    pathname === '/transparansi'
+                      ? 'bg-[#D4A24C] text-[#082F23] font-bold'
+                      : 'text-[#D4A24C] border border-[#D4A24C]/30 hover:bg-[#D4A24C]/10'
+                  }`}
                 >
                   <Wallet className="w-3.5 h-3.5" />
                   <span>Transparansi Kas Terbuka</span>
                 </Link>
+                <Link
+                  href="/santri/absensi"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-200/70 hover:text-white hover:bg-white/5 transition-colors whitespace-nowrap"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Presensi Mandiri</span>
+                </Link>
               </div>
             )}
 
-            {/* Right side — User area */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* Theme toggle integrated into user area */}
+            {/* ── Spacer when not authenticated on mobile ── */}
+            {!isAuthenticated && <div className="flex-1 sm:hidden" />}
+
+            {/* ── Right side: theme + user/login + hamburger ── */}
+            <div className="flex items-center gap-1 shrink-0 ml-auto lg:ml-0">
+
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#D4A24C] transition cursor-pointer"
@@ -232,14 +264,14 @@ export default function Navbar() {
 
               {isAuthenticated ? (
                 <div className="relative" ref={menuRef}>
-                  {/* User Avatar — rounded-full, no chevron arrow, click to open dropdown */}
+                  {/* User Avatar button */}
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 cursor-pointer group"
+                    className="flex items-center gap-1.5 cursor-pointer group"
                     aria-label="User menu"
                   >
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-offset-2 ring-offset-[#082F23] transition-all duration-200 group-hover:ring-[#D4A24C]/60 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-offset-1 ring-offset-[#082F23] transition-all duration-200 group-hover:ring-[#D4A24C]/60 ${
                         isMusyrif
                           ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23] ring-[#D4A24C]/30'
                           : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white ring-emerald-500/30'
@@ -247,30 +279,33 @@ export default function Navbar() {
                     >
                       {currentUser.full_name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="hidden sm:block text-left">
-                      <span className="text-[11px] font-semibold text-white max-w-[90px] truncate block leading-tight">
+                    {/* Name + role — visible sm+ */}
+                    <div className="hidden sm:flex flex-col text-left">
+                      <span className="text-[11px] font-semibold text-white max-w-[80px] truncate leading-tight">
                         {currentUser.full_name.split(' ')[0]}
                       </span>
                       <span className={`text-[9px] font-medium leading-tight ${isMusyrif ? 'text-[#D4A24C]/70' : 'text-emerald-300/60'}`}>
                         {currentUser.role}
                       </span>
                     </div>
+                    <ChevronDown
+                      className={`hidden sm:block w-3 h-3 text-emerald-300/50 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`}
+                    />
                   </button>
 
-                  {/* User Profile Dropdown — Modern card */}
+                  {/* ── User Dropdown ── */}
                   {showUserMenu && (
                     <div className="absolute right-0 mt-3 w-72 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200 dark:border-[#1C3A2E] shadow-2xl overflow-hidden z-50 animate-fade-up">
-                      {/* Header with large avatar */}
+                      {/* Header gradient */}
                       <div className="p-4 bg-gradient-to-br from-[#082F23] to-[#0D7B5F]/80 relative overflow-hidden">
-                        {/* Subtle pattern */}
-                        <div className="absolute inset-0 opacity-10"
+                        <div
+                          className="absolute inset-0 opacity-10"
                           style={{
                             backgroundImage: 'radial-gradient(rgba(212,162,76,0.4) 1px, transparent 1px)',
                             backgroundSize: '16px 16px',
                           }}
                         />
                         <div className="relative flex flex-col items-center text-center gap-2">
-                          {/* Large avatar */}
                           <div
                             className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ring-4 ring-white/20 shadow-xl ${
                               isMusyrif
@@ -284,7 +319,6 @@ export default function Navbar() {
                             <p className="text-sm font-bold text-white leading-tight">
                               {currentUser.full_name}
                             </p>
-                            {/* Role badge */}
                             <span
                               className={`inline-block mt-1 text-[10px] uppercase px-2.5 py-0.5 rounded-full font-bold ${
                                 isMusyrif
@@ -294,7 +328,6 @@ export default function Navbar() {
                             >
                               {currentUser.role}
                             </span>
-                            {/* Email / group */}
                             <p className="text-[10px] text-white/50 mt-1">
                               {currentUser.group_name || 'Peserta Didik'}
                             </p>
@@ -309,12 +342,12 @@ export default function Navbar() {
                           onClick={() => setShowUserMenu(false)}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition group"
                         >
-                          <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-[#0D7B5F]/10 transition">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-[#0D7B5F]/10 transition shrink-0">
                             <User className="w-3.5 h-3.5 text-[#0D7B5F] dark:text-emerald-400" />
                           </div>
                           <div>
                             <span className="block font-semibold text-stone-800 dark:text-white">Profil</span>
-                            <span className="text-[10px] text-stone-400">Lihat & edit profil</span>
+                            <span className="text-[10px] text-stone-400">Lihat &amp; edit profil</span>
                           </div>
                         </Link>
 
@@ -326,12 +359,12 @@ export default function Navbar() {
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition cursor-pointer text-left group"
                         >
-                          <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center group-hover:bg-[#D4A24C]/10 transition">
+                          <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center group-hover:bg-[#D4A24C]/10 transition shrink-0">
                             <Key className="w-3.5 h-3.5 text-[#D4A24C]" />
                           </div>
                           <div>
-                            <span className="block font-semibold text-stone-800 dark:text-white">Akun & Kata Sandi</span>
-                            <span className="text-[10px] text-stone-400">Keamanan & kredensial</span>
+                            <span className="block font-semibold text-stone-800 dark:text-white">Akun &amp; Kata Sandi</span>
+                            <span className="text-[10px] text-stone-400">Keamanan &amp; kredensial</span>
                           </div>
                         </button>
 
@@ -340,7 +373,7 @@ export default function Navbar() {
                           onClick={() => setShowUserMenu(false)}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition group"
                         >
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-500/10 transition">
+                          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-500/10 transition shrink-0">
                             <Wallet className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                           </div>
                           <div>
@@ -350,7 +383,7 @@ export default function Navbar() {
                         </Link>
                       </div>
 
-                      {/* Divider + Logout */}
+                      {/* Logout */}
                       <div className="px-2 pb-2 border-t border-stone-100 dark:border-[#1C3A2E] pt-2">
                         <button
                           onClick={handleLogout}
@@ -366,18 +399,19 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] text-[11px] font-bold transition shadow-sm hover:shadow-md cursor-pointer btn-press"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] text-[11px] font-bold transition shadow-sm hover:shadow-md cursor-pointer btn-press whitespace-nowrap"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Masuk</span>
                 </Link>
               )}
 
-              {/* Mobile menu hamburger — only musyrif, since santri uses bottom nav */}
-              {isAuthenticated && isMusyrif && (
+              {/* Hamburger — shown on < lg for ALL authenticated users */}
+              {isAuthenticated && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="lg:hidden p-2 rounded-lg text-emerald-200/70 hover:text-white hover:bg-white/10 transition"
+                  aria-label="Toggle menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
@@ -387,9 +421,12 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu — for musyrif only (slide down) */}
-      {isAuthenticated && isMusyrif && mobileMenuOpen && (
-        <div className="lg:hidden bg-[#082F23]/98 backdrop-blur-xl border-b border-[#0D7B5F]/25 px-4 pt-2 pb-3 space-y-0.5 animate-fade-up">
+      {/* ── Mobile/Tablet Dropdown — < lg, all authenticated users ── */}
+      {isAuthenticated && mobileMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          className="lg:hidden bg-[#082F23]/98 backdrop-blur-xl border-b border-[#0D7B5F]/25 px-4 pt-2 pb-3 space-y-0.5 animate-fade-up"
+        >
           {navLinks.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -406,7 +443,7 @@ export default function Navbar() {
                     : 'text-emerald-200/70 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 shrink-0" />
                 <span>{item.label}</span>
                 {item.badge && item.badge > 0 ? (
                   <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white">
@@ -417,13 +454,10 @@ export default function Navbar() {
             );
           })}
 
-          {/* Mobile Logout Button */}
+          {/* Logout in mobile menu */}
           <div className="pt-2 border-t border-[#0D7B5F]/30 mt-2">
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
+              onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-300 hover:bg-rose-950/30 transition"
             >
               <LogOut className="w-4 h-4" />
