@@ -799,7 +799,7 @@ export const SAMPLE_SELFIES = [
 
 // Initial Seed Attendance Records (Bulan Oktober 2026)
 export const SEED_ATTENDANCE_RECORDS: AttendanceRecord[] = [
-  // --- DEMO DISCREPANCY (Ketidaksamaan Santri vs Musyrif) ---
+  // --- DEMO ATTENDANCE (Presensi Mandiri Santri) ---
   {
     id: 'att-disc-01',
     session_id: 'sess-2026-10-16-shubuh',
@@ -811,12 +811,10 @@ export const SEED_ATTENDANCE_RECORDS: AttendanceRecord[] = [
     activity_name: 'Shubuh Berjamaah',
     operational_date: '2026-10-16',
     attendance_type: 'hadir',
-    status: 'perlu_tinjauan',
+    status: 'hadir_valid',
     santri_status: 'hadir_valid',
-    musyrif_status: 'alpa',
-    has_discrepancy: true,
-    discrepancy_reason: 'Santri melakukan absen mandiri selfie Hadir (04:25 WIB, jarak 14m), namun Musyrif menandai Alpa saat pengecekan shaf sholat.',
-    is_verified: false,
+    has_discrepancy: false,
+    is_verified: true,
     photo_path: SAMPLE_SELFIES[1],
     latitude: PONDOK_DEFAULT_COORDINATES.latitude + 0.0001,
     longitude: PONDOK_DEFAULT_COORDINATES.longitude + 0.0001,
@@ -836,12 +834,10 @@ export const SEED_ATTENDANCE_RECORDS: AttendanceRecord[] = [
     activity_name: 'Shubuh Berjamaah',
     operational_date: '2026-10-16',
     attendance_type: 'hadir',
-    status: 'perlu_tinjauan',
-    santri_status: 'belum_absen',
-    musyrif_status: 'hadir',
-    has_discrepancy: true,
-    discrepancy_reason: 'Santri belum melakukan absen selfie mandiri, tetapi dicatat Hadir oleh musyrif karena terlihat di masjid.',
-    is_verified: false,
+    status: 'hadir_valid',
+    santri_status: 'hadir_valid',
+    has_discrepancy: false,
+    is_verified: true,
     photo_path: SAMPLE_SELFIES[0],
     latitude: PONDOK_DEFAULT_COORDINATES.latitude,
     longitude: PONDOK_DEFAULT_COORDINATES.longitude,

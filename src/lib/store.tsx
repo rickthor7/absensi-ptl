@@ -1095,13 +1095,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const targetRecordId = existing ? existing.id : `att-${Date.now()}`;
     const sessionId = existing ? existing.session_id : `sess-${todayStr}-${activity.code.toLowerCase()}`;
 
-    // Discrepancy detection if Musyrif already recorded manual attendance
-    const disc = checkDiscrepancy(calculatedStatus, existing?.musyrif_status);
-    const finalStatus: AttendanceStatus = disc.hasDiscrepancy ? 'perlu_tinjauan' : calculatedStatus;
-
-    if (disc.hasDiscrepancy) {
-      message += ` (Perhatian: Data berbeda dengan catatan musyrif: "${disc.reason}")`;
-    }
+    // Presensi murni berbasis sistem mandiri santri (foto selfie & geotag GPS)
+    const finalStatus: AttendanceStatus = calculatedStatus;
 
     const updatedOrNewRecord: AttendanceRecord = {
       ...(existing || {}),
@@ -1117,10 +1112,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attendance_type: type,
       status: finalStatus,
       santri_status: calculatedStatus,
-      musyrif_status: existing?.musyrif_status,
-      has_discrepancy: disc.hasDiscrepancy,
-      discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
-      is_verified: !disc.hasDiscrepancy,
+      musyrif_status: undefined,
+      has_discrepancy: false,
+      discrepancy_reason: undefined,
+      is_verified: true,
       photo_path: publicPhotoUrl,
       latitude: coords.latitude,
       longitude: coords.longitude,
@@ -1167,10 +1162,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           attendance_type: type,
           status: finalStatus,
           santri_status: calculatedStatus,
-          musyrif_status: existing?.musyrif_status || null,
-          has_discrepancy: disc.hasDiscrepancy,
-          discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
-          is_verified: !disc.hasDiscrepancy,
+          musyrif_status: null,
+          has_discrepancy: false,
+          discrepancy_reason: null,
+          is_verified: true,
           photo_path: publicPhotoUrl,
           latitude: coords.latitude,
           longitude: coords.longitude,

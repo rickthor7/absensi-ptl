@@ -258,13 +258,10 @@ export default function MusyrifDashboardPage() {
     ? Math.max(0, santriList.length - attendedActiveActivityCount)
     : 0;
 
-  // "Perlu Tindakan" list
+  // "Perlu Tindakan" list (Izin diajukan & perlu tinjauan)
   const pendingActions = attendanceRecords.filter(
     (r) => r.status === 'izin_diajukan' || r.status === 'perlu_tinjauan'
   );
-
-  // Discrepancy
-  const discrepancyRecords = attendanceRecords.filter((r) => r.has_discrepancy);
 
   // Monthly stats
   const currentMonthKey = effectiveTime.toISOString().substring(0, 7);
@@ -505,32 +502,6 @@ export default function MusyrifDashboardPage() {
         </div>
 
       </div>
-
-      {/* ── Discrepancy Alert Banner if any ── */}
-      {discrepancyRecords.length > 0 && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-amber-950 dark:text-amber-100">
-                Perhatian: Ditemukan {discrepancyRecords.length} Ketidaksamaan Data Presensi!
-              </h3>
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                Terdapat perbedaan antara catatan mandiri (selfie/izin) santri dan absen manual musyrif.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/musyrif/absensi"
-            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black transition shadow-xs self-start sm:self-auto shrink-0 flex items-center gap-1.5"
-          >
-            <span>Verifikasi Data</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── ROW 2: 4 QUICK NAVIGATION CARDS ── */}
