@@ -15,22 +15,20 @@ import {
   Sparkles,
   Camera,
   Check,
-  FileQuestion,
   CreditCard,
   RotateCcw,
   BookOpen,
-  TrendingUp,
-  Award,
-  Bell,
   ChevronRight,
+  ChevronLeft,
   Star,
   Flame,
   FileSpreadsheet,
+  DoorOpen,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
-/* ─── Helper ─── */
+/* ─── Greeting Helper ─── */
 function getGreeting(date: Date): string {
   const h = date.getHours();
   if (h < 5) return 'Selamat Malam';
@@ -40,21 +38,13 @@ function getGreeting(date: Date): string {
   return 'Selamat Malam';
 }
 
-function formatRupiah(val: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(val);
-}
-
-/* ─── Subcomponent: Animated Ring Progress ─── */
-function RingProgress({
+/* ─── Circular Donut Ring Progress ─── */
+function DonutRing({
   value,
-  size = 72,
-  strokeWidth = 6,
-  color = '#0D7B5F',
-  trackColor = '#E2D7C7',
+  size = 80,
+  strokeWidth = 7,
+  color = '#105943',
+  trackColor = '#E5EBE8',
 }: {
   value: number;
   size?: number;
@@ -64,10 +54,18 @@ function RingProgress({
 }) {
   const r = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (value / 100) * circ;
+  const offset = circ - (Math.min(100, Math.max(0, value)) / 100) * circ;
+
   return (
     <svg width={size} height={size} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={trackColor}
+        strokeWidth={strokeWidth}
+      />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -78,13 +76,139 @@ function RingProgress({
         strokeDasharray={circ}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)' }}
+        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
       />
     </svg>
   );
 }
 
-export default function SantriHomePage() {
+/* ─── Mini Calendar Widget ─── */
+function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
+  const [viewDate, setViewDate] = useState(
+    () => new Date(effectiveTime.getFullYear(), effectiveTime.getMonth(), 1)
+  );
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+
+  const handlePrev = () => setViewDate(new Date(year, month - 1, 1));
+  const handleNext = () => setViewDate(new Date(year, month + 1, 1));
+
+  // Monday-based offset (0 = Mon .. 6 = Sun)
+  const firstDay = new Date(year, month, 1).getDay();
+  const startOffset = (firstDay + 6) % 7;
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  const tYear = effectiveTime.getFullYear();
+  const tMonth = effectiveTime.getMonth();
+  const tDay = effectiveTime.getDate();
+
+  const gridCells = [];
+
+  // Prev month filler
+  for (let i = startOffset - 1; i >= 0; i--) {
+    gridCells.push({
+      day: daysInPrevMonth - i,
+      isCurrentMonth: false,
+      isToday: false,
+    });
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === tDay && month === tMonth && year === tYear;
+    gridCells.push({
+      day: d,
+      isCurrentMonth: true,
+      isToday,
+    });
+  }
+
+  // Next month filler
+  const remaining = (7 - (gridCells.length % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    gridCells.push({
+      day: i,
+      isCurrentMonth: false,
+      isToday: false,
+    });
+  }
+
+  return (
+    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-[#105943]" />
+          <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
+            Kalender Kegiatan
+          </h3>
+        </div>
+      </div>
+
+      {/* Month Navigator */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <button
+          type="button"
+          onClick={handlePrev}
+          className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+          aria-label="Bulan Sebelumnya"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="font-extrabold text-xs text-stone-800 dark:text-stone-200">
+          {monthNames[month]} {year}
+        </span>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+          aria-label="Bulan Berikutnya"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Day Names */}
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-stone-400 mb-1.5">
+        <span>Sen</span>
+        <span>Sel</span>
+        <span>Rab</span>
+        <span>Kam</span>
+        <span>Jum</span>
+        <span>Sab</span>
+        <span>Min</span>
+      </div>
+
+      {/* Day Cells Matrix */}
+      <div className="grid grid-cols-7 gap-1 text-center text-xs">
+        {gridCells.map((item, idx) => (
+          <div
+            key={idx}
+            className={`h-7 sm:h-8 flex items-center justify-center rounded-xl text-xs transition ${
+              item.isToday
+                ? 'bg-[#105943] text-white font-black shadow-sm'
+                : item.isCurrentMonth
+                ? 'text-stone-700 dark:text-stone-300 font-medium hover:bg-stone-100 dark:hover:bg-stone-800/60'
+                : 'text-stone-300 dark:text-stone-700'
+            }`}
+          >
+            {item.day}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function SantriDashboardPage() {
   const router = useRouter();
   const [isRaportOpen, setIsRaportOpen] = useState(false);
   const {
@@ -92,8 +216,6 @@ export default function SantriHomePage() {
     activities,
     attendanceRecords,
     effectiveTime,
-    sppPayments,
-    sppSettings,
     deleteSantriAttendance,
   } = useStore();
 
@@ -104,20 +226,32 @@ export default function SantriHomePage() {
   const studentRecords = attendanceRecords.filter((r) => r.student_id === currentUser.id);
   const todayStr = effectiveTime.toISOString().split('T')[0];
   const todayAttendance = activeActivity
-    ? studentRecords.find((r) => r.activity_id === activeActivity.id && r.operational_date === todayStr)
+    ? studentRecords.find(
+        (r) => r.activity_id === activeActivity.id && r.operational_date === todayStr
+      )
     : null;
 
   /* ── Monthly Stats ── */
-  const currentMonthPrefix = `${effectiveTime.getFullYear()}-${String(effectiveTime.getMonth() + 1).padStart(2, '0')}`;
-  const monthRecords = studentRecords.filter((r) => r.operational_date.startsWith(currentMonthPrefix));
-  const hadirCount = monthRecords.filter((r) => r.status === 'hadir_valid').length;
-  const izinCount = monthRecords.filter((r) => r.status === 'izin_diajukan' || r.status === 'izin_disetujui').length;
-  const alpaCount = monthRecords.filter((r) => r.status === 'alpa').length;
-  const reviewCount = monthRecords.filter((r) => r.status === 'perlu_tinjauan').length;
-  const totalThisMonth = hadirCount + izinCount + alpaCount + reviewCount;
-  const attendanceRate = totalThisMonth > 0 ? Math.round((hadirCount / totalThisMonth) * 100) : 0;
+  const currentMonthPrefix = `${effectiveTime.getFullYear()}-${String(
+    effectiveTime.getMonth() + 1
+  ).padStart(2, '0')}`;
+  const monthRecords = studentRecords.filter((r) =>
+    r.operational_date.startsWith(currentMonthPrefix)
+  );
 
-  /* ── Streak: consecutive hadir days ── */
+  const hadirCount = monthRecords.filter((r) => r.status === 'hadir_valid').length;
+  const izinCount = monthRecords.filter(
+    (r) => r.status === 'izin_diajukan' || r.status === 'izin_disetujui'
+  ).length;
+  const alpaCount = monthRecords.filter((r) => r.status === 'alpa').length;
+  const reviewCount = monthRecords.filter(
+    (r) => r.status === 'perlu_tinjauan' || r.status === 'ditolak_lokasi'
+  ).length;
+  const totalThisMonth = hadirCount + izinCount + alpaCount + reviewCount;
+  const attendanceRate =
+    totalThisMonth > 0 ? Math.round((hadirCount / totalThisMonth) * 100) : 0;
+
+  /* ── Streak Calculation ── */
   const streak = useMemo(() => {
     const sorted = [...studentRecords]
       .filter((r) => r.status === 'hadir_valid')
@@ -134,451 +268,602 @@ export default function SantriHomePage() {
     return count;
   }, [studentRecords]);
 
-  /* ── SPP ── */
-  const currentMonth = effectiveTime.getMonth() + 1;
-  const currentYear = effectiveTime.getFullYear();
-  const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  const sppPayment = (sppPayments || []).find(
-    (p) => p.student_id === currentUser.id && p.month === currentMonth && p.year === currentYear
-  );
-
-  const firstName = currentUser.nickname || currentUser.full_name.split(' ')[0];
+  const firstName = currentUser.nickname || currentUser.full_name?.split(' ')[0] || 'Santri';
   const greeting = getGreeting(effectiveTime);
 
-  const tierLabel =
-    attendanceRate >= 85 ? { label: 'Mumtaz', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', icon: '⭐' } :
-    attendanceRate >= 70 ? { label: 'Jayyid', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', icon: '✅' } :
-    { label: 'Peringatan', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10', icon: '⚠️' };
+  // Status badge check
+  const isSafe = attendanceRate >= 70;
 
   return (
-    <div className="mesh-bg min-h-[calc(100vh-8rem)]">
-      <div className="max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 space-y-5 sm:space-y-6 relative z-10">
-
-        {/* ══ TOP ROW: HERO + ACTIVE ACTIVITY (Desktop 2-Col Grid) ══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch">
-
-          {/* HERO CARD (Col 7 on Desktop) */}
-          <div className="lg:col-span-7 relative overflow-hidden rounded-3xl animated-gradient bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#096B52] text-white shadow-2xl shadow-emerald-950/30 flex flex-col justify-between p-5 sm:p-6 lg:p-7">
-            {/* Decorative blobs */}
-            <div className="absolute top-0 right-0 w-56 h-56 bg-[#D4A24C]/10 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl -translate-x-1/4 translate-y-1/4 pointer-events-none" />
-            <div
-              className="absolute inset-0 opacity-[0.04] pointer-events-none"
-              style={{ backgroundImage: 'radial-gradient(circle, #D4A24C 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+      
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ── ROW 1: HERO CARD + KEGIATAN TERBARU WIDGET ── */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* ── LEFT HERO CARD (Col 7 on Desktop) ── */}
+        <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B4A37] via-[#0E5B44] to-[#124233] text-white p-5 sm:p-6 lg:p-7 shadow-lg flex flex-col justify-between border border-[#146B50]/30 min-h-[300px]">
+          
+          {/* Mosque building backdrop image blended smoothly on right */}
+          <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-25 pointer-events-none overflow-hidden mix-blend-overlay hidden sm:block">
+            <img
+              src="/og-image.jpg"
+              alt="Pesantren"
+              className="w-full h-full object-cover object-right"
             />
-
-            <div className="relative z-10">
-              {/* Top row: Hijri date + Time */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold text-[#D4A24C]/90 bg-black/20 backdrop-blur-sm px-2.5 sm:px-3 py-1 rounded-full border border-[#D4A24C]/20">
-                  <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
-                  <span>{getEstimatedHijriDate(effectiveTime)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
-                  <Clock className="w-3.5 h-3.5 text-[#D4A24C]" />
-                  <span className="text-sm font-bold font-mono tabular-nums">
-                    {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  <span className="text-[9px] text-white/40">WIB</span>
-                </div>
-              </div>
-
-              {/* Greeting */}
-              <div className="space-y-0.5 mb-4">
-                <p className="text-xs sm:text-sm text-emerald-300/80 font-medium">{greeting},</p>
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{firstName} 👋</h1>
-                <p className="text-xs text-white/60 font-medium truncate">{currentUser.full_name}</p>
-              </div>
-
-              {/* Chips row */}
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-5">
-                <span className="px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] sm:text-xs font-mono font-bold text-white/90">
-                  {currentUser.student_number || 'Santri'}
-                </span>
-                <span className="px-2.5 py-1 rounded-full bg-[#D4A24C]/25 border border-[#D4A24C]/30 text-[10px] sm:text-xs font-semibold text-[#F5D78E]">
-                  Angkatan {currentUser.generation || '2026'}
-                </span>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold border ${tierLabel.bg} ${tierLabel.color} border-current/20`}>
-                  {tierLabel.icon} {tierLabel.label}
-                </span>
-              </div>
-            </div>
-
-            {/* Stats strip */}
-            <div className="relative z-10 grid grid-cols-3 gap-2 sm:gap-3 pt-2">
-              {[
-                { label: 'Hadir', value: hadirCount, sub: 'Bulan ini', accent: 'from-emerald-500/20 to-emerald-500/5 border-emerald-400/20' },
-                { label: 'Izin', value: izinCount, sub: 'Disetujui', accent: 'from-amber-500/20 to-amber-500/5 border-amber-400/20' },
-                { label: 'Streak', value: streak, sub: 'Hari hadir', accent: 'from-[#D4A24C]/20 to-[#D4A24C]/5 border-[#D4A24C]/20' },
-              ].map((s) => (
-                <div key={s.label} className={`bg-gradient-to-b ${s.accent} border rounded-2xl px-2.5 py-2.5 text-center`}>
-                  <div className="text-xl sm:text-2xl font-black text-white">{s.value}</div>
-                  <div className="text-[10px] font-bold text-white/80 uppercase tracking-wide">{s.label}</div>
-                  <div className="text-[9px] text-white/50">{s.sub}</div>
-                </div>
-              ))}
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B4A37] via-transparent to-transparent" />
           </div>
 
-          {/* ACTIVE ACTIVITY CARD (Col 5 on Desktop) */}
-          <div className={`lg:col-span-5 rounded-3xl border overflow-hidden transition-all duration-300 flex flex-col justify-between ${
-            isWindowOpen
-              ? 'bg-white dark:bg-[#0F1E18] border-emerald-400/40 shadow-xl shadow-emerald-900/10 shimmer-border'
-              : 'bg-white dark:bg-[#0F1E18] border-stone-200 dark:border-[#1C3A2E] shadow-sm'
-          }`}>
-            <div className={`h-1 ${isWindowOpen ? 'bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#D4A24C]' : 'bg-stone-200 dark:bg-[#1C3A2E]'}`} />
-
-            <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
-              {/* Header */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                      isWindowOpen ? 'bg-emerald-500/10' : 'bg-stone-100 dark:bg-[#162B22]'
-                    }`}>
-                      <Clock className={`w-5 h-5 ${isWindowOpen ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400'}`} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest">Kegiatan</span>
-                        {isWindowOpen ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dot-pulse" />
-                            LIVE
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-stone-100 dark:bg-[#162B22] text-stone-400">TUTUP</span>
-                        )}
-                      </div>
-                      <h2 className="text-base sm:text-lg font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
-                        {activeActivity ? activeActivity.name : 'Tidak Ada Kegiatan'}
-                      </h2>
-                    </div>
-                  </div>
-                  {activeActivity && (
-                    <div className="text-right shrink-0">
-                      <div className="text-xs font-bold font-mono text-stone-700 dark:text-stone-300">
-                        {activeActivity.start_time}–{activeActivity.end_time}
-                      </div>
-                      <div className="text-[10px] text-stone-400 mt-0.5">r {activeActivity.radius_m}m</div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-4 leading-relaxed">
-                  {isWindowOpen
-                    ? `Sesi absensi kegiatan ${activeActivity?.name} sedang aktif. Silakan lakukan verifikasi wajah dan GPS.`
-                    : 'Di luar jam kegiatan aktif. Anda dapat melihat jadwal sesi berikutnya atau mengajukan perizinan.'}
-                </p>
-              </div>
-
-              {/* Action Area */}
-              <div>
-                {todayAttendance ? (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shadow-sm shrink-0">
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-xs sm:text-sm text-emerald-900 dark:text-emerald-100 truncate">Absensi Tercatat ✓</p>
-                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">
-                            {todayAttendance.status.replace(/_/g, ' ')} • {new Date(todayAttendance.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (window.confirm(`Hapus absensi "${activeActivity?.name}" untuk retake?`)) {
-                              const res = await deleteSantriAttendance(todayAttendance.id);
-                              if (res.success) router.push('/santri/absensi');
-                              else alert(res.message);
-                            }
-                          }}
-                          className="p-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition btn-press shadow-sm cursor-pointer"
-                          title="Retake Absen"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </button>
-                        <Link
-                          href="/santri/riwayat"
-                          className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition btn-press flex items-center gap-1"
-                        >
-                          Detail <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ) : isWindowOpen ? (
-                  <Link
-                    href="/santri/absensi"
-                    className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-gradient-to-r from-[#082F23] via-[#0D7B5F] to-[#096B52] hover:brightness-110 text-white font-bold text-sm shadow-xl shadow-emerald-900/20 active:scale-[0.98] transition-all border border-[#D4A24C]/20 cursor-pointer group"
-                  >
-                    <Camera className="w-5 h-5 text-[#D4A24C]" />
-                    <span>Mulai Absensi Sekarang</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/40 text-xs">
-                      <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                        <Bell className="w-4 h-4 shrink-0 text-amber-500" />
-                        <span>
-                          {activeResult.nextActivity
-                            ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time})`
-                            : 'Semua sesi hari ini selesai.'}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-                        Di luar jam
-                      </span>
-                    </div>
-                    <Link
-                      href="/santri/absensi"
-                      className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0D7B5F] to-[#082F23] hover:brightness-110 text-white font-bold text-sm shadow-lg shadow-emerald-900/15 active:scale-[0.98] transition-all border border-[#D4A24C]/30 cursor-pointer group"
-                    >
-                      <Camera className="w-4 h-4 text-[#D4A24C]" />
-                      <span>Formulir Presensi & Izin</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ══ QUICK MENU GRID ══ */}
-        <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
-          {[
-            { href: '/santri/absensi', icon: Camera, label: 'Absen', sub: 'Selfie GPS', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 dark:bg-emerald-500/15', hoverBorder: 'hover:border-emerald-400/50' },
-            { href: '/santri/kalender', icon: Calendar, label: 'Kalender', sub: 'Bulanan', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 dark:bg-amber-500/15', hoverBorder: 'hover:border-amber-400/50' },
-            { href: '/santri/riwayat', icon: History, label: 'Riwayat', sub: 'Catatan', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-500/10 dark:bg-sky-500/15', hoverBorder: 'hover:border-sky-400/50' },
-            { href: '/santri/spp', icon: CreditCard, label: 'SPP', sub: 'Keuangan', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10 dark:bg-purple-500/15', hoverBorder: 'hover:border-purple-400/50' },
-          ].map(({ href, icon: Icon, label, sub, color, bg, hoverBorder }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex flex-col items-center justify-center gap-1.5 py-4 px-2 rounded-3xl bg-white dark:bg-[#0F1E18] border border-stone-200 dark:border-[#1C3A2E] shadow-sm ${hoverBorder} card-hover transition-all cursor-pointer group`}
-            >
-              <div className={`w-11 h-11 rounded-2xl ${bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <Icon className={`w-5 h-5 ${color} stroke-[2.2]`} />
-              </div>
-              <span className="text-xs font-extrabold text-stone-800 dark:text-stone-200 text-center leading-tight">{label}</span>
-              <span className="text-[10px] text-stone-400 dark:text-stone-500">{sub}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* ══ DASHBOARD MAIN BODY (Desktop 2-Col Layout: Col 6 & Col 6) ══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
-
-          {/* Left Column (Col 6 on Desktop): Progress & Statistics */}
-          <div className="lg:col-span-6 space-y-4 sm:space-y-6">
+          <div className="relative z-10 space-y-4">
             
-            {/* PROGRESS & SCORE ROW */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {/* Attendance Rate */}
-              <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm p-4 sm:p-5 flex items-center gap-3.5 card-hover">
-                <div className="relative shrink-0">
-                  <RingProgress
-                    value={attendanceRate}
-                    size={68}
-                    strokeWidth={6}
-                    color="#0D7B5F"
-                    trackColor="rgba(212,162,76,0.15)"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-black text-stone-900 dark:text-stone-100">{attendanceRate}%</span>
-                  </div>
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">Kehadiran</div>
-                  <div className="text-sm sm:text-base font-extrabold text-stone-900 dark:text-stone-100 leading-tight">Bulan Ini</div>
-                  <div className={`text-[10px] sm:text-xs font-bold mt-1 ${tierLabel.color}`}>{tierLabel.icon} {tierLabel.label}</div>
-                </div>
+            {/* Top row: Hijri date & WIB clock pills */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-emerald-100 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-[#D6A84F]" />
+                <span>{getEstimatedHijriDate(effectiveTime)}</span>
               </div>
 
-              {/* SPP Status */}
-              <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm p-4 sm:p-5 card-hover flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                      sppPayment?.status === 'verified' ? 'bg-emerald-500/10' :
-                      sppPayment?.status === 'pending' ? 'bg-amber-500/10' : 'bg-[#D4A24C]/15'
-                    }`}>
-                      <CreditCard className={`w-4.5 h-4.5 ${
-                        sppPayment?.status === 'verified' ? 'text-emerald-600 dark:text-emerald-400' :
-                        sppPayment?.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-[#D4A24C]'
-                      }`} />
-                    </div>
-                    {sppPayment?.status === 'verified' && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    )}
-                  </div>
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">SPP {monthNames[currentMonth - 1]}</div>
-                  <div className={`text-xs sm:text-sm font-extrabold mt-0.5 ${
-                    sppPayment?.status === 'verified' ? 'text-emerald-600 dark:text-emerald-400' :
-                    sppPayment?.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
-                  }`}>
-                    {sppPayment?.status === 'verified' ? '✓ Lunas' :
-                     sppPayment?.status === 'pending' ? '⏳ Verifikasi' : '⚠ Belum Bayar'}
-                  </div>
-                </div>
-                <Link href="/santri/spp" className="mt-3 flex items-center gap-1 text-[11px] font-bold text-[#0D7B5F] dark:text-emerald-400 hover:underline">
-                  {sppPayment?.status === 'verified' ? 'Lihat bukti' : 'Upload bukti'} <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-bold text-white shadow-2xs font-mono">
+                <Clock className="w-3.5 h-3.5 text-[#D6A84F]" />
+                <span>
+                  {effectiveTime.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <span className="text-[9px] text-emerald-200">WIB</span>
               </div>
             </div>
 
-            {/* STATS ROW (4 Columns) */}
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
-              {[
-                { label: 'Hadir', value: hadirCount, icon: CheckCircle2, cls: 'stat-accent-emerald', iconCls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' },
-                { label: 'Izin', value: izinCount, icon: FileQuestion, cls: 'stat-accent-gold', iconCls: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' },
-                { label: 'Alpa', value: alpaCount, icon: AlertTriangle, cls: 'stat-accent-rose', iconCls: 'text-rose-600 dark:text-rose-400 bg-rose-500/10' },
-                { label: 'Review', value: reviewCount, icon: Star, cls: '', iconCls: 'text-orange-600 dark:text-orange-400 bg-orange-500/10' },
-              ].map(({ label, value, icon: Icon, cls, iconCls }) => (
-                <div key={label} className={`bg-white dark:bg-[#0F1E18] rounded-2xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm p-3 sm:p-4 ${cls} card-hover text-center sm:text-left`}>
-                  <div className={`w-8 h-8 rounded-xl ${iconCls} flex items-center justify-center mb-2 mx-auto sm:mx-0`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100">{value}</div>
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-semibold uppercase tracking-wide mt-0.5">{label}</div>
-                </div>
-              ))}
+            {/* Greeting & Name Title */}
+            <div>
+              <p className="text-xs sm:text-sm text-emerald-200/90 font-medium">
+                {greeting},
+              </p>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2 mt-0.5">
+                <span>{firstName.toUpperCase()}</span>
+                <span>👋</span>
+              </h1>
+              <p className="text-xs text-emerald-100/80 font-medium tracking-wide uppercase mt-1">
+                {currentUser.full_name}
+              </p>
             </div>
 
-            {/* MOTIVATIONAL BANNER */}
-            <div className="rounded-3xl bg-gradient-to-r from-[#082F23]/80 to-[#0D7B5F]/50 dark:from-[#030805]/90 dark:to-[#082F23]/70 border border-[#0D7B5F]/25 p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-[#D4A24C]/20 flex items-center justify-center shrink-0">
-                <Flame className="w-5 h-5 text-[#D4A24C]" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-bold text-white/95 leading-snug">
-                  {streak > 0
-                    ? `Streak ${streak} hari! 🔥 Pertahankan konsistensi kehadiranmu, ${firstName}!`
-                    : `Mulai absensi hari ini dan raih streak berturut-turut, ${firstName}!`}
-                </p>
-                <p className="text-[10px] sm:text-xs text-white/50 mt-0.5">Pondok Pesantren Nurul Falah · Ketintang, Surabaya</p>
-              </div>
+            {/* Tag Badges Row (STR/NIS, Angkatan, Status Peringatan) */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="px-3 py-1 rounded-full bg-[#083327]/80 border border-[#146B50] text-[11px] font-mono font-bold text-emerald-200">
+                {currentUser.student_number || 'STR. 2024 - 809'}
+              </span>
+
+              <span className="px-3 py-1 rounded-full bg-amber-900/40 border border-amber-600/40 text-[11px] font-bold text-amber-200 flex items-center gap-1">
+                <span>🎓</span>
+                <span>Angkatan {currentUser.generation || '2024'}</span>
+              </span>
+
+              {isSafe ? (
+                <span className="px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-500/40 text-[11px] font-bold text-emerald-200 flex items-center gap-1">
+                  <span>✓</span>
+                  <span>Aman (≥ 70%)</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full bg-rose-950/60 border border-rose-500/50 text-[11px] font-bold text-rose-200 flex items-center gap-1 animate-pulse">
+                  <span>⚠️</span>
+                  <span>Peringatan</span>
+                </span>
+              )}
             </div>
 
           </div>
 
-          {/* Right Column (Col 6 on Desktop): Recent History & Calendar Shortcut */}
-          <div className="lg:col-span-6 space-y-4 sm:space-y-6">
-
-            {/* RECENT HISTORY */}
-            <div className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 dark:border-[#1C3A2E]">
-                <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                  <History className="w-4 h-4 text-[#0D7B5F]" />
-                  Riwayat Absensi Terkini
-                </h3>
-                <Link href="/santri/riwayat" className="text-xs text-[#0D7B5F] dark:text-[#D4A24C] font-bold hover:underline flex items-center gap-0.5">
-                  Semua Riwayat <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
+          {/* Bottom 3 Glass Stat Cards */}
+          <div className="relative z-10 grid grid-cols-3 gap-2.5 sm:gap-3 pt-5">
+            {/* Box 1: Hadir */}
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
+              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                <Calendar className="w-3.5 h-3.5" />
               </div>
-              <div className="divide-y divide-stone-100 dark:divide-[#1C3A2E]">
-                {studentRecords.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <BookOpen className="w-10 h-10 text-stone-300 dark:text-stone-600 mx-auto mb-2" />
-                    <p className="text-xs sm:text-sm text-stone-400">Belum ada riwayat absensi tercatat.</p>
-                  </div>
-                ) : (
-                  studentRecords.slice(0, 5).map((rec) => {
-                    const meta = STATUS_META[rec.status];
-                    return (
-                      <div key={rec.id} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-stone-50/60 dark:hover:bg-[#162B22]/60 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.dotClass}`} />
-                          <div className="min-w-0">
-                            <p className="font-bold text-xs sm:text-sm text-stone-800 dark:text-stone-200 truncate">{rec.activity_name}</p>
-                            <p className="text-[10px] sm:text-xs text-stone-400 mt-0.5">
-                              {rec.operational_date} · {new Date(rec.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-bold border ${meta.bgClass} ${meta.textClass} ${meta.borderClass} whitespace-nowrap`}>
-                          {meta.label.split('—')[0].trim()}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
+              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+                {hadirCount}
+              </div>
+              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+                HADIR
+              </div>
+              <div className="text-[9px] text-emerald-200/70">Bulan ini</div>
+            </div>
+
+            {/* Box 2: Izin */}
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
+              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+                {izinCount}
+              </div>
+              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+                IZIN
+              </div>
+              <div className="text-[9px] text-emerald-200/70">Disetujui</div>
+            </div>
+
+            {/* Box 3: Streak */}
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
+              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-[#D6A84F]/25 text-[#D6A84F] flex items-center justify-center">
+                <Flame className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+                {streak}
+              </div>
+              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+                STREAK
+              </div>
+              <div className="text-[9px] text-emerald-200/70">Hari hadir</div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── RIGHT CARD: KEGIATAN TERBARU (Col 5 on Desktop) ── */}
+        <div className="lg:col-span-5 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          
+          <div className="space-y-3.5">
+            {/* Header: Title + Lihat Semua */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📢</span>
+                <h2 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">
+                  Kegiatan Terbaru
+                </h2>
+              </div>
+              <Link
+                href="/santri/kalender"
+                className="text-xs font-bold text-[#105943] dark:text-[#D6A84F] hover:underline flex items-center gap-1"
+              >
+                <span>Lihat Semua</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Status Icon & Session Info */}
+            <div className="flex items-start gap-3.5 pt-1">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-[#105943] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">
+                <Calendar className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                      isWindowOpen
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                        : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                    }`}
+                  >
+                    {isWindowOpen ? 'BUKA' : 'TUTUP'}
+                  </span>
+                </div>
+
+                <h3 className="font-extrabold text-base text-stone-900 dark:text-stone-100 truncate">
+                  {activeActivity ? activeActivity.name : 'Tidak Ada Kegiatan'}
+                </h3>
+
+                <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                  {isWindowOpen
+                    ? `Sesi absensi kegiatan ${activeActivity?.name} sedang dibuka. Silakan lakukan selfie dan verifikasi GPS.`
+                    : 'Diluar jam kegiatan aktif. Anda dapat melihat jadwal sesi berikutnya atau mengajukan perizinan.'}
+                </p>
               </div>
             </div>
 
-            {/* CALENDAR SHORTCUT */}
-            <Link
-              href="/santri/kalender"
-              className="block bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm overflow-hidden card-hover group cursor-pointer"
-            >
-              <div className="h-1 bg-gradient-to-r from-[#D4A24C] via-amber-400 to-[#0D7B5F]" />
-              <div className="p-5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">Kalender Presensi Santri</h3>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Rekapitulasi kehadiran harian & bulanan interaktif</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden sm:flex gap-1.5">
-                    {[['bg-emerald-500','H'], ['bg-amber-400','I'], ['bg-rose-400','A']].map(([bg, t]) => (
-                      <span key={t} className={`w-6 h-6 rounded-lg ${bg} flex items-center justify-center text-[9px] font-black text-white shadow-xs`}>{t}</span>
-                    ))}
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-stone-400 group-hover:translate-x-1 transition-transform" />
-                </div>
+            {/* Next activity notice box */}
+            <div className="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 p-3 flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 min-w-0">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="truncate">
+                  {activeResult.nextActivity
+                    ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time})`
+                    : 'Semua sesi terjadwal hari ini selesai.'}
+                </span>
               </div>
-            </Link>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 shrink-0">
+                {isWindowOpen ? 'Aktif' : 'Di Luar Jam'}
+              </span>
+            </div>
 
-            {/* RAPORT MUTABAAH SHORTCUT */}
-            <button
-              type="button"
-              onClick={() => setIsRaportOpen(true)}
-              className="w-full text-left block bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm overflow-hidden card-hover group cursor-pointer"
-            >
-              <div className="h-1 bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#D4A24C]" />
-              <div className="p-5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <FileSpreadsheet className="w-6 h-6 text-[#0D7B5F] dark:text-emerald-400 stroke-[2.2]" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">Raport Mutaba&apos;ah Bulanan</h3>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Tabel harian per kegiatan &amp; rincian poin keaktifan</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/20">
-                    Buka Rapot
+          </div>
+
+          {/* Primary Action Button */}
+          <div className="pt-4">
+            {todayAttendance ? (
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate">
+                    Absen Tercatat: {todayAttendance.status.replace(/_/g, ' ')}
                   </span>
-                  <ChevronRight className="w-5 h-5 text-stone-400 group-hover:translate-x-1 transition-transform" />
                 </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm('Ambil ulang foto absensi ini?')) {
+                      await deleteSantriAttendance(todayAttendance.id);
+                      router.push('/santri/absensi');
+                    }
+                  }}
+                  className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+                  title="Retake absen"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </button>
-
+            ) : isWindowOpen ? (
+              <Link
+                href="/santri/absensi"
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#0B4A37] to-[#105943] hover:from-[#08382A] hover:to-[#0B4A37] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+              >
+                <Camera className="w-4 h-4 text-[#D6A84F]" />
+                <span>Ambil Absensi Selfie Sekarang</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                href="/santri/absensi"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#0B4A37] hover:bg-[#08382A] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+              >
+                <Calendar className="w-4 h-4 text-[#D6A84F]" />
+                <span>Formulir Presensi &amp; Izin</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
           </div>
 
         </div>
 
       </div>
 
-      {/* Raport Mutaba'ah Modal */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ── ROW 2: 4 QUICK NAVIGATION CARDS ── */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        
+        {/* Card 1: Absen / Selfie GPS */}
+        <Link
+          href="/santri/absensi"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-[#105943] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Camera className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
+                Absen
+              </h4>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Selfie GPS
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#105943] group-hover:translate-x-0.5 transition" />
+        </Link>
+
+        {/* Card 2: Kalender / Bulanan */}
+        <Link
+          href="/santri/kalender"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
+                Kalender
+              </h4>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Bulanan
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition" />
+        </Link>
+
+        {/* Card 3: Riwayat / Catatan */}
+        <Link
+          href="/santri/riwayat"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <History className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
+                Riwayat
+              </h4>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Catatan
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-sky-600 group-hover:translate-x-0.5 transition" />
+        </Link>
+
+        {/* Card 4: SPP / Keuangan */}
+        <Link
+          href="/santri/spp"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
+                SPP
+              </h4>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Keuangan
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition" />
+        </Link>
+
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ── ROW 3: 3-COLUMN DETAILED INFORMATION GRID ── */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* ── COL 1: RINGKASAN KEHADIRAN (lg:col-span-4) ── */}
+        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between">
+          
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[#105943] text-sm">📊</span>
+                <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
+                  Ringkasan Kehadiran
+                </h3>
+              </div>
+            </div>
+
+            {/* Donut Chart Row */}
+            <div className="flex items-center gap-4 pt-1">
+              {/* Donut Ring */}
+              <div className="relative shrink-0 flex items-center justify-center">
+                <DonutRing value={attendanceRate} size={82} strokeWidth={7} color="#105943" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-base font-black text-stone-900 dark:text-white">
+                    {attendanceRate}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Status Info & Raport Trigger */}
+              <div className="space-y-1.5 min-w-0">
+                <p className="text-xs font-extrabold text-stone-800 dark:text-stone-200">
+                  Kehadiran Bulan Ini
+                </p>
+
+                {isSafe ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200">
+                    <span>✓</span>
+                    <span>Aman (≥ 70%)</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200">
+                    <span>⚠️</span>
+                    <span>Peringatan</span>
+                  </span>
+                )}
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRaportOpen(true)}
+                    className="text-xs font-bold text-[#105943] dark:text-[#D6A84F] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Lihat Detail</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Mini Stat Boxes Below */}
+          <div className="grid grid-cols-4 gap-2 pt-5 border-t border-stone-100 dark:border-stone-800 mt-4">
+            {/* Hadir */}
+            <div className="text-center p-2 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-sm font-black text-stone-900 dark:text-white">
+                {hadirCount}
+              </div>
+              <div className="text-[10px] font-semibold text-stone-500">Hadir</div>
+            </div>
+
+            {/* Izin */}
+            <div className="text-center p-2 rounded-2xl bg-amber-50 dark:bg-stone-800/50">
+              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                <DoorOpen className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-sm font-black text-stone-900 dark:text-white">
+                {izinCount}
+              </div>
+              <div className="text-[10px] font-semibold text-stone-500">Izin</div>
+            </div>
+
+            {/* Alpa */}
+            <div className="text-center p-2 rounded-2xl bg-rose-50 dark:bg-stone-800/50">
+              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-sm font-black text-stone-900 dark:text-white">
+                {alpaCount}
+              </div>
+              <div className="text-[10px] font-semibold text-stone-500">Alpa</div>
+            </div>
+
+            {/* Review */}
+            <div className="text-center p-2 rounded-2xl bg-orange-50 dark:bg-stone-800/50">
+              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center">
+                <Star className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-sm font-black text-stone-900 dark:text-white">
+                {reviewCount}
+              </div>
+              <div className="text-[10px] font-semibold text-stone-500">Review</div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── COL 2: RIWAYAT ABSENSI TERKINI (lg:col-span-4) ── */}
+        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between">
+          
+          <div>
+            {/* Header: Title + Semua Riwayat */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-[#105943]" />
+                <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
+                  Riwayat Absensi Terkini
+                </h3>
+              </div>
+              <Link
+                href="/santri/riwayat"
+                className="text-xs font-bold text-[#105943] dark:text-[#D6A84F] hover:underline flex items-center gap-1"
+              >
+                <span>Semua Riwayat</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* List of Recent Items */}
+            <div className="divide-y divide-stone-100 dark:divide-stone-800 pt-1">
+              {studentRecords.length === 0 ? (
+                <div className="py-8 text-center text-xs text-stone-400">
+                  Belum ada riwayat absensi tercatat.
+                </div>
+              ) : (
+                studentRecords.slice(0, 4).map((rec) => {
+                  const meta = STATUS_META[rec.status];
+                  return (
+                    <div
+                      key={rec.id}
+                      className="py-3 flex items-center justify-between gap-2.5 hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition rounded-xl px-1"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            rec.status === 'hadir_valid'
+                              ? 'bg-emerald-500'
+                              : rec.status.startsWith('izin')
+                              ? 'bg-amber-500'
+                              : 'bg-orange-500'
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-stone-800 dark:text-stone-200 truncate">
+                            {rec.activity_name || 'Kegiatan Pondok'}
+                          </p>
+                          <p className="text-[10px] text-stone-400">
+                            {rec.operational_date} •{' '}
+                            {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}{' '}
+                            WIB
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
+                      >
+                        {meta.label.split('—')[0].trim()}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2 text-right">
+            <Link
+              href="/santri/riwayat"
+              className="text-[11px] font-bold text-stone-500 hover:text-[#105943] transition"
+            >
+              Lihat selengkapnya &rarr;
+            </Link>
+          </div>
+
+        </div>
+
+        {/* ── COL 3: KALENDER KEGIATAN WIDGET (lg:col-span-4) ── */}
+        <div className="lg:col-span-4">
+          <MiniCalendarWidget effectiveTime={effectiveTime} />
+        </div>
+
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ── ROW 4: BOTTOM MOTIVATIONAL PESANTREN BANNER ── */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B4A37] via-[#0E5B44] to-[#146B50] p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#146B50]/40">
+        
+        {/* Subtle background mosque silhouette */}
+        <div className="absolute right-0 top-0 bottom-0 w-80 opacity-20 pointer-events-none overflow-hidden mix-blend-overlay hidden md:block">
+          <img
+            src="/og-image.jpg"
+            alt="Pesantren"
+            className="w-full h-full object-cover object-right"
+          />
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3.5 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 text-white">
+            <BookOpen className="w-5 h-5 text-[#D6A84F]" />
+          </div>
+          <div className="min-w-0">
+            <h4 className="font-extrabold text-xs sm:text-sm text-white tracking-tight truncate">
+              Mulai absensi hari ini dan raih streak berturut-turut, {firstName.toUpperCase()}!
+            </h4>
+            <p className="text-[11px] text-emerald-100/70 truncate mt-0.5">
+              Pondok Pesantren Nurul Falah - Ketintang, Surabaya
+            </p>
+          </div>
+        </div>
+
+        <div className="relative z-10 shrink-0 self-end sm:self-center">
+          <Link
+            href="/santri/absensi"
+            className="px-4 py-2 rounded-full bg-[#D7EFE5] hover:bg-white text-[#0B4A37] font-black text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Semangat!</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ── RAPORT MUTABAAH BULANAN MODAL ── */}
+      {/* ══════════════════════════════════════════════════════════════ */}
       {isRaportOpen && (
         <RaportSantriModal
           initialStudentId={currentUser.id}
           onClose={() => setIsRaportOpen(false)}
         />
       )}
+
     </div>
   );
 }

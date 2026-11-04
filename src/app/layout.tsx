@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { StoreProvider } from '@/lib/store';
-import Navbar from '@/components/layout/Navbar';
-import MobileNav from '@/components/layout/MobileNav';
+import AppShell from '@/components/layout/AppShell';
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -94,11 +93,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--cream-bg)] text-[var(--text-primary)] dark:bg-[#080F0C] dark:text-[#E8F0EC] antialiased transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-[#F4F7F5] text-stone-900 dark:bg-[#07130F] dark:text-[#E8F0EC] antialiased transition-colors duration-200">
         <StoreProvider>
-          <Navbar />
-          <main className="flex-1 pb-20 lg:pb-12">{children}</main>
-          <MobileNav />
+          <AppShell>{children}</AppShell>
         </StoreProvider>
       </body>
     </html>
