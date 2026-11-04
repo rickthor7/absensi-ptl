@@ -99,11 +99,11 @@ export default function HomePage() {
             {/* CTA Buttons */}
             <div className="relative z-10 flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2">
               <Link
-                href={isAuthenticated ? '/santri/absensi' : '/login'}
+                href={isAuthenticated ? '/santri/absensi' : '/login/santri'}
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] text-sm font-extrabold shadow-lg shadow-amber-900/25 hover:brightness-110 transition-all btn-press"
               >
                 <Camera className="w-4 h-4" />
-                <span>{isAuthenticated ? 'Mulai Absensi Santri' : 'Masuk ke Portal'}</span>
+                <span>{isAuthenticated ? 'Mulai Absensi Santri' : 'Masuk ke Portal Santri'}</span>
               </Link>
 
               <Link
@@ -187,7 +187,7 @@ export default function HomePage() {
               {/* Action footer inside live box */}
               <div className="p-3.5 bg-stone-50 dark:bg-[#0A1612] border-t border-stone-100 dark:border-[#1C3A2E]">
                 <Link
-                  href={isAuthenticated ? '/santri/absensi' : '/login'}
+                  href={isAuthenticated ? '/santri/absensi' : '/login/santri'}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A6951] text-white text-xs font-bold transition-all shadow-sm btn-press"
                 >
                   <Camera className="w-4 h-4 text-[#D4A24C]" />
@@ -266,10 +266,10 @@ export default function HomePage() {
 
               <div className="p-5 sm:p-6 pt-0">
                 <Link
-                  href="/santri"
+                  href={isAuthenticated ? '/santri' : '/login/santri'}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0D7B5F] to-[#0A6951] hover:brightness-110 text-white text-sm font-bold transition-all shadow-md shadow-emerald-900/20 btn-press group"
                 >
-                  <span>Buka Dashboard Santri</span>
+                  <span>{isAuthenticated ? 'Buka Dashboard Santri' : 'Masuk Portal Santri'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -315,10 +315,10 @@ export default function HomePage() {
 
               <div className="p-5 sm:p-6 pt-0">
                 <Link
-                  href="/musyrif"
+                  href={isAuthenticated ? '/musyrif' : '/login/musyrif'}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#082F23] to-[#0D4433] hover:brightness-110 text-[#D4A24C] text-sm font-bold transition-all shadow-md border border-[#D4A24C]/30 btn-press group"
                 >
-                  <span>Buka Dashboard Musyrif</span>
+                  <span>{isAuthenticated ? 'Buka Dashboard Musyrif' : 'Masuk Portal Musyrif'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -354,7 +354,7 @@ export default function HomePage() {
                 <span>Buka Laporan Transparansi</span>
               </Link>
               <Link
-                href={isAuthenticated ? '/santri/spp' : '/login'}
+                href={isAuthenticated ? '/santri/spp' : '/login/santri'}
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white dark:bg-[#152922] border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold hover:border-[#D4A24C]/50 transition"
               >
                 <CreditCard className="w-4 h-4 text-[#D4A24C]" />

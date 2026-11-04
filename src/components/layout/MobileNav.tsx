@@ -30,7 +30,7 @@ export default function MobileNav() {
   const pathname = usePathname();
   const { currentUser, attendanceRecords, sppPayments } = useStore();
 
-  if (pathname === '/' || pathname === '/login') {
+  if (pathname === '/' || pathname === '/login' || pathname.startsWith('/login/')) {
     return null;
   }
 

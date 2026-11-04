@@ -1,112 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useStore } from '@/lib/store';
-import {
-  Shield,
-  GraduationCap,
-  ArrowRight,
-  Sparkles,
-  Lock,
-  Mail,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  AlertCircle,
-  ChevronRight,
-  HelpCircle,
-  Building2,
-  Clock,
-  PhoneCall,
-  Zap,
-} from 'lucide-react';
+import React from 'react';
 import Link from 'next/link';
+import {
+  GraduationCap,
+  Shield,
+  ArrowRight,
+  Zap,
+  CheckCircle2,
+  Building2,
+  ArrowLeft,
+  MapPin,
+  Sparkles,
+} from 'lucide-react';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useStore();
-
-  // Role portal toggle: 'santri' | 'musyrif'
-  const [selectedRole, setSelectedRole] = useState<'santri' | 'musyrif'>('santri');
-
-  // Real credentials form state (empty by default for real authentication)
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-
-  // UI state
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showHelpModal, setShowHelpModal] = useState(false);
-
-  // Handle Real Login Submission
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    const cleanId = identifier.trim();
-    if (!cleanId) {
-      setErrorMessage(
-        selectedRole === 'santri'
-          ? 'Mohon masukkan Nomor Induk Santri (NIS) atau Email Anda.'
-          : 'Mohon masukkan alamat Email Musyrif Anda.'
-      );
-      return;
-    }
-
-    if (!password) {
-      setErrorMessage('Mohon masukkan kata sandi akun Anda.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await login(cleanId, password, selectedRole);
-
-      if (result.success) {
-        setSuccessMessage(result.message);
-        setTimeout(() => {
-          if (result.role === 'musyrif' || result.role === 'admin') {
-            router.push('/musyrif');
-          } else {
-            router.push('/santri');
-          }
-        }, 500);
-      } else {
-        setErrorMessage(result.message);
-      }
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Terjadi kendala saat menghubungkan ke server autentikasi.';
-      setErrorMessage(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden py-12 px-4 sm:px-6">
       {/* Background layers */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#F4F1EB] via-[#E8F0EC] to-[#F4F1EB] dark:from-[#050C09] dark:via-[#081A13] dark:to-[#050C09]" />
-      <div className="absolute inset-0 opacity-[0.02]" style={{
-        backgroundImage: 'radial-gradient(circle, #0D7B5F 1px, transparent 1px)',
-        backgroundSize: '32px 32px'
-      }} />
-      
-      {/* Decorative blobs */}
-      <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#0D7B5F]/8 blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-[#D4A24C]/6 blur-[80px] pointer-events-none" />
+      <div
+        className="absolute inset-0 opacity-[0.025]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #0D7B5F 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      />
 
-      <div className="w-full max-w-md px-5 py-8 relative z-10 space-y-6">
+      {/* Decorative blobs */}
+      <div className="absolute top-[-10%] left-[-5%] w-[450px] h-[450px] rounded-full bg-[#0D7B5F]/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-[#D4A24C]/10 blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-2xl relative z-10 space-y-7">
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <Link href="/" className="inline-block group">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#082F23] p-[2px] mx-auto shadow-xl shadow-emerald-900/20 transform group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#082F23] via-[#0D7B5F] to-[#082F23] p-[2px] mx-auto shadow-xl shadow-emerald-900/20 transform group-hover:scale-105 transition-transform">
               <img
                 src="/logo.jpg"
                 alt="Logo PP Nurul Falah"
@@ -116,264 +45,137 @@ export default function LoginPage() {
           </Link>
 
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#0D7B5F]/8 dark:bg-[#0D7B5F]/15 text-[#0D7B5F] dark:text-[#D4A24C] text-[10px] font-bold border border-[#0D7B5F]/15 dark:border-[#0D7B5F]/25 mb-2">
-              <Zap className="w-3 h-3" />
-              <span>Presensi Terpadu</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0D7B5F]/10 dark:bg-[#0D7B5F]/20 text-[#0D7B5F] dark:text-[#D4A24C] text-xs font-bold border border-[#0D7B5F]/20 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#D4A24C]" />
+              <span>Portal Masuk Sistem Presensi &amp; Keuangan</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-              Nurul Falah
+            <h1 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white tracking-tight">
+              Pondok Pesantren Nurul Falah
             </h1>
-            <p className="text-[11px] text-stone-400 mt-0.5">
-              Ketintang, Surabaya • Masuk ke Akun
+            <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1 max-w-md mx-auto">
+              Silakan pilih portal masuk sesuai dengan peran Anda di pondok pesantren
             </p>
           </div>
         </div>
 
-        {/* Main Login Card */}
-        <div className="bg-white/90 dark:bg-[#0F1E18]/95 backdrop-blur-xl rounded-2xl border border-stone-200/80 dark:border-[#1C3A2E] shadow-2xl shadow-emerald-950/5 dark:shadow-black/30 overflow-hidden">
-          <div className="p-5 sm:p-6 space-y-5">
-            {/* Role Switcher */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
-                Portal
-              </label>
-              <div className="grid grid-cols-2 gap-1.5 bg-stone-100 dark:bg-[#162B22] p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole('santri');
-                    setErrorMessage(null);
-                  }}
-                  className={`py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    selectedRole === 'santri'
-                      ? 'bg-gradient-to-r from-[#082F23] to-[#0D7B5F] text-white shadow-md'
-                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-700'
-                  }`}
-                >
-                  <GraduationCap className={`w-4 h-4 ${selectedRole === 'santri' ? 'text-[#D4A24C]' : ''}`} />
-                  <span>Santri</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole('musyrif');
-                    setErrorMessage(null);
-                  }}
-                  className={`py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    selectedRole === 'musyrif'
-                      ? 'bg-gradient-to-r from-[#082F23] to-[#0D7B5F] text-white shadow-md'
-                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-700'
-                  }`}
-                >
-                  <Shield className={`w-4 h-4 ${selectedRole === 'musyrif' ? 'text-[#D4A24C]' : ''}`} />
-                  <span>Musyrif</span>
-                </button>
+        {/* 2-Column Portal Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
+          
+          {/* Card 1: Portal Santri */}
+          <div className="group bg-white/90 dark:bg-[#0F1E18]/95 backdrop-blur-xl rounded-3xl border border-stone-200/80 dark:border-[#1C3A2E] shadow-xl shadow-emerald-950/5 dark:shadow-black/30 hover:border-emerald-400/50 card-hover overflow-hidden flex flex-col justify-between transition-all">
+            <div>
+              <div className="h-1.5 bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#D4A24C]" />
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-13 h-13 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <GraduationCap className="w-7 h-7 text-[#0D7B5F] dark:text-emerald-400 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    Mandiri
+                  </span>
+                </div>
+
+                <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 mb-1.5">
+                  Portal Santri
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-5">
+                  Akses khusus santri untuk presensi selfie GPS, pengajuan izin syar&apos;i, dan rekap SPP.
+                </p>
+
+                <div className="space-y-2 mb-6 bg-stone-50/80 dark:bg-[#14261F] p-3.5 rounded-2xl border border-stone-100 dark:border-[#1C3A2E] text-xs text-stone-600 dark:text-stone-300">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Presensi selfie kamera + koordinat GPS</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Pengajuan izin multi-kegiatan berlampiran</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Riwayat kehadiran &amp; administrasi SPP</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Alerts */}
-            {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-[11px] flex items-start gap-2 animate-fade-up">
-                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                <p className="leading-relaxed font-medium">{errorMessage}</p>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] flex items-start gap-2 animate-fade-up">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p className="leading-relaxed font-medium">{successMessage}</p>
-              </div>
-            )}
-
-            {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
-              {/* Identifier */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-600 dark:text-stone-300">
-                  {selectedRole === 'santri' ? 'NIS atau Email' : 'Email Musyrif'}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {selectedRole === 'santri' ? (
-                      <GraduationCap className="w-4 h-4 text-stone-300" />
-                    ) : (
-                      <Mail className="w-4 h-4 text-stone-300" />
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={
-                      selectedRole === 'santri'
-                        ? 'STR-2026-042 atau email'
-                        : 'mansur@nurulfalah.ac.id'
-                    }
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-stone-50 dark:bg-[#162B22] border border-stone-200 dark:border-[#1C3A2E] focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]/50 focus:border-[#0D7B5F] text-xs font-medium text-stone-900 dark:text-stone-100 transition-all placeholder:text-stone-400"
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-stone-600 dark:text-stone-300">Kata Sandi</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowHelpModal(true)}
-                    className="text-[10px] font-semibold text-[#0D7B5F] dark:text-[#D4A24C] hover:underline cursor-pointer"
-                  >
-                    Lupa sandi?
-                  </button>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="w-4 h-4 text-stone-300" />
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Masukkan kata sandi"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-stone-50 dark:bg-[#162B22] border border-stone-200 dark:border-[#1C3A2E] focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]/50 focus:border-[#0D7B5F] text-xs font-medium text-stone-900 dark:text-stone-100 transition-all placeholder:text-stone-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 transition cursor-pointer"
-                    aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Remember */}
-              <label className="flex items-center gap-2 cursor-pointer text-[11px] text-stone-500 dark:text-stone-400 select-none pt-0.5">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-stone-300 text-[#0D7B5F] focus:ring-[#0D7B5F] w-3.5 h-3.5"
-                />
-                <span>Ingat sesi di perangkat ini</span>
-              </label>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-[#082F23] via-[#0D7B5F] to-[#096B52] hover:from-[#0A3D2D] hover:to-[#0D7B5F] text-white text-sm font-bold shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border border-[#D4A24C]/15"
+            <div className="p-6 pt-0">
+              <Link
+                href="/login/santri"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#0D7B5F] to-[#0A6951] hover:brightness-110 text-white text-sm font-bold shadow-md shadow-emerald-900/20 transition-all btn-press group"
               >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>Masuk ke Portal {selectedRole === 'santri' ? 'Santri' : 'Musyrif'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
+                <span>Masuk Portal Santri</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
 
-          {/* Footer Bar */}
-          <div className="bg-stone-50 dark:bg-[#0A1A14] px-5 py-2.5 border-t border-stone-200/60 dark:border-[#1C3A2E] flex items-center justify-between gap-3 text-[10px] text-stone-400">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#0D7B5F] shrink-0" />
-              <span className="truncate">PP. Nurul Falah Surabaya</span>
+          {/* Card 2: Portal Musyrif */}
+          <div className="group bg-white/90 dark:bg-[#0F1E18]/95 backdrop-blur-xl rounded-3xl border border-stone-200/80 dark:border-[#1C3A2E] shadow-xl shadow-emerald-950/5 dark:shadow-black/30 hover:border-amber-400/50 card-hover overflow-hidden flex flex-col justify-between transition-all">
+            <div>
+              <div className="h-1.5 bg-gradient-to-r from-[#D4A24C] via-[#E8C36E] to-[#0D7B5F]" />
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-13 h-13 rounded-2xl bg-amber-500/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Shield className="w-7 h-7 text-[#D4A24C] stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                    Pengawasan
+                  </span>
+                </div>
+
+                <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 mb-1.5">
+                  Portal Musyrif
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-5">
+                  Panel pengawasan kehadiran santri, persetujuan perizinan, verifikasi SPP, dan audit.
+                </p>
+
+                <div className="space-y-2 mb-6 bg-stone-50/80 dark:bg-[#14261F] p-3.5 rounded-2xl border border-stone-100 dark:border-[#1C3A2E] text-xs text-stone-600 dark:text-stone-300">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>Monitoring absensi sesi sholat &amp; taklim</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>Persetujuan izin &amp; tinjauan foto presensi</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>Verifikasi kas SPP &amp; ekspor laporan</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowHelpModal(true)}
-              className="text-[10px] font-semibold text-[#0D7B5F] dark:text-[#D4A24C] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-            >
-              <HelpCircle className="w-3 h-3" />
-              <span>Bantuan</span>
-            </button>
+
+            <div className="p-6 pt-0">
+              <Link
+                href="/login/musyrif"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#082F23] to-[#0D4433] hover:brightness-110 text-[#D4A24C] text-sm font-bold shadow-md border border-[#D4A24C]/30 transition-all btn-press group"
+              >
+                <span>Masuk Portal Musyrif</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
+
         </div>
 
-        {/* Back to Home */}
-        <div className="text-center">
+        {/* Back Link & Info Footer */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500 dark:text-stone-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-400 hover:text-[#0D7B5F] dark:hover:text-[#D4A24C] transition"
+            className="inline-flex items-center gap-1.5 font-semibold text-stone-600 hover:text-[#0D7B5F] dark:text-stone-300 dark:hover:text-[#D4A24C] transition"
           >
-            <span>← Halaman Beranda</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Halaman Beranda</span>
           </Link>
-        </div>
-      </div>
-
-      {/* Help Modal */}
-      {showHelpModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0F1E18] rounded-2xl max-w-sm w-full shadow-2xl border border-stone-200 dark:border-[#1C3A2E] overflow-hidden animate-fade-up">
-            <div className="bg-gradient-to-r from-[#082F23] to-[#0D7B5F] text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-[#D4A24C]" />
-                <div>
-                  <h3 className="font-bold text-sm">Bantuan Akses</h3>
-                  <p className="text-[10px] text-emerald-200/60">Nurul Falah</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHelpModal(false)}
-                className="text-white/50 hover:text-white p-1 rounded-lg hover:bg-white/10 text-sm cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-5 space-y-3 text-xs text-stone-600 dark:text-stone-300">
-              <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 space-y-1">
-                <p className="font-bold text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-[#0D7B5F]" />
-                  Santri
-                </p>
-                <p className="text-[10px] text-stone-500">
-                  Gunakan NIS resmi (contoh: <span className="font-mono font-bold">STR-2026-042</span>) atau email santri.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1">
-                <p className="font-bold text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-amber-500" />
-                  Musyrif
-                </p>
-                <p className="text-[10px] text-stone-500">
-                  Gunakan email dinas (contoh: <span className="font-mono font-bold">mansur@nurulfalah.ac.id</span>).
-                </p>
-              </div>
-
-              <div className="space-y-1.5 pt-2 border-t border-stone-200 dark:border-[#1C3A2E] text-[10px] text-stone-400">
-                <div className="flex items-center gap-1.5">
-                  <PhoneCall className="w-3 h-3 text-[#0D7B5F]" />
-                  <span>Kantor Kesantrian: Gedung Pusat Lt. 1</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-[#0D7B5F]" />
-                  <span>08.00 – 16.30 WIB (Sabtu – Kamis)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-stone-50 dark:bg-[#0A1A14] p-3 border-t border-stone-200 dark:border-[#1C3A2E]">
-              <button
-                type="button"
-                onClick={() => setShowHelpModal(false)}
-                className="w-full py-2 bg-[#0D7B5F] hover:bg-[#096B52] text-white rounded-lg text-xs font-bold transition cursor-pointer btn-press"
-              >
-                Tutup
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-stone-400">
+            <Building2 className="w-3.5 h-3.5 text-[#0D7B5F]" />
+            <span>Pondok Pesantren Nurul Falah Ketintang, Surabaya</span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

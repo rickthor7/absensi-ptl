@@ -92,7 +92,7 @@ export default function Navbar() {
   }, []);
 
   // If on login page, hide navbar for clean focus
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname.startsWith('/login/')) {
     return null;
   }
 
