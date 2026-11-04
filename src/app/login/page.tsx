@@ -277,50 +277,6 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
-
-              {/* Quick Credentials */}
-              <div className="pt-3 border-t border-stone-100 dark:border-[#1C3A2E] space-y-2">
-                <span className="text-[9px] font-bold text-stone-400 block uppercase tracking-wider">
-                  Akun Demo:
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole('musyrif');
-                      setIdentifier('mansur@nurulfalah.ac.id');
-                      setPassword('password123');
-                      setErrorMessage(null);
-                    }}
-                    className="p-2.5 rounded-lg bg-stone-50 dark:bg-[#162B22] hover:bg-[#0D7B5F]/8 dark:hover:bg-[#0D7B5F]/15 border border-stone-200/60 dark:border-[#1C3A2E] transition cursor-pointer text-left btn-press"
-                  >
-                    <span className="block font-bold text-[10px] text-[#0D7B5F] dark:text-[#D4A24C]">
-                      Ust. Mansur
-                    </span>
-                    <span className="block text-[9px] text-stone-400 font-mono truncate">
-                      mansur@nurulfalah.ac.id
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole('santri');
-                      setIdentifier('STR-2026-042');
-                      setPassword('password123');
-                      setErrorMessage(null);
-                    }}
-                    className="p-2.5 rounded-lg bg-stone-50 dark:bg-[#162B22] hover:bg-[#0D7B5F]/8 dark:hover:bg-[#0D7B5F]/15 border border-stone-200/60 dark:border-[#1C3A2E] transition cursor-pointer text-left btn-press"
-                  >
-                    <span className="block font-bold text-[10px] text-[#0D7B5F] dark:text-[#D4A24C]">
-                      Ahmad Fauzi
-                    </span>
-                    <span className="block text-[9px] text-stone-400 font-mono truncate">
-                      NIS: STR-2026-042
-                    </span>
-                  </button>
-                </div>
-              </div>
             </form>
           </div>
 
