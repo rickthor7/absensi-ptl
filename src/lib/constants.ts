@@ -742,12 +742,61 @@ export const SEED_PROFILES: Profile[] = [
     created_at: '2026-07-15T08:00:00Z',
   },
 
-  // --- Musyrif & Pengasuhan ---
+  // --- 4 Musyrif Setoran Tahfidz Resmi ---
+  {
+    id: 'usr-musyrif-firdaus',
+    email: 'firdaus@nurulfalah.ac.id',
+    full_name: 'Ust. Firdaus',
+    nickname: 'firdaus',
+    role: 'musyrif',
+    group_name: 'Pengampu Tahfidz Pagi A',
+    tahfidz_assigned_class: 'tahfidz_pagi_a',
+    is_active: true,
+    phone: '0812-3456-7801',
+    created_at: '2025-08-01T08:00:00Z',
+  },
+  {
+    id: 'usr-musyrif-suparlan',
+    email: 'suparlan@nurulfalah.ac.id',
+    full_name: 'Ustadz Suparlan',
+    nickname: 'suparlan',
+    role: 'musyrif',
+    group_name: 'Pengampu Tahfidz Pagi B',
+    tahfidz_assigned_class: 'tahfidz_pagi_b',
+    is_active: true,
+    phone: '0812-3456-7802',
+    created_at: '2025-08-01T08:00:00Z',
+  },
+  {
+    id: 'usr-musyrif-salman',
+    email: 'salman@nurulfalah.ac.id',
+    full_name: 'Ust. Salman',
+    nickname: 'salman',
+    role: 'musyrif',
+    group_name: 'Pengampu Tahfidz Malam A',
+    tahfidz_assigned_class: 'tahfidz_malam_a',
+    is_active: true,
+    phone: '0812-3456-7803',
+    created_at: '2025-08-01T08:00:00Z',
+  },
+  {
+    id: 'usr-musyrif-zuhdi',
+    email: 'zuhdi@nurulfalah.ac.id',
+    full_name: 'Ust. Zuhdi',
+    nickname: 'zuhdi',
+    role: 'musyrif',
+    group_name: 'Pengampu Tahfidz Malam B',
+    tahfidz_assigned_class: 'tahfidz_malam_b',
+    is_active: true,
+    phone: '0812-3456-7804',
+    created_at: '2025-08-01T08:00:00Z',
+  },
+  // --- Musyrif & Pengasuhan Lainnya ---
   {
     id: 'usr-musyrif-1',
     email: 'mansur@nurulfalah.ac.id',
     full_name: 'Ustadz Mansur Hidayat, M.Ag',
-    nickname: 'Ustadz Mansur',
+    nickname: 'mansur',
     role: 'musyrif',
     group_name: 'Pengasuhan Asrama Putra',
     is_active: true,
@@ -1635,3 +1684,69 @@ export const SEED_FINANCIAL_TRANSACTIONS: FinancialTransaction[] = [
     created_at: '2026-10-13T14:10:00+07:00',
   },
 ];
+
+// ─── 4 KELAS TAHFIDZ & MUSYRIF PENYIMAK RESMI ───
+export interface TahfidzClassConfig {
+  id: 'tahfidz_pagi_a' | 'tahfidz_pagi_b' | 'tahfidz_malam_a' | 'tahfidz_malam_b';
+  name: string;
+  session: 'pagi' | 'malam';
+  classLetter: 'A' | 'B';
+  activityCode: 'SETORAN_PAGI' | 'SETORAN_MALAM';
+  activityName: string;
+  ustadzId: string;
+  ustadzName: string;
+  ustadzNickname: string;
+  ustadzPhone?: string;
+}
+
+export const TAHFIDZ_CLASSES: TahfidzClassConfig[] = [
+  {
+    id: 'tahfidz_pagi_a',
+    name: 'Kelas Tahfidz Pagi A',
+    session: 'pagi',
+    classLetter: 'A',
+    activityCode: 'SETORAN_PAGI',
+    activityName: 'Setoran Pagi',
+    ustadzId: 'usr-musyrif-firdaus',
+    ustadzName: 'Ust. Firdaus',
+    ustadzNickname: 'firdaus',
+    ustadzPhone: '6281234567801',
+  },
+  {
+    id: 'tahfidz_pagi_b',
+    name: 'Kelas Tahfidz Pagi B',
+    session: 'pagi',
+    classLetter: 'B',
+    activityCode: 'SETORAN_PAGI',
+    activityName: 'Setoran Pagi',
+    ustadzId: 'usr-musyrif-suparlan',
+    ustadzName: 'Ustadz Suparlan',
+    ustadzNickname: 'suparlan',
+    ustadzPhone: '6281234567802',
+  },
+  {
+    id: 'tahfidz_malam_a',
+    name: 'Kelas Tahfidz Malam A',
+    session: 'malam',
+    classLetter: 'A',
+    activityCode: 'SETORAN_MALAM',
+    activityName: 'Setoran Malam',
+    ustadzId: 'usr-musyrif-salman',
+    ustadzName: 'Ust. Salman',
+    ustadzNickname: 'salman',
+    ustadzPhone: '6281234567803',
+  },
+  {
+    id: 'tahfidz_malam_b',
+    name: 'Kelas Tahfidz Malam B',
+    session: 'malam',
+    classLetter: 'B',
+    activityCode: 'SETORAN_MALAM',
+    activityName: 'Setoran Malam',
+    ustadzId: 'usr-musyrif-zuhdi',
+    ustadzName: 'Ust. Zuhdi',
+    ustadzNickname: 'zuhdi',
+    ustadzPhone: '6281234567804',
+  },
+];
+

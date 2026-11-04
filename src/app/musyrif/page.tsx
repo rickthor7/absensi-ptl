@@ -40,6 +40,7 @@ import {
   Star,
   DoorOpen,
   Shield,
+  BookOpen,
 } from 'lucide-react';
 import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
@@ -504,9 +505,9 @@ export default function MusyrifDashboardPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* ── ROW 2: 4 QUICK NAVIGATION CARDS ── */}
+      {/* ── ROW 2: 5 QUICK NAVIGATION CARDS ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         
         {/* Card 1: Absensi Santri */}
         <Link
@@ -555,7 +556,28 @@ export default function MusyrifDashboardPage() {
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition" />
         </Link>
 
-        {/* Card 3: Laporan & Raport */}
+        {/* Card 3: Setoran Tahfidz */}
+        <Link
+          href="/musyrif/tahfidz"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-emerald-200/80 dark:border-emerald-800/60 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-[#146B50] dark:text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
+                Tahfidz
+              </h4>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold truncate">
+                ACC &amp; Rekap WA
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition" />
+        </Link>
+
+        {/* Card 4: Laporan & Raport */}
         <Link
           href="/musyrif/laporan"
           className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
@@ -576,7 +598,7 @@ export default function MusyrifDashboardPage() {
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-sky-600 group-hover:translate-x-0.5 transition" />
         </Link>
 
-        {/* Card 4: Keuangan & SPP */}
+        {/* Card 5: Keuangan & SPP */}
         <Link
           href="/musyrif/keuangan"
           className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"

@@ -34,6 +34,7 @@ import {
   AlertCircle,
   ExternalLink,
   Lock,
+  BookOpen,
 } from 'lucide-react';
 
 interface ShellNavItem {
@@ -148,6 +149,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Musyrif navigation items
   const musyrifNavItems: ShellNavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
+    { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
@@ -170,6 +172,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Quick search filtered list
   const searchItems = [
     ...navItems.map((item) => ({ title: item.label, href: item.href, category: 'Menu' })),
+    { title: 'Setoran Tahfidz & Rekap WA', href: '/musyrif/tahfidz', category: 'Tahfidz' },
     { title: 'Presensi Kamera & GPS', href: isMusyrif ? '/musyrif/absensi' : '/santri/absensi', category: 'Aksi' },
     { title: 'Ajukan Izin Presensi', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Pembayaran SPP Online', href: isMusyrif ? '/musyrif/keuangan' : '/santri/spp', category: 'Keuangan' },

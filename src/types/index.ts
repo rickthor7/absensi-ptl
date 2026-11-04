@@ -24,6 +24,7 @@ export interface Profile {
   generation?: string | number; // Angkatan (2023, 2024, 2025, 2026)
   class_tahfidz_pagi?: string; // Kelas Tahfidz Pagi (A, B, -)
   class_tahfidz_malam?: string; // Kelas Tahfidz Malam (A, B, -)
+  tahfidz_assigned_class?: 'tahfidz_pagi_a' | 'tahfidz_pagi_b' | 'tahfidz_malam_a' | 'tahfidz_malam_b' | string;
   lid?: string; // Nomor LID / WhatsApp LID
   is_active: boolean;
   avatar_url?: string;
@@ -95,7 +96,10 @@ export interface AttendanceRecord {
   tahfidz_juz?: number; // 1 - 30
   tahfidz_halaman?: number; // 1 - 20 (halaman awal)
   tahfidz_halaman_end?: number; // 1 - 20 (halaman akhir jika range)
+  tahfidz_surah?: string;
   tahfidz_notes?: string;
+  tahfidz_class?: 'tahfidz_pagi_a' | 'tahfidz_pagi_b' | 'tahfidz_malam_a' | 'tahfidz_malam_b' | string;
+  tahfidz_ustadz_name?: string;
   tahfidz_status?: TahfidzValidationStatus;
   tahfidz_validated_by?: string;
   tahfidz_validated_by_name?: string;
@@ -103,6 +107,7 @@ export interface AttendanceRecord {
   tahfidz_validation_note?: string;
 }
 
+export type TahfidzClassId = 'tahfidz_pagi_a' | 'tahfidz_pagi_b' | 'tahfidz_malam_a' | 'tahfidz_malam_b';
 export type TahfidzMode = 'ziyadah' | 'murojaah';
 export type TahfidzValidationStatus = 'menunggu_validasi' | 'lancar' | 'perlu_diulang' | 'tidak_lancar';
 

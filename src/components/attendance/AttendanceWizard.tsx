@@ -97,6 +97,17 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
 
   // Tahfidz setoran state (Ziyadah vs Murojaah, Juz 1-30, Halaman Mulai & Akhir 1-20)
   const isTahfidz = isTahfidzActivity(activity) && attendanceType === 'hadir';
+  const isPagi = activity.code === 'SETORAN_PAGI';
+  const assignedTahfidzClassLetter = isPagi
+    ? (currentUser.class_tahfidz_pagi || 'A')
+    : (currentUser.class_tahfidz_malam || 'A');
+  const assignedTahfidzClassName = isPagi
+    ? `Kelas Tahfidz Pagi ${assignedTahfidzClassLetter}`
+    : `Kelas Tahfidz Malam ${assignedTahfidzClassLetter}`;
+  const assignedUstadzName = isPagi
+    ? (assignedTahfidzClassLetter === 'A' ? 'Ust. Firdaus' : 'Ustadz Suparlan')
+    : (assignedTahfidzClassLetter === 'A' ? 'Ust. Salman' : 'Ust. Zuhdi');
+
   const [tahfidzMode, setTahfidzMode] = useState<TahfidzMode>('ziyadah');
   const [tahfidzJuz, setTahfidzJuz] = useState<number>(30);
   const [tahfidzHalaman, setTahfidzHalaman] = useState<number>(1);
@@ -757,6 +768,26 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
 
             {/* Input Card Container */}
             <div className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-800/40 p-4 sm:p-5 space-y-5">
+              {/* Info Pengampu & Kelas Tahfidz */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#146B50] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                    🕌
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-300 block">
+                      {assignedTahfidzClassName}
+                    </span>
+                    <span className="font-extrabold text-stone-900 dark:text-stone-100">
+                      Penyimak: {assignedUstadzName}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#146B50] dark:text-emerald-300 bg-white dark:bg-stone-900 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                  Reviewer
+                </span>
+              </div>
+
               {/* 1. Tipe / Mode Setoran: Ziyadah vs Murojaah */}
               <div className="space-y-2">
                 <label className="text-xs font-extrabold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
@@ -1165,7 +1196,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 text-[#146B50] border border-emerald-300 shrink-0">
-                    Menunggu Validasi
+                    Menunggu ACC {assignedUstadzName}
                   </span>
                 </div>
               )}

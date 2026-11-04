@@ -1019,6 +1019,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     tahfidzHalaman,
     tahfidzHalamanEnd,
     tahfidzNotes,
+    tahfidzClass,
+    tahfidzUstadzName,
   }: {
     activityId: string;
     type: AttendanceType;
@@ -1030,6 +1032,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     tahfidzHalaman?: number;
     tahfidzHalamanEnd?: number;
     tahfidzNotes?: string;
+    tahfidzClass?: string;
+    tahfidzUstadzName?: string;
   }) => {
     const activity = activities.find((a) => a.id === activityId);
     if (!activity) {
@@ -1096,7 +1100,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const sessionId = existing ? existing.session_id : `sess-${todayStr}-${activity.code.toLowerCase()}`;
 
     // Presensi murni berbasis sistem mandiri santri (foto selfie & geotag GPS)
-    const finalStatus: AttendanceStatus = calculatedStatus;
+    const isTahfidzActivity = activity.code === 'SETORAN_PAGI' || activity.code === 'SETORAN_MALAM';
+    let finalStatus: AttendanceStatus = calculatedStatus;
+
+    // Resolve tahfidz class & ustadz name
+    let resolvedTahfidzClass = tahfidzClass;
+    let resolvedTahfidzUstadzName = tahfidzUstadzName;
+
+    if (isTahfidzActivity) {
+      if (activity.code === 'SETORAN_PAGI') {
+        const cls = resolvedTahfidzClass || (currentUser.class_tahfidz_pagi === 'A' ? 'tahfidz_pagi_a' : 'tahfidz_pagi_b');
+        resolvedTahfidzClass = cls;
+        resolvedTahfidzUstadzName = cls === 'tahfidz_pagi_a' ? 'Ust. Firdaus' : 'Ustadz Suparlan';
+      } else {
+        const cls = resolvedTahfidzClass || (currentUser.class_tahfidz_malam === 'A' ? 'tahfidz_malam_a' : 'tahfidz_malam_b');
+        resolvedTahfidzClass = cls;
+        resolvedTahfidzUstadzName = cls === 'tahfidz_malam_a' ? 'Ust. Salman' : 'Ust. Zuhdi';
+      }
+
+      if (type === 'hadir' && calculatedStatus === 'hadir_valid') {
+        finalStatus = 'perlu_tinjauan';
+        message = `Alhamdulillah! Data setoran ${activity.name} terkirim. Menunggu ACC ${resolvedTahfidzUstadzName}.`;
+      }
+    }
 
     const updatedOrNewRecord: AttendanceRecord = {
       ...(existing || {}),
@@ -1115,7 +1141,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       musyrif_status: undefined,
       has_discrepancy: false,
       discrepancy_reason: undefined,
-      is_verified: true,
+      is_verified: !isTahfidzActivity,
       photo_path: publicPhotoUrl,
       latitude: coords.latitude,
       longitude: coords.longitude,
@@ -1130,6 +1156,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       tahfidz_halaman: tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman,
       tahfidz_halaman_end: tahfidzHalamanEnd !== undefined ? tahfidzHalamanEnd : (tahfidzHalaman !== undefined ? tahfidzHalaman : existing?.tahfidz_halaman_end),
       tahfidz_notes: tahfidzNotes || existing?.tahfidz_notes,
+      tahfidz_class: resolvedTahfidzClass || existing?.tahfidz_class,
+      tahfidz_ustadz_name: resolvedTahfidzUstadzName || existing?.tahfidz_ustadz_name,
       tahfidz_status: tahfidzJuz ? (existing?.tahfidz_status || 'menunggu_validasi') : existing?.tahfidz_status,
     };
 
@@ -1817,8 +1845,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const updated = attendanceRecords.map((r) => {
       if (r.id === recordId) {
+        // Jika di-ACC (lancar atau perlu diulang), status presensi menjadi hadir_valid
+        // Jika tidak lancar / belum setor sama sekali, status presensi menjadi alpa
+        const newStatus: AttendanceStatus =
+          status === 'lancar' || status === 'perlu_diulang'
+            ? 'hadir_valid'
+            : status === 'tidak_lancar'
+            ? 'alpa'
+            : r.status;
+
         return {
           ...r,
+          status: newStatus,
+          is_verified: status === 'lancar' || status === 'perlu_diulang',
           tahfidz_mode: targetMode,
           tahfidz_juz: targetJuz,
           tahfidz_halaman: targetHalaman,
