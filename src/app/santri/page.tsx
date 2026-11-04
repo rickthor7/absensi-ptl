@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
@@ -25,8 +25,10 @@ import {
   ChevronRight,
   Star,
   Flame,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
+import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 /* ─── Helper ─── */
 function getGreeting(date: Date): string {
@@ -84,6 +86,7 @@ function RingProgress({
 
 export default function SantriHomePage() {
   const router = useRouter();
+  const [isRaportOpen, setIsRaportOpen] = useState(false);
   const {
     currentUser,
     activities,
@@ -537,11 +540,45 @@ export default function SantriHomePage() {
               </div>
             </Link>
 
+            {/* RAPORT MUTABAAH SHORTCUT */}
+            <button
+              type="button"
+              onClick={() => setIsRaportOpen(true)}
+              className="w-full text-left block bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm overflow-hidden card-hover group cursor-pointer"
+            >
+              <div className="h-1 bg-gradient-to-r from-[#0D7B5F] via-[#1AA37A] to-[#D4A24C]" />
+              <div className="p-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <FileSpreadsheet className="w-6 h-6 text-[#0D7B5F] dark:text-emerald-400 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">Raport Mutaba&apos;ah Bulanan</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Tabel harian per kegiatan &amp; rincian poin keaktifan</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/20">
+                    Buka Rapot
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-stone-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </button>
+
           </div>
 
         </div>
 
       </div>
+
+      {/* Raport Mutaba'ah Modal */}
+      {isRaportOpen && (
+        <RaportSantriModal
+          initialStudentId={currentUser.id}
+          onClose={() => setIsRaportOpen(false)}
+        />
+      )}
     </div>
   );
 }

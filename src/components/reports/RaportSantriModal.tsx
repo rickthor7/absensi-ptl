@@ -1,494 +1,715 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useStore } from '@/lib/store';
 import { StudentMonthlyScore } from '@/lib/scoring';
-import { Activity, Profile } from '@/types';
+import { Activity, Profile, AttendanceRecord } from '@/types';
 import {
   X,
   Printer,
   Download,
-  FileSpreadsheet,
-  CheckCircle2,
-  AlertTriangle,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   User,
   GraduationCap,
-  Calendar,
   Sparkles,
-  Phone,
-  MapPin,
-  Building2,
+  FileSpreadsheet,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
-import { formatIndonesianDate } from '@/lib/schedule';
 
 interface RaportSantriModalProps {
-  studentsScores: StudentMonthlyScore[];
+  studentsScores?: StudentMonthlyScore[];
   initialStudentId?: string;
-  activities: Activity[];
-  monthLabel: string;
-  monthKey: string;
+  activities?: Activity[];
+  monthLabel?: string;
+  monthKey?: string;
   musyrifUser?: Profile;
   onClose: () => void;
 }
 
+const INDO_DAYS = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
+
+const MONTH_NAMES = [
+  'JANUARI',
+  'FEBRUARI',
+  'MARET',
+  'APRIL',
+  'MEI',
+  'JUNI',
+  'JULI',
+  'AGUSTUS',
+  'SEPTEMBER',
+  'OKTOBER',
+  'NOVEMBER',
+  'DESEMBER',
+];
+
+interface ColumnDef {
+  key: string;
+  header: string;
+  activityCodes: string[];
+}
+
 export default function RaportSantriModal({
-  studentsScores,
+  studentsScores: propStudentsScores,
   initialStudentId,
-  activities,
-  monthLabel,
-  monthKey,
+  activities: propActivities,
+  monthLabel: propMonthLabel,
+  monthKey: propMonthKey,
   musyrifUser,
   onClose,
 }: RaportSantriModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(() => {
-    if (!initialStudentId) return 0;
-    const idx = studentsScores.findIndex((s) => s.student.id === initialStudentId);
-    return idx >= 0 ? idx : 0;
+  const {
+    profiles,
+    activities: storeActivities,
+    attendanceRecords,
+    effectiveTime,
+    currentUser,
+  } = useStore();
+
+  const allActivities = propActivities || storeActivities;
+
+  // Month Key state (e.g. "2026-10")
+  const defaultMonthKey = propMonthKey || effectiveTime.toISOString().substring(0, 7);
+  const [selectedMonthKey, setSelectedMonthKey] = useState(defaultMonthKey);
+
+  // Available months
+  const availableMonths = useMemo(() => {
+    const list: { key: string; label: string }[] = [];
+    const currentYear = effectiveTime.getFullYear();
+    for (let m = 10; m >= 7; m--) {
+      const k = `${currentYear}-${String(m).padStart(2, '0')}`;
+      list.push({
+        key: k,
+        label: `${MONTH_NAMES[m - 1]} ${currentYear}`,
+      });
+    }
+    return list;
+  }, [effectiveTime]);
+
+  const santriProfiles = useMemo(() => {
+    return profiles.filter((p) => p.role === 'santri');
+  }, [profiles]);
+
+  // Selected student index
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(() => {
+    if (initialStudentId) return initialStudentId;
+    if (currentUser.role === 'santri') return currentUser.id;
+    return santriProfiles[0]?.id || '';
   });
 
-  const [includeAllInPrint, setIncludeAllInPrint] = useState(false);
+  const currentStudent = useMemo(() => {
+    return santriProfiles.find((s) => s.id === selectedStudentId) || santriProfiles[0];
+  }, [santriProfiles, selectedStudentId]);
 
-  const currentScore = studentsScores[currentIndex] || studentsScores[0];
-  if (!currentScore) return null;
+  const currentStudentIndex = useMemo(() => {
+    return santriProfiles.findIndex((s) => s.id === currentStudent?.id);
+  }, [santriProfiles, currentStudent]);
 
-  const currentStudent = currentScore.student;
+  // Activity columns definition matching exactly the spreadsheet
+  // Columns: LAIL, SUBUH, TAHFIDZ_PAGI, NGAJI_KITAB, MAGHRIB, ISYA, TAHFIDZ_MALAM
+  const columns: ColumnDef[] = useMemo(() => {
+    const standardDefs: ColumnDef[] = [
+      { key: 'lail', header: 'LAIL', activityCodes: ['QIYAM'] },
+      { key: 'subuh', header: 'SUBUH', activityCodes: ['SHUBUH'] },
+      { key: 'tahfidz_pagi', header: 'TAHFIDZ_PAGI', activityCodes: ['SETORAN_PAGI'] },
+      { key: 'ngaji_kitab', header: 'NGAJI_KITAB', activityCodes: ['MADIN', 'NGAJI_SABTU'] },
+      { key: 'maghrib', header: 'MAGHRIB', activityCodes: ['MAGHRIB'] },
+      { key: 'isya', header: 'ISYA', activityCodes: ['ISYA'] },
+      { key: 'tahfidz_malam', header: 'TAHFIDZ_MALAM', activityCodes: ['SETORAN_MALAM'] },
+    ];
 
-  const getPredicate = (percentage: number) => {
-    if (percentage >= 85) return { grade: 'A', label: 'Sangat Baik (Mumtaz)', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
-    if (percentage >= 70) return { grade: 'B', label: 'Baik (Jayyid Jiddan)', color: 'text-blue-700 bg-blue-50 border-blue-200' };
-    if (percentage >= 60) return { grade: 'C', label: 'Cukup (Maqbul)', color: 'text-amber-700 bg-amber-50 border-amber-200' };
-    return { grade: 'D', label: 'Pembinaan (Rasib)', color: 'text-rose-700 bg-rose-50 border-rose-200' };
-  };
+    // Also check if any activity in store doesn't match standard codes
+    const handledCodes = new Set(standardDefs.flatMap((d) => d.activityCodes));
+    const extraActivities = allActivities.filter(
+      (a) => a.is_active && !handledCodes.has(a.code)
+    );
 
-  const overallPred = getPredicate(currentScore.scorePercentage);
+    const extraDefs: ColumnDef[] = extraActivities.map((a) => ({
+      key: `custom_${a.id}`,
+      header: a.code || a.name.toUpperCase().replace(/\s+/g, '_'),
+      activityCodes: [a.code],
+    }));
 
-  // Trigger print dialog for current student or all
-  const handlePrintPDF = (printAll = false) => {
-    setIncludeAllInPrint(printAll);
-    setTimeout(() => {
-      window.print();
-    }, 150);
-  };
+    return [...standardDefs, ...extraDefs];
+  }, [allActivities]);
 
-  // Export Single Student Raport as CSV
-  const exportSingleStudentCSV = () => {
-    const s = currentScore;
-    const pred = getPredicate(s.scorePercentage);
+  // Compute days in selected month and status for each activity
+  const monthData = useMemo(() => {
+    if (!selectedMonthKey || !currentStudent) {
+      return {
+        days: [] as Array<{ dateStr: string; dayName: string; cells: Record<string, 'H' | 'I' | 'A' | ''> }>,
+        colTotals: {
+          hadir: {} as Record<string, number>,
+          izin: {} as Record<string, number>,
+          alpa: {} as Record<string, number>,
+        },
+        totals: {
+          hadir: 0,
+          izin: 0,
+          alpa: 0,
+          poinHadir: 0,
+          poinIzin: 0,
+          poin: 0,
+          totalKegiatan: 0,
+          percentage: 0,
+        },
+      };
+    }
+
+    const [yearStr, monthStr] = selectedMonthKey.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const todayStr = effectiveTime.toISOString().split('T')[0];
+
+    const studentRecords = attendanceRecords.filter(
+      (r) => r.student_id === currentStudent.id && r.operational_date.startsWith(selectedMonthKey)
+    );
+
+    const days: Array<{
+      dateStr: string;
+      dayName: string;
+      cells: Record<string, 'H' | 'I' | 'A' | ''>;
+    }> = [];
+
+    // Initialize col totals
+    const colHadir: Record<string, number> = {};
+    const colIzin: Record<string, number> = {};
+    const colAlpa: Record<string, number> = {};
+    columns.forEach((col) => {
+      colHadir[col.key] = 0;
+      colIzin[col.key] = 0;
+      colAlpa[col.key] = 0;
+    });
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dateObj = new Date(year, month - 1, d);
+      const dayOfWeek = dateObj.getDay(); // 0 = Minggu .. 6 = Sabtu
+      const dayName = INDO_DAYS[dayOfWeek];
+      const isoDay = dayOfWeek === 0 ? 7 : dayOfWeek; // 1 = Senin .. 7 = Minggu
+
+      const cells: Record<string, 'H' | 'I' | 'A' | ''> = {};
+
+      columns.forEach((col) => {
+        // Find matching activity for this day of week
+        const act = allActivities.find(
+          (a) =>
+            a.is_active &&
+            col.activityCodes.includes(a.code) &&
+            a.active_days &&
+            a.active_days.includes(isoDay)
+        );
+
+        if (!act) {
+          cells[col.key] = '';
+          return;
+        }
+
+        // Look for attendance record
+        const rec = studentRecords.find(
+          (r) => r.operational_date === dateStr && r.activity_id === act.id
+        );
+
+        if (rec) {
+          if (rec.status === 'hadir_valid') {
+            cells[col.key] = 'H';
+            colHadir[col.key]++;
+          } else if (rec.status === 'izin_disetujui' || rec.status === 'izin_diajukan' || rec.status === 'perlu_tinjauan') {
+            cells[col.key] = 'I';
+            colIzin[col.key]++;
+          } else {
+            cells[col.key] = 'A';
+            colAlpa[col.key]++;
+          }
+        } else {
+          // If no record submitted:
+          // Past date (or today after activity window) -> Alpa
+          if (dateStr <= todayStr) {
+            cells[col.key] = 'A';
+            colAlpa[col.key]++;
+          } else {
+            // Future date
+            cells[col.key] = '';
+          }
+        }
+      });
+
+      days.push({
+        dateStr,
+        dayName,
+        cells,
+      });
+    }
+
+    // Totals calculation
+    const totalHadir = Object.values(colHadir).reduce((a, b) => a + b, 0);
+    const totalIzin = Object.values(colIzin).reduce((a, b) => a + b, 0);
+    const totalAlpa = Object.values(colAlpa).reduce((a, b) => a + b, 0);
+
+    const poinHadir = totalHadir * 1;
+    const poinIzin = totalIzin * 0.5;
+    const totalPoin = poinHadir + poinIzin;
+    const totalKegiatan = totalHadir + totalIzin + totalAlpa;
+    const percentage = totalKegiatan > 0 ? (totalPoin / totalKegiatan) * 100 : 0;
+
+    return {
+      days,
+      colTotals: {
+        hadir: colHadir,
+        izin: colIzin,
+        alpa: colAlpa,
+      },
+      totals: {
+        hadir: totalHadir,
+        izin: totalIzin,
+        alpa: totalAlpa,
+        poinHadir,
+        poinIzin,
+        poin: totalPoin,
+        totalKegiatan,
+        percentage,
+      },
+    };
+  }, [selectedMonthKey, currentStudent, columns, allActivities, attendanceRecords, effectiveTime]);
+
+  const monthLabel = useMemo(() => {
+    if (!selectedMonthKey) return '';
+    const [yearStr, monthStr] = selectedMonthKey.split('-');
+    const m = parseInt(monthStr, 10);
+    return `${MONTH_NAMES[m - 1]} ${yearStr}`;
+  }, [selectedMonthKey]);
+
+  // Export to CSV matching the spreadsheet layout
+  const handleDownloadCSV = () => {
+    if (!currentStudent) return;
+
+    const headers = ['HARI', 'TANGGAL', ...columns.map((c) => c.header)];
+    const rows = monthData.days.map((d) => [
+      d.dayName,
+      d.dateStr,
+      ...columns.map((c) => d.cells[c.key] || ''),
+    ]);
+
+    const hadirRow = ['JUMLAH HADIR', '', ...columns.map((c) => monthData.colTotals.hadir[c.key] || 0)];
+    const izinRow = ['JUMLAH IZIN', '', ...columns.map((c) => monthData.colTotals.izin[c.key] || 0)];
+    const alpaRow = ['JUMLAH ALPA', '', ...columns.map((c) => monthData.colTotals.alpa[c.key] || 0)];
 
     const lines = [
-      'PESANTREN AL-QURAN NURUL FALAH KETINTANG',
-      'Jl. Ketintang PTT V-B No. 24, Gayungan, Kota Surabaya, Jawa Timur 60231',
-      `Telp: (031) 828-4456 / WA Musyrif: ${musyrifUser?.phone || '+62 812-3456-7890'}`,
-      'RAPORT EVALUASI PRESENSI & KEDISIPLINAN SANTRI',
-      `Periode: ${monthLabel}`,
+      'LAPORAN MUTABAAH YAUMIYAH PER BULAN',
       '',
-      `Nama Santri,${s.student.full_name}`,
-      `NIS,${s.student.student_number || '-'}`,
-      `Kamar / Asrama,${s.student.group_name || '-'}`,
-      `Musyrif Pembina,${musyrifUser?.full_name || 'Ustadz Pembina'}`,
-      `Status Kelulusan,${s.isWarning ? 'PERINGATAN (< 70%)' : 'AMAN (LULUS)'}`,
-      `Skor Akhir,${s.scorePercentage}% (Predikat ${pred.grade} - ${pred.label})`,
+      `Nama Santri,${currentStudent.full_name}`,
+      `Bulan,${monthLabel}`,
+      `NIS,${currentStudent.student_number || '-'}`,
+      `Kamar / Asrama,${currentStudent.group_name || '-'}`,
       '',
-      'RINCIAN KEHADIRAN PER KEGIATAN',
-      'No,Nama Kegiatan,Waktu Kegiatan,Total Sesi,Hadir (Poin 1),Izin (Poin 0.5),Alpa (Poin 0),Persentase (%),Predikat Mutu',
-      ...activities.map((act, i) => {
-        const sc = s.activityScores[act.id] || { hadir: 0, izin: 0, alpa: 0, sessions: 0, percentage: 100 };
-        const p = getPredicate(sc.percentage);
-        return `${i + 1},"${act.name}","${act.start_time} - ${act.end_time} WIB",${sc.sessions},${sc.hadir},${sc.izin},${sc.alpa},${sc.percentage}%,${p.grade}`;
-      }),
+      headers.join(','),
+      ...rows.map((r) => r.join(',')),
       '',
-      'RINGKASAN AKUMULATIF',
-      `Total Sesi Wajib,${s.totalSessions}`,
-      `Total Hadir,${s.hadirCount}`,
-      `Total Izin,${s.izinCount}`,
-      `Total Alpa,${s.alpaCount}`,
-      `Total Poin Diperoleh,${s.totalScore}`,
-      `Persentase Kehadiran,${s.scorePercentage}%`,
-      `Hasil Evaluasi,${s.isWarning ? 'Wajib Mengikuti Sidang Evaluasi Pembinaan' : 'Memenuhi Standar Kelulusan Kehadiran Santri'}`,
+      hadirRow.join(','),
+      izinRow.join(','),
+      alpaRow.join(','),
       '',
-      `Surabaya, ${formatIndonesianDate(new Date())}`,
-      'Mengetahui Musyrif Pembina,Pengasuh Pondok Pesantren',
-      `"${musyrifUser?.full_name || 'Ustadz Pembina'}","K.H. Pengasuh Nurul Falah"`,
+      'POIN KEAKTIFAN,HADIR,' + monthData.totals.hadir + ',' + monthData.totals.poinHadir,
+      ',IZIN,' + monthData.totals.izin + ',' + monthData.totals.poinIzin + ',' + monthData.totals.poin,
+      ',ALPA,' + monthData.totals.alpa + ',0',
+      '',
+      `TOTAL KEGIATAN,${monthData.totals.totalKegiatan}`,
+      `PERSENTASE KEAKTIFAN,${monthData.totals.percentage.toFixed(2).replace('.', ',')}%`,
     ];
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + lines.join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `raport-santri-${currentStudent.student_number || 'nis'}-${monthKey}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Export All Students Raport as CSV
-  const exportAllStudentsCSV = () => {
-    const headers = [
-      'NIS',
-      'Nama Santri',
-      'Kamar / Asrama',
-      'Hadir (x1)',
-      'Izin (x0.5)',
-      'Alpa (x0)',
-      'Total Sesi',
-      'Total Skor',
-      'Persentase (%)',
-      'Predikat',
-      'Status Kelulusan',
-      ...activities.map((a) => `Persentase ${a.name} (%)`),
-      ...activities.map((a) => `Predikat ${a.name}`),
-    ];
-
-    const rows = studentsScores.map((s) => {
-      const pred = getPredicate(s.scorePercentage);
-      const actPercentages = activities.map((a) => {
-        const sc = s.activityScores[a.id];
-        return sc ? `${sc.percentage}%` : '100%';
-      });
-      const actGrades = activities.map((a) => {
-        const sc = s.activityScores[a.id];
-        return sc ? getPredicate(sc.percentage).grade : 'A';
-      });
-
-      return [
-        `"${s.student.student_number || ''}"`,
-        `"${s.student.full_name}"`,
-        `"${s.student.group_name || ''}"`,
-        s.hadirCount,
-        s.izinCount,
-        s.alpaCount,
-        s.totalSessions,
-        s.totalScore,
-        `${s.scorePercentage}%`,
-        pred.grade,
-        s.isWarning ? 'PERINGATAN (< 70%)' : 'AMAN (>= 70%)',
-        ...actPercentages,
-        ...actGrades,
-      ];
-    });
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,\uFEFF' +
-      [
-        'PESANTREN AL-QURAN NURUL FALAH KETINTANG',
-        'Jl. Ketintang PTT V-B No. 24, Gayungan, Kota Surabaya, Jawa Timur',
-        `REKAPITULASI RAPORT BULANAN SANTRI - ${monthLabel}`,
-        '',
-        headers.join(','),
-        ...rows.map((r) => r.join(',')),
-      ].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `buku-raport-santri-nurul-falah-${monthKey}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const renderSingleRaportCard = (scoreItem: StudentMonthlyScore, idx: number) => {
-    const s = scoreItem;
-    const st = s.student;
-    const pred = getPredicate(s.scorePercentage);
-
-    return (
-      <div
-        key={st.id}
-        className={`raport-page bg-white text-stone-900 p-6 sm:p-10 rounded-2xl shadow-xl border border-stone-200 max-w-3xl mx-auto print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none ${
-          idx > 0 ? 'print:break-before-page' : ''
-        }`}
-        style={{ fontFamily: "'Times New Roman', serif" }}
-      >
-        {/* ── KOP RESMI PONDOK PESANTREN ── */}
-        <div className="flex items-center justify-between border-b-4 border-double border-stone-800 pb-3 mb-5">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-[#0D7B5F] flex items-center justify-center p-1.5 shrink-0 bg-emerald-50/50">
-            <div className="w-full h-full rounded-full bg-[#082F23] flex items-center justify-center text-[#D4A24C]">
-              <span className="text-2xl sm:text-3xl font-serif font-black leading-none">ن</span>
-            </div>
-          </div>
-
-          <div className="text-center flex-1 px-3">
-            <h1 className="text-base sm:text-xl font-black tracking-wider uppercase text-emerald-950 font-serif">
-              Pesantren Al-Qur&apos;an Nurul Falah
-            </h1>
-            <p className="text-xs sm:text-sm font-bold text-stone-800 tracking-tight font-serif">
-              Pondok Pesantren Tahfidz Leader
-            </p>
-            <p className="text-[10px] sm:text-[11px] text-stone-600 leading-tight mt-0.5 font-sans">
-              Jl. Ketintang PTT V-B No. 24, Kel. Ketintang, Kec. Gayungan, Kota Surabaya, Jawa Timur 60231
-            </p>
-            <p className="text-[10px] text-stone-500 font-sans">
-              Telp: (031) 828-4456 • WA Musyrif: {musyrifUser?.phone || '+62 812-3456-7890'} • Web: nurulfalah.sch.id
-            </p>
-          </div>
-
-          <div className="w-16 sm:w-20 hidden sm:flex items-center justify-center">
-            <div className="text-center text-[10px] border border-stone-400 p-1.5 rounded text-stone-600 font-sans">
-              <span>Formulir</span>
-              <span className="block font-bold">RAP-01</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── JUDUL DOKUMEN ── */}
-        <div className="text-center space-y-0.5 mb-5 font-sans">
-          <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-stone-900 border-b border-stone-300 pb-1 inline-block">
-            Raport Evaluasi Presensi &amp; Kedisiplinan Santri
-          </h2>
-          <p className="text-xs font-semibold text-stone-600">
-            Periode: <span className="font-bold text-stone-900">{monthLabel}</span>
-          </p>
-        </div>
-
-        {/* ── IDENTITAS SANTRI ── */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs font-sans bg-stone-50/80 p-3 sm:p-4 rounded-xl border border-stone-200 mb-5">
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Nama Santri</span>
-            <span className="font-bold text-stone-900">: {st.full_name}</span>
-          </div>
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Musyrif Pembina</span>
-            <span className="font-semibold text-stone-900">: {musyrifUser?.full_name || 'Ustadz Pembina Asrama'}</span>
-          </div>
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Nomor Induk (NIS)</span>
-            <span className="font-mono font-bold text-stone-900">: {st.student_number || '-'}</span>
-          </div>
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Status Kehadiran</span>
-            <span className={`font-bold ${s.isWarning ? 'text-rose-600' : 'text-emerald-700'}`}>
-              : {s.isWarning ? 'Peringatan (< 70%)' : 'Aman (Memenuhi Syarat)'}
-            </span>
-          </div>
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Kamar / Asrama</span>
-            <span className="font-semibold text-stone-900">: {st.group_name || '-'}</span>
-          </div>
-          <div className="flex">
-            <span className="w-28 text-stone-500 shrink-0">Predikat Mutu</span>
-            <span className="font-bold text-stone-900">: {pred.grade} ({pred.label})</span>
-          </div>
-        </div>
-
-        {/* ── TABEL RINCIAN KEGIATAN ── */}
-        <div className="mb-6 overflow-x-auto font-sans">
-          <table className="w-full text-left text-xs border-collapse border border-stone-300">
-            <thead>
-              <tr className="bg-stone-100 text-stone-800 text-[11px] font-bold">
-                <th className="border border-stone-300 py-2 px-2.5 text-center w-8">No</th>
-                <th className="border border-stone-300 py-2 px-3">Kegiatan Harian Santri</th>
-                <th className="border border-stone-300 py-2 px-2.5 text-center">Jadwal Sesi</th>
-                <th className="border border-stone-300 py-2 px-2 text-center">Wajib</th>
-                <th className="border border-stone-300 py-2 px-2 text-center text-emerald-800">Hadir</th>
-                <th className="border border-stone-300 py-2 px-2 text-center text-amber-800">Izin</th>
-                <th className="border border-stone-300 py-2 px-2 text-center text-rose-800">Alpa</th>
-                <th className="border border-stone-300 py-2 px-2 text-center">Kehadiran</th>
-                <th className="border border-stone-300 py-2 px-2 text-center">Nilai</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activities.map((act, i) => {
-                const sc = s.activityScores[act.id] || { hadir: 0, izin: 0, alpa: 0, sessions: 0, percentage: 100 };
-                const p = getPredicate(sc.percentage);
-                return (
-                  <tr key={act.id} className={i % 2 === 1 ? 'bg-stone-50/50' : 'bg-white'}>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-mono">{i + 1}</td>
-                    <td className="border border-stone-300 py-2 px-3 font-semibold text-stone-900">
-                      {act.name}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2.5 text-center text-[11px] font-mono text-stone-600">
-                      {act.start_time} - {act.end_time}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-bold text-stone-700">
-                      {sc.sessions}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-bold text-emerald-700">
-                      {sc.hadir}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-bold text-amber-700">
-                      {sc.izin}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-bold text-rose-700">
-                      {sc.alpa}
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-bold font-mono">
-                      {sc.percentage}%
-                    </td>
-                    <td className="border border-stone-300 py-2 px-2 text-center font-black">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
-                        p.grade === 'A' ? 'bg-emerald-100 text-emerald-800' :
-                        p.grade === 'B' ? 'bg-blue-100 text-blue-800' :
-                        p.grade === 'C' ? 'bg-amber-100 text-amber-800' :
-                        'bg-rose-100 text-rose-800'
-                      }`}>
-                        {p.grade}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="bg-stone-100 font-bold border-t-2 border-stone-400">
-                <td colSpan={3} className="border border-stone-300 py-2 px-3 text-right">
-                  Akumulasi Total:
-                </td>
-                <td className="border border-stone-300 py-2 px-2 text-center">{s.totalSessions}</td>
-                <td className="border border-stone-300 py-2 px-2 text-center text-emerald-800">{s.hadirCount}</td>
-                <td className="border border-stone-300 py-2 px-2 text-center text-amber-800">{s.izinCount}</td>
-                <td className="border border-stone-300 py-2 px-2 text-center text-rose-800">{s.alpaCount}</td>
-                <td className="border border-stone-300 py-2 px-2 text-center font-black text-sm text-stone-900 font-mono">
-                  {s.scorePercentage}%
-                </td>
-                <td className="border border-stone-300 py-2 px-2 text-center font-black text-sm">
-                  {pred.grade}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {/* ── TANDA TANGAN PENGESAHAN ── */}
-        <div className="pt-2 font-sans">
-          <div className="flex justify-end text-xs mb-3 text-stone-700">
-            <p>Surabaya, {formatIndonesianDate(new Date())}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 text-center text-xs">
-            <div>
-              <p className="text-stone-600 mb-14">Musyrif Pembina Kamar,</p>
-              <p className="font-bold text-stone-900 underline">{musyrifUser?.full_name || 'Ustadz Pembina Asrama'}</p>
-              <p className="text-[10px] text-stone-500 font-mono">NIY. NF-2024-MSY</p>
-            </div>
-
-            <div>
-              <p className="text-stone-600 mb-14">Pengasuh Pondok Pesantren,</p>
-              <p className="font-bold text-stone-900 underline">K.H. Pengasuh Nurul Falah</p>
-              <p className="text-[10px] text-stone-500">Pondok Pesantren Nurul Falah Ketintang</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    link.setAttribute(
+      'download',
+      `rapot-mutabaah-${currentStudent.nickname || currentStudent.full_name}-${selectedMonthKey}.csv`
     );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-3 sm:p-6 flex items-center justify-center">
-      <div className="relative w-full max-w-4xl bg-stone-100 dark:bg-stone-900 rounded-3xl shadow-2xl border border-stone-200 dark:border-stone-800 flex flex-col max-h-[92vh] overflow-hidden">
-        {/* Modal Top Control Bar (Hidden on Print) */}
-        <div className="no-print p-4 sm:p-5 bg-white dark:bg-[#0F1E18] border-b border-stone-200 dark:border-[#1C3A2E] flex flex-wrap items-center justify-between gap-3 shrink-0">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:overflow-visible">
+      {/* Container Box */}
+      <div className="bg-white dark:bg-[#0C1713] text-stone-900 dark:text-stone-100 rounded-3xl shadow-2xl border border-stone-200 dark:border-[#1C3A2E] w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:border-none print:rounded-none">
+
+        {/* ══ TOP ACTION TOOLBAR (Hidden in Print) ══ */}
+        <div className="p-3.5 sm:p-4 bg-gradient-to-r from-[#082F23] to-[#0D7B5F] text-white flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-[#0D7B5F] dark:text-[#1AA37A] flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 stroke-[2.2]" />
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-[#D4A24C]">
+              <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">
-                Pratinjau Raport Bulanan Santri
-              </h3>
-              <p className="text-[11px] text-stone-500">
-                Pondok Pesantren Al-Qur&apos;an Nurul Falah Ketintang • {monthLabel}
-              </p>
+              <h2 className="text-sm font-bold tracking-tight">Raport Mutaba&apos;ah Yaumiyah</h2>
+              <p className="text-[10px] text-emerald-200/70">Format Tabel Bulanan &amp; Detail Perhitungan</p>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Student Selector */}
-            <select
-              value={currentStudent.id}
-              onChange={(e) => {
-                const idx = studentsScores.findIndex((s) => s.student.id === e.target.value);
-                if (idx >= 0) setCurrentIndex(idx);
-              }}
-              className="text-xs font-bold px-3 py-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none max-w-[180px] sm:max-w-xs truncate"
-            >
-              {studentsScores.map((s, idx) => (
-                <option key={s.student.id} value={s.student.id}>
-                  {idx + 1}. {s.student.full_name} ({s.scorePercentage}%)
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center flex-wrap gap-2">
+            {/* Month Select */}
+            <div className="flex items-center gap-1.5 bg-black/20 rounded-xl px-2.5 py-1.5 border border-white/15">
+              <Calendar className="w-3.5 h-3.5 text-[#D4A24C]" />
+              <select
+                value={selectedMonthKey}
+                onChange={(e) => setSelectedMonthKey(e.target.value)}
+                className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer"
+              >
+                {availableMonths.map((m) => (
+                  <option key={m.key} value={m.key} className="bg-[#082F23] text-white">
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* Print Current Student Button */}
-            <button
-              onClick={() => handlePrintPDF(false)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#096B52] text-white text-xs font-bold transition shadow-sm cursor-pointer btn-press"
-              title="Cetak atau Simpan sebagai PDF untuk santri ini"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak / PDF</span>
-            </button>
+            {/* Student Switcher (If multiple students available) */}
+            {santriProfiles.length > 1 && (
+              <div className="flex items-center gap-1 bg-black/20 rounded-xl px-1.5 py-1 border border-white/15">
+                <button
+                  type="button"
+                  disabled={currentStudentIndex <= 0}
+                  onClick={() => {
+                    if (currentStudentIndex > 0) {
+                      setSelectedStudentId(santriProfiles[currentStudentIndex - 1].id);
+                    }
+                  }}
+                  className="p-1 hover:bg-white/10 rounded-lg disabled:opacity-30 cursor-pointer"
+                  title="Santri Sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  className="bg-transparent text-white text-xs font-semibold max-w-[160px] truncate focus:outline-none cursor-pointer px-1"
+                >
+                  {santriProfiles.map((s) => (
+                    <option key={s.id} value={s.id} className="bg-[#082F23] text-white">
+                      {s.full_name} ({s.nickname || s.student_number || 'Santri'})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={currentStudentIndex >= santriProfiles.length - 1}
+                  onClick={() => {
+                    if (currentStudentIndex < santriProfiles.length - 1) {
+                      setSelectedStudentId(santriProfiles[currentStudentIndex + 1].id);
+                    }
+                  }}
+                  className="p-1 hover:bg-white/10 rounded-lg disabled:opacity-30 cursor-pointer"
+                  title="Santri Selanjutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
-            {/* Export CSV for this student */}
+            {/* Download CSV */}
             <button
-              onClick={exportSingleStudentCSV}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-semibold transition cursor-pointer"
-              title="Ekspor raport santri ini ke file CSV"
+              type="button"
+              onClick={handleDownloadCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/15 transition cursor-pointer btn-press"
+              title="Unduh Excel / CSV"
             >
               <Download className="w-3.5 h-3.5 text-[#D4A24C]" />
-              <span className="hidden sm:inline">CSV Raport</span>
+              <span className="hidden sm:inline">Unduh CSV</span>
             </button>
 
-            {/* Export All CSV */}
+            {/* Print Button */}
             <button
-              onClick={exportAllStudentsCSV}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-semibold transition cursor-pointer"
-              title="Ekspor seluruh rekap raport santri ke CSV"
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D4A24C] hover:bg-[#E8C36E] text-[#082F23] text-xs font-bold transition shadow-sm cursor-pointer btn-press"
+              title="Cetak Raport"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Semua CSV</span>
+              <Printer className="w-3.5 h-3.5" />
+              <span>Cetak Rapot</span>
             </button>
 
-            {/* Close Button */}
+            {/* Close */}
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition cursor-pointer"
+              className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Navigation bar between students */}
-        <div className="no-print px-6 py-2.5 bg-stone-50 dark:bg-stone-800/60 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between text-xs text-stone-600 dark:text-stone-400">
-          <div className="flex items-center gap-2">
-            <button
-              disabled={currentIndex <= 0}
-              onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-              className="p-1 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-semibold">
-              Santri {currentIndex + 1} dari {studentsScores.length}
-            </span>
-            <button
-              disabled={currentIndex >= studentsScores.length - 1}
-              onClick={() => setCurrentIndex((prev) => Math.min(studentsScores.length - 1, prev + 1))}
-              className="p-1 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {/* ══ SCROLLABLE REPORT BODY ══ */}
+        <div className="overflow-y-auto overflow-x-auto p-4 sm:p-6 lg:p-8 space-y-5 print:p-0 print:overflow-visible">
+
+          {/* ══ 1. TITLE BANNER ══ */}
+          <div
+            className="w-full text-center py-2.5 px-4 font-bold text-sm sm:text-base uppercase tracking-wider text-[#1F497D] border border-[#8EA9DB] rounded-md shadow-xs print:rounded-none"
+            style={{ backgroundColor: '#C6D9F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+          >
+            LAPORAN MUTABAAH YAUMIYAH PER BULAN
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePrintPDF(true)}
-              className="text-[11px] font-bold text-[#0D7B5F] dark:text-[#D4A24C] hover:underline cursor-pointer"
-            >
-              Cetak Raport Semua Santri ({studentsScores.length}) →
-            </button>
+          {/* ══ 2. HEADER INFO (NAMA SANTRI & BULAN) ══ */}
+          <div className="space-y-1 text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100">
+            <div className="flex items-center gap-2">
+              <span className="w-28 sm:w-32 shrink-0 text-stone-600 dark:text-stone-400 font-semibold">Nama Santri</span>
+              <span className="uppercase text-stone-900 dark:text-white font-extrabold">: {currentStudent?.full_name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-28 sm:w-32 shrink-0 text-stone-600 dark:text-stone-400 font-semibold">Bulan</span>
+              <span className="uppercase text-stone-900 dark:text-white font-extrabold">: {monthLabel}</span>
+            </div>
           </div>
+
+          {/* ══ 3. MAIN SPREADSHEET TABLE ══ */}
+          <div className="overflow-x-auto border border-[#8EA9DB] rounded-md shadow-xs print:rounded-none">
+            <table className="w-full border-collapse text-center text-xs">
+              {/* Header Row */}
+              <thead>
+                <tr
+                  className="font-bold text-stone-900 border-b border-[#8EA9DB] text-[11px] sm:text-xs uppercase"
+                  style={{ backgroundColor: '#B8CCE4', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                >
+                  <th className="border-r border-[#8EA9DB] py-2 px-2.5 w-20 text-center font-bold">HARI</th>
+                  <th className="border-r border-[#8EA9DB] py-2 px-2.5 w-28 text-center font-bold">TANGGAL</th>
+                  {columns.map((col) => (
+                    <th key={col.key} className="border-r border-[#8EA9DB] py-2 px-2 text-center font-bold whitespace-nowrap min-w-[70px]">
+                      {col.header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              {/* Day Rows */}
+              <tbody>
+                {monthData.days.map((row) => (
+                  <tr
+                    key={row.dateStr}
+                    className="border-b border-stone-200 dark:border-stone-800 hover:bg-stone-50/50 dark:hover:bg-stone-900/50 transition-colors text-[11px] sm:text-xs"
+                  >
+                    {/* Hari */}
+                    <td className="border-r border-[#8EA9DB] py-1 px-2 font-medium text-stone-800 dark:text-stone-200">
+                      {row.dayName}
+                    </td>
+
+                    {/* Tanggal */}
+                    <td className="border-r border-[#8EA9DB] py-1 px-2 font-mono text-stone-700 dark:text-stone-300">
+                      {row.dateStr}
+                    </td>
+
+                    {/* Activity Cells */}
+                    {columns.map((col) => {
+                      const val = row.cells[col.key];
+
+                      let bgStyle = {};
+                      let textColor = 'text-stone-800 dark:text-stone-200';
+
+                      if (val === 'H') {
+                        bgStyle = { backgroundColor: '#D9EAD3', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' };
+                        textColor = 'text-[#274E13] font-bold';
+                      } else if (val === 'I') {
+                        bgStyle = { backgroundColor: '#FCE5CD', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' };
+                        textColor = 'text-[#783F04] font-bold';
+                      } else if (val === 'A') {
+                        bgStyle = { backgroundColor: '#F4CCCC', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' };
+                        textColor = 'text-[#990000] font-bold';
+                      }
+
+                      return (
+                        <td
+                          key={col.key}
+                          className={`border-r border-[#8EA9DB] py-1 px-1 text-center font-bold transition-colors ${textColor}`}
+                          style={bgStyle}
+                        >
+                          {val}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* ══ SUMMARY ROWS (JUMLAH HADIR, IZIN, ALPA) ══ */}
+                <tr
+                  className="font-bold border-t-2 border-[#8EA9DB] text-[11px] sm:text-xs"
+                  style={{ backgroundColor: '#DCE6F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                >
+                  <td colSpan={2} className="border-r border-[#8EA9DB] py-1.5 px-3 text-center font-extrabold text-stone-900">
+                    JUMLAH HADIR
+                  </td>
+                  {columns.map((col) => (
+                    <td key={col.key} className="border-r border-[#8EA9DB] py-1.5 px-1 font-extrabold text-[#274E13]">
+                      {monthData.colTotals.hadir[col.key] || 0}
+                    </td>
+                  ))}
+                </tr>
+
+                <tr
+                  className="font-bold border-t border-[#8EA9DB] text-[11px] sm:text-xs"
+                  style={{ backgroundColor: '#DCE6F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                >
+                  <td colSpan={2} className="border-r border-[#8EA9DB] py-1.5 px-3 text-center font-extrabold text-stone-900">
+                    JUMLAH IZIN
+                  </td>
+                  {columns.map((col) => (
+                    <td key={col.key} className="border-r border-[#8EA9DB] py-1.5 px-1 font-extrabold text-[#783F04]">
+                      {monthData.colTotals.izin[col.key] || 0}
+                    </td>
+                  ))}
+                </tr>
+
+                <tr
+                  className="font-bold border-t border-[#8EA9DB] text-[11px] sm:text-xs"
+                  style={{ backgroundColor: '#DCE6F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                >
+                  <td colSpan={2} className="border-r border-[#8EA9DB] py-1.5 px-3 text-center font-extrabold text-stone-900">
+                    JUMLAH ALPA
+                  </td>
+                  {columns.map((col) => (
+                    <td key={col.key} className="border-r border-[#8EA9DB] py-1.5 px-1 font-extrabold text-[#990000]">
+                      {monthData.colTotals.alpa[col.key] || 0}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* ══ 4. DETAIL PERHITUNGAN SECTION ══ */}
+          <div className="pt-2 space-y-4 max-w-xl">
+
+            {/* Poin Keaktifan Table */}
+            <div className="border border-[#8EA9DB] rounded-md overflow-hidden shadow-xs print:rounded-none">
+              <table className="w-full border-collapse text-xs">
+                <tbody>
+                  {/* Hadir */}
+                  <tr className="border-b border-[#8EA9DB]">
+                    <td
+                      rowSpan={3}
+                      className="border-r border-[#8EA9DB] py-2 px-3 font-extrabold text-stone-900 text-center uppercase w-44"
+                      style={{ backgroundColor: '#C6D9F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                    >
+                      POIN KEAKTIFAN
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-bold text-stone-800 dark:text-stone-200 w-28">
+                      HADIR
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center w-24">
+                      {monthData.totals.hadir}
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center w-24">
+                      {monthData.totals.poinHadir}
+                    </td>
+                    <td rowSpan={2} className="py-1.5 px-4 font-mono font-extrabold text-center text-sm text-[#1F497D] bg-stone-50 dark:bg-stone-900/60">
+                      {monthData.totals.poin}
+                    </td>
+                  </tr>
+
+                  {/* Izin */}
+                  <tr className="border-b border-[#8EA9DB]">
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-bold text-stone-800 dark:text-stone-200">
+                      IZIN
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center">
+                      {monthData.totals.izin}
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center">
+                      {monthData.totals.poinIzin}
+                    </td>
+                  </tr>
+
+                  {/* Alpa */}
+                  <tr>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-bold text-stone-800 dark:text-stone-200">
+                      ALPA
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center">
+                      {monthData.totals.alpa}
+                    </td>
+                    <td className="border-r border-[#8EA9DB] py-1.5 px-4 font-mono font-bold text-center text-stone-400">
+                      0
+                    </td>
+                    <td className="py-1.5 px-4 bg-stone-50 dark:bg-stone-900/60" />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Total Kegiatan Box */}
+            <div className="border border-[#8EA9DB] rounded-md overflow-hidden shadow-xs print:rounded-none">
+              <table className="w-full border-collapse text-xs">
+                <tbody>
+                  <tr>
+                    <td
+                      className="border-r border-[#8EA9DB] py-2 px-3 font-extrabold text-stone-900 uppercase w-44"
+                      style={{ backgroundColor: '#C6D9F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                    >
+                      TOTAL KEGIATAN
+                    </td>
+                    <td className="py-2 px-4 font-mono font-black text-sm text-center w-28 bg-white dark:bg-stone-900">
+                      {monthData.totals.totalKegiatan}
+                    </td>
+                    <td className="text-[11px] text-stone-500 px-3 italic bg-stone-50/50 dark:bg-stone-950/40">
+                      Total akumulasi seluruh sesi kegiatan wajib santri
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Persentase Keaktifan Box */}
+            <div className="border border-[#8EA9DB] rounded-md overflow-hidden shadow-xs print:rounded-none">
+              <table className="w-full border-collapse text-xs">
+                <tbody>
+                  <tr>
+                    <td
+                      className="border-r border-[#8EA9DB] py-2.5 px-3 font-extrabold text-stone-900 uppercase w-44"
+                      style={{ backgroundColor: '#C6D9F1', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                    >
+                      PERSENTASE KEAKTIFAN
+                    </td>
+                    <td className="py-2.5 px-4 font-mono font-black text-base text-center w-28 bg-white dark:bg-stone-900 text-[#1F497D] dark:text-[#8EA9DB]">
+                      {monthData.totals.percentage.toFixed(2).replace('.', ',')}%
+                    </td>
+                    <td className="text-[11px] px-3 font-semibold bg-stone-50/50 dark:bg-stone-950/40">
+                      {monthData.totals.percentage >= 85 ? (
+                        <span className="text-emerald-700 font-bold">⭐ Kategori Mumtaz (Sangat Baik)</span>
+                      ) : monthData.totals.percentage >= 70 ? (
+                        <span className="text-blue-700 font-bold">✓ Kategori Jayyid (Baik / Memenuhi Standar)</span>
+                      ) : (
+                        <span className="text-rose-700 font-bold">⚠️ Perlu Pembinaan (&lt; 70%)</span>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          {/* ══ FOOTER KETERANGAN KELULUSAN ══ */}
+          <div className="pt-2 text-[11px] text-stone-500 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <p>
+              Keterangan: <strong className="text-emerald-700">H</strong> = Hadir (1 poin),{' '}
+              <strong className="text-amber-700">I</strong> = Izin (0.5 poin),{' '}
+              <strong className="text-rose-700">A</strong> = Alpa (0 poin).
+            </p>
+            <p className="font-mono text-[10px]">
+              Dokumen Resmi Pondok Pesantren Nurul Falah Ketintang, Surabaya
+            </p>
+          </div>
+
         </div>
 
-        {/* Scrollable Printable Container */}
-        <div className="overflow-y-auto p-4 sm:p-8 space-y-8 flex-1" id="raport-printable-area">
-          {includeAllInPrint
-            ? studentsScores.map((s, idx) => renderSingleRaportCard(s, idx))
-            : renderSingleRaportCard(currentScore, 0)}
-        </div>
       </div>
     </div>
   );

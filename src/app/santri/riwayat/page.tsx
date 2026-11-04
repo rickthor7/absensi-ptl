@@ -20,7 +20,9 @@ import {
   AlertCircle,
   FileQuestion,
   RotateCcw,
+  FileSpreadsheet,
 } from 'lucide-react';
+import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 export default function SantriRiwayatPage() {
   const router = useRouter();
@@ -28,6 +30,7 @@ export default function SantriRiwayatPage() {
   const todayStr = effectiveTime.toISOString().split('T')[0];
 
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+  const [isRaportOpen, setIsRaportOpen] = useState(false);
   const [filterActivity, setFilterActivity] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,14 +75,22 @@ export default function SantriRiwayatPage() {
           </p>
         </div>
 
-        {/* Quick Stats Pill */}
-        <div className="relative z-10 flex items-center gap-2 self-start sm:self-center">
+        {/* Quick Stats Pill & Raport Button */}
+        <div className="relative z-10 flex flex-wrap items-center gap-2 self-start sm:self-center">
           <div className="px-3.5 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800 text-[#146B50] dark:text-emerald-300 text-xs font-extrabold">
             {totalHadir} Hadir Valid
           </div>
           <div className="px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-extrabold">
             {totalIzin} Izin
           </div>
+          <button
+            type="button"
+            onClick={() => setIsRaportOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-[#146B50] to-[#0D523D] hover:from-[#0D523D] hover:to-[#093B2C] text-white text-xs font-extrabold shadow-xs hover:shadow transition cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#D6A84F]" />
+            <span>Raport Mutaba&apos;ah</span>
+          </button>
         </div>
       </div>
 
@@ -241,6 +252,14 @@ export default function SantriRiwayatPage() {
         <AttendanceDetailModal
           record={selectedRecord}
           onClose={() => setSelectedRecord(null)}
+        />
+      )}
+
+      {/* Raport Mutaba'ah Bulanan Modal */}
+      {isRaportOpen && (
+        <RaportSantriModal
+          initialStudentId={currentUser.id}
+          onClose={() => setIsRaportOpen(false)}
         />
       )}
     </div>
