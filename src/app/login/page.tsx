@@ -79,7 +79,7 @@ export default function LoginPage() {
                   Portal Santri
                 </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-5">
-                  Akses khusus santri untuk presensi selfie GPS, pengajuan izin syar&apos;i, dan rekap SPP.
+                  Login praktis cukup menggunakan <strong className="text-emerald-700 dark:text-emerald-400">nama panggilan (nickname)</strong> santri dan kata sandi.
                 </p>
 
                 <div className="space-y-2 mb-6 bg-stone-50/80 dark:bg-[#14261F] p-3.5 rounded-2xl border border-stone-100 dark:border-[#1C3A2E] text-xs text-stone-600 dark:text-stone-300">
@@ -128,7 +128,7 @@ export default function LoginPage() {
                   Portal Musyrif
                 </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-5">
-                  Panel pengawasan kehadiran santri, persetujuan perizinan, verifikasi SPP, dan audit.
+                  Login praktis menggunakan <strong className="text-amber-700 dark:text-amber-400">nama panggilan</strong> atau email dinas musyrif dan kata sandi.
                 </p>
 
                 <div className="space-y-2 mb-6 bg-stone-50/80 dark:bg-[#14261F] p-3.5 rounded-2xl border border-stone-100 dark:border-[#1C3A2E] text-xs text-stone-600 dark:text-stone-300">

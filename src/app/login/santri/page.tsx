@@ -44,7 +44,7 @@ export default function SantriLoginPage() {
 
     const cleanId = identifier.trim();
     if (!cleanId) {
-      setErrorMessage('Mohon masukkan Nomor Induk Santri (NIS) atau Email terdaftar.');
+      setErrorMessage('Mohon masukkan nama panggilan (nickname) santri Anda.');
       return;
     }
 
@@ -140,11 +140,11 @@ export default function SantriLoginPage() {
 
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* NIS / Email Santri */}
+              {/* Nickname Santri */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
-                  <span>Nomor Induk Santri (NIS) / Email</span>
-                  <span className="text-[10px] text-stone-400 font-normal">Contoh: STR-2026-042</span>
+                  <span>Nama Panggilan (Nickname)</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Cukup nama pendek</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -155,10 +155,13 @@ export default function SantriLoginPage() {
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Masukkan NIS atau email santri"
+                    placeholder="Contoh: akbar, dliya, yazid, dll."
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-stone-50 dark:bg-[#162B22] border border-stone-200 dark:border-[#1C3A2E] focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]/50 focus:border-[#0D7B5F] text-xs font-medium text-stone-900 dark:text-stone-100 transition-all placeholder:text-stone-400"
                   />
                 </div>
+                <p className="text-[10px] text-stone-400">
+                  Gunakan nama panggilan Anda saat terdaftar di pondok (atau bisa pakai NIS).
+                </p>
               </div>
 
               {/* Password */}
@@ -253,7 +256,7 @@ export default function SantriLoginPage() {
               className="font-semibold text-[#0D7B5F] dark:text-[#D4A24C] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
             >
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>Bantuan NIS</span>
+              <span>Bantuan Login</span>
             </button>
           </div>
         </div>
@@ -303,14 +306,10 @@ export default function SantriLoginPage() {
               <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 space-y-1.5">
                 <p className="font-bold text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
                   <GraduationCap className="w-4 h-4 text-[#0D7B5F]" />
-                  Format Nomor Induk Santri (NIS)
+                  Cara Login Praktis
                 </p>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
-                  Gunakan format NIS resmi kartu santri (contoh:{' '}
-                  <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                    STR-2026-042
-                  </span>
-                  ) atau alamat email yang telah didaftarkan pihak pengurus pondok.
+                  Cukup ketikkan <strong className="text-stone-800 dark:text-stone-200">Nama Panggilan</strong> santri Anda (contoh: <span className="font-bold text-emerald-700 dark:text-emerald-400">akbar</span>, <span className="font-bold text-emerald-700 dark:text-emerald-400">dliya</span>, dll) serta kata sandi. Anda juga tetap dapat menggunakan NIS resmi atau email terdaftar.
                 </p>
               </div>
 
@@ -344,3 +343,4 @@ export default function SantriLoginPage() {
     </div>
   );
 }
+

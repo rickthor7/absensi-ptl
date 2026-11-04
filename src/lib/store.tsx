@@ -669,7 +669,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return result;
   };
 
-  // Real Authentic Login Function (Supabase Auth + Database Profile Table)
+  // Real Authentic Login Function (Nickname, NIS, Email, or Full Name + Password)
   const login = async (
     identifier: string,
     password: string,
@@ -677,7 +677,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; message: string; role?: Role }> => {
     const cleanId = identifier.trim();
     if (!cleanId) {
-      return { success: false, message: 'Harap masukkan Email atau Nomor Induk Santri (NIS).' };
+      return { success: false, message: 'Harap masukkan nama panggilan (nickname) Anda.' };
     }
     if (!password) {
       return { success: false, message: 'Harap masukkan kata sandi akun Anda.' };
@@ -686,10 +686,82 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     const config = getSupabaseConfig();
 
-    // 1. If Supabase is connected, try Supabase Auth sign-in first
+    // 1. Query Database Profiles (Supports both Supabase Database & Local Profiles)
+    let searchProfiles = profiles;
+    if (supabase && isSupabaseConnected) {
+      try {
+        const { data: dbProfiles } = await supabase.from('profiles').select('*');
+        if (dbProfiles && dbProfiles.length > 0) {
+          searchProfiles = dbProfiles as Profile[];
+          setProfiles(dbProfiles as Profile[]);
+        }
+      } catch (e) {
+        console.warn('Direct profile search fallback:', e);
+      }
+    }
+
+    const lowerId = cleanId.toLowerCase();
+    const cleanAlphaNum = lowerId.replace(/[^0-9a-z]/g, '');
+    const cleanDigits = lowerId.replace(/[^0-9]/g, '');
+
+    // Function to check if a profile matches the identifier (Nickname, First Name, Email, NIS, Full Name)
+    const matchesIdentifier = (p: Profile) => {
+      // 1. Nickname matching
+      if (p.nickname) {
+        const pNickLower = p.nickname.toLowerCase();
+        const pNickAlphaNum = pNickLower.replace(/[^0-9a-z]/g, '');
+        if (pNickLower === lowerId || pNickAlphaNum === cleanAlphaNum) return true;
+
+        // Strip honorific titles e.g. "Ustadz Mansur" -> "mansur"
+        const cleanHonorific = pNickLower.replace(/^(ustadz|ustadzah|ust\.|ust)\s+/i, '');
+        if (cleanHonorific === lowerId || cleanHonorific.replace(/[^0-9a-z]/g, '') === cleanAlphaNum) return true;
+      }
+
+      // 2. First name matching (e.g. "Ahmad" for "Ahmad Fauzi")
+      const firstName = p.full_name?.toLowerCase().split(/\s+/)[0];
+      if (firstName && (firstName === lowerId || firstName.replace(/[^0-9a-z]/g, '') === cleanAlphaNum)) {
+        return true;
+      }
+
+      // 3. Email matching
+      if (p.email?.toLowerCase() === lowerId) return true;
+
+      // 4. Full name exact matching
+      if (p.full_name?.toLowerCase() === lowerId) return true;
+
+      // 5. NIS / Student Number matching (with/without dash or last digits)
+      if (p.student_number) {
+        const nisExact = p.student_number.toLowerCase() === lowerId;
+        const nisNoDash = p.student_number.replace(/[^0-9a-zA-Z]/g, '').toLowerCase() === cleanAlphaNum;
+        const digitsMatch = cleanDigits.length >= 3 && p.student_number.replace(/[^0-9]/g, '').endsWith(cleanDigits);
+        if (nisExact || nisNoDash || digitsMatch) return true;
+      }
+
+      // 6. ID matching
+      if (p.id?.toLowerCase() === lowerId) return true;
+
+      return false;
+    };
+
+    // Filter by roleHint first if available (e.g. logging into santri portal matches santri)
+    let matchedProfile = searchProfiles.find((p) => {
+      if (!matchesIdentifier(p)) return false;
+      if (roleHint === 'santri') return p.role === 'santri';
+      if (roleHint === 'musyrif') return p.role === 'musyrif' || p.role === 'admin';
+      return true;
+    });
+
+    // If not found with roleHint, fallback to any role match
+    if (!matchedProfile) {
+      matchedProfile = searchProfiles.find(matchesIdentifier);
+    }
+
+    // 2. If Supabase is connected, try Supabase Auth sign-in with resolved email
     if (supabase && config.isConfigured) {
       try {
-        const loginEmail = cleanId.includes('@')
+        const loginEmail = matchedProfile?.email
+          ? matchedProfile.email.toLowerCase()
+          : cleanId.includes('@')
           ? cleanId.toLowerCase()
           : `${cleanId.toLowerCase()}@santri.nurulfalah.ac.id`;
 
@@ -705,7 +777,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             .eq('id', authData.user.id)
             .maybeSingle();
 
-          const userProfile: Profile = (profileData as Profile) || {
+          const userProfile: Profile = (profileData as Profile) || matchedProfile || {
             id: authData.user.id,
             email: authData.user.email,
             full_name:
@@ -726,7 +798,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
           return {
             success: true,
-            message: `Alhamdulillah! Selamat datang, ${userProfile.full_name}.`,
+            message: `Alhamdulillah! Selamat datang, ${userProfile.nickname || userProfile.full_name}.`,
             role: userProfile.role,
           };
         }
@@ -735,38 +807,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 2. Query Database Profiles (Supports both Supabase Database & Local Profiles)
-    let searchProfiles = profiles;
-    if (supabase && isSupabaseConnected) {
-      try {
-        const { data: dbProfiles } = await supabase.from('profiles').select('*');
-        if (dbProfiles && dbProfiles.length > 0) {
-          searchProfiles = dbProfiles as Profile[];
-          setProfiles(dbProfiles as Profile[]);
-        }
-      } catch (e) {
-        console.warn('Direct profile search fallback:', e);
-      }
-    }
-
-    const lowerId = cleanId.toLowerCase();
-    const cleanDigits = lowerId.replace(/[^0-9]/g, '');
-
-    const matchedProfile = searchProfiles.find((p) => {
-      const emailMatch = p.email?.toLowerCase() === lowerId;
-      const nisExact = p.student_number?.toLowerCase() === lowerId;
-      const nisNoDash =
-        p.student_number?.replace(/[^0-9a-zA-Z]/g, '').toLowerCase() ===
-        lowerId.replace(/[^0-9a-zA-Z]/g, '');
-      const digitsMatch =
-        cleanDigits.length >= 3 &&
-        p.student_number?.replace(/[^0-9]/g, '').endsWith(cleanDigits);
-      const nameMatch = p.full_name.toLowerCase() === lowerId;
-      const idMatch = p.id.toLowerCase() === lowerId;
-
-      return emailMatch || nisExact || nisNoDash || digitsMatch || nameMatch || idMatch;
-    });
-
+    // 3. Fallback to Local / Database Profile Validation
     if (matchedProfile) {
       // Validate password
       const storedHash = (matchedProfile as any).password_hash || 'password123';
@@ -789,14 +830,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       return {
         success: true,
-        message: `Alhamdulillah! Selamat datang kembali, ${matchedProfile.full_name}.`,
+        message: `Alhamdulillah! Selamat datang, ${matchedProfile.nickname || matchedProfile.full_name}.`,
         role: matchedProfile.role,
       };
     }
 
     return {
       success: false,
-      message: 'Akun dengan NIS atau Email tersebut tidak terdaftar di sistem. Harap periksa kembali.',
+      message: `Akun dengan nama panggilan "${cleanId}" tidak ditemukan. Silakan periksa kembali nama panggilan Anda.`,
     };
   };
 
