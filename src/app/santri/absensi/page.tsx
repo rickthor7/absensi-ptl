@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { determineActiveActivity } from '@/lib/schedule';
 import AttendanceWizard from '@/components/attendance/AttendanceWizard';
+import ActivitySelectDropdown, { formatTimeRange } from '@/components/schedule/ActivitySelectDropdown';
 import { Activity } from '@/types';
-import { Camera, Clock, ChevronDown, Sparkles, MapPin, ShieldCheck } from 'lucide-react';
+import { Camera, Clock, Sparkles, MapPin, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export default function SantriAbsensiPage() {
   const { activities, effectiveTime } = useStore();
@@ -28,34 +29,56 @@ export default function SantriAbsensiPage() {
             <span>Presensi Mandiri Santri</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight">
-            Formulir Selfie & Geotag
+            Formulir Selfie &amp; Geotag
           </h1>
           <p className="text-xs text-stone-500 max-w-md">
             Pastikan kamera depan dan izin lokasi GPS telah diaktifkan untuk pencatatan otomatis.
           </p>
         </div>
 
-        {/* Activity Picker */}
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <span className="text-xs font-bold text-stone-500 shrink-0">Kegiatan:</span>
-          <div className="relative w-full sm:w-auto">
-            <select
-              value={selectedActivity?.id || ''}
-              onChange={(e) => {
-                const act = activities.find((a) => a.id === e.target.value);
-                if (act) setSelectedActivity(act);
-              }}
-              className="w-full sm:w-64 text-xs font-bold p-3 pr-9 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 appearance-none focus:ring-2 focus:ring-[#146B50] outline-none shadow-xs cursor-pointer"
-            >
-              {activities.map((act) => (
-                <option key={act.id} value={act.id}>
-                  {act.name} ({act.start_time} - {act.end_time})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3 top-3.5 pointer-events-none" />
-          </div>
+        {/* Custom Activity Dropdown */}
+        <div className="relative z-10 w-full md:w-auto">
+          <ActivitySelectDropdown
+            activities={activities}
+            selectedActivityId={selectedActivity?.id || ''}
+            onSelect={(act) => setSelectedActivity(act)}
+            activeActivityId={activeResult.activeActivity?.id}
+            className="w-full sm:w-72"
+          />
         </div>
+      </div>
+
+      {/* Quick Session Tabs Strip */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {activities.map((act) => {
+          const isSelected = act.id === selectedActivity?.id;
+          const isLive = act.id === activeResult.activeActivity?.id;
+          return (
+            <button
+              key={act.id}
+              onClick={() => setSelectedActivity(act)}
+              className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-gradient-to-r from-[#146B50] to-[#0B3D2E] text-white shadow-md ring-2 ring-[#D6A84F]/40'
+                  : 'bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-stone-50 dark:hover:bg-stone-800/60'
+              }`}
+            >
+              {isLive ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              ) : isSelected ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#D6A84F] shrink-0" />
+              ) : null}
+              <span>{act.name}</span>
+              <span
+                className={`text-[10px] font-mono ${
+                  isSelected ? 'text-emerald-200' : 'text-stone-400'
+                }`}
+              >
+                {formatTimeRange(act.start_time, act.end_time).replace(' WIB', '')}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Info schedule badge */}
@@ -64,7 +87,7 @@ export default function SantriAbsensiPage() {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#146B50] dark:text-[#D6A84F] shrink-0" />
             <span>
-              Jadwal: <strong>{selectedActivity.name}</strong> ({selectedActivity.start_time} - {selectedActivity.end_time} WIB)
+              Jadwal: <strong>{selectedActivity.name}</strong> ({formatTimeRange(selectedActivity.start_time, selectedActivity.end_time)})
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#146B50] dark:text-[#D6A84F] bg-white/60 dark:bg-stone-900/60 px-2.5 py-1 rounded-full border border-emerald-300/40">

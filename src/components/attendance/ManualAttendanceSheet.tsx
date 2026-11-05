@@ -4,6 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { Activity, AttendanceRecord, Profile } from '@/types';
 import { checkDiscrepancy } from '@/lib/store';
+import ActivitySelectDropdown from '@/components/schedule/ActivitySelectDropdown';
+import CustomSelect from '@/components/ui/CustomSelect';
 import {
   Users,
   Calendar,
@@ -267,20 +269,12 @@ export default function ManualAttendanceSheet({
             <label className="block text-[11px] font-bold text-stone-500 mb-1">
               Pilih Kegiatan:
             </label>
-            <div className="relative">
-              <select
-                value={selectedActivityId}
-                onChange={(e) => handleActivityOrDateChange(e.target.value, selectedDate)}
-                className="w-full text-xs font-bold p-2.5 pr-8 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 appearance-none outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
-              >
-                {activities.map((act) => (
-                  <option key={act.id} value={act.id}>
-                    {act.name} ({act.start_time} - {act.end_time})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3 top-3 pointer-events-none" />
-            </div>
+            <ActivitySelectDropdown
+              activities={activities}
+              selectedActivityId={selectedActivityId}
+              onSelect={(act) => handleActivityOrDateChange(act.id, selectedDate)}
+              className="w-full"
+            />
           </div>
 
           {/* Date Selector */}
@@ -316,21 +310,15 @@ export default function ManualAttendanceSheet({
             <label className="block text-[11px] font-bold text-stone-500 mb-1">
               Kamar / Angkatan:
             </label>
-            <div className="relative">
-              <select
-                value={filterGroup}
-                onChange={(e) => setFilterGroup(e.target.value)}
-                className="w-full text-xs font-bold p-2.5 pr-8 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 appearance-none outline-none focus:ring-2 focus:ring-[#146B50] cursor-pointer"
-              >
-                <option value="all">Semua Kamar / Angkatan</option>
-                {groupOptions.map((grp) => (
-                  <option key={grp} value={grp}>
-                    {grp}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3 top-3 pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={filterGroup}
+              onChange={(val) => setFilterGroup(val)}
+              options={[
+                { value: 'all', label: 'Semua Kamar / Angkatan' },
+                ...groupOptions.map((grp) => ({ value: grp, label: grp })),
+              ]}
+              className="w-full"
+            />
           </div>
         </div>
 

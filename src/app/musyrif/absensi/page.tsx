@@ -7,6 +7,7 @@ import { STATUS_META } from '@/lib/constants';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import CorrectionModal from '@/components/attendance/CorrectionModal';
 import TahfidzValidationModal from '@/components/attendance/TahfidzValidationModal';
+import CustomSelect from '@/components/ui/CustomSelect';
 import {
   CheckCircle2,
   Search,
@@ -157,33 +158,31 @@ export default function MusyrifAbsensiPage() {
             )}
           </div>
 
-          <select
+          <CustomSelect
             value={filterActivity}
-            onChange={(e) => setFilterActivity(e.target.value)}
-            className="text-xs font-semibold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none"
-          >
-            <option value="all">Semua Kegiatan</option>
-            {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setFilterActivity(val)}
+            options={[
+              { value: 'all', label: 'Semua Kegiatan' },
+              ...activities.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+            className="w-full sm:w-44"
+          />
 
-          <select
+          <CustomSelect
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-xs font-semibold p-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 outline-none"
-          >
-            <option value="all">Semua Status</option>
-            <option value="hadir_valid">Hadir Valid (Selfie &amp; GPS)</option>
-            <option value="izin_diajukan">Izin Menunggu</option>
-            <option value="izin_disetujui">Izin Disetujui</option>
-            <option value="izin_ditolak">Izin Ditolak</option>
-            <option value="perlu_tinjauan">Perlu Tinjauan</option>
-            <option value="ditolak_lokasi">Ditolak Lokasi (Luar Radius)</option>
-            <option value="alpa">Alpa / Tidak Hadir</option>
-          </select>
+            onChange={(val) => setFilterStatus(val)}
+            options={[
+              { value: 'all', label: 'Semua Status' },
+              { value: 'hadir_valid', label: 'Hadir Valid (Selfie & GPS)' },
+              { value: 'izin_diajukan', label: 'Izin Menunggu' },
+              { value: 'izin_disetujui', label: 'Izin Disetujui' },
+              { value: 'izin_ditolak', label: 'Izin Ditolak' },
+              { value: 'perlu_tinjauan', label: 'Perlu Tinjauan' },
+              { value: 'ditolak_lokasi', label: 'Ditolak Lokasi (Luar)' },
+              { value: 'alpa', label: 'Alpa / Tidak Hadir' },
+            ]}
+            className="w-full sm:w-48"
+          />
         </div>
       </div>
 
