@@ -1073,23 +1073,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
 
     let calculatedStatus: AttendanceStatus = 'hadir_valid';
-    let message = 'Absensi mandiri berhasil diverifikasi!';
+    let message = 'Absensi mandiri berhasil diverifikasi sistem!';
 
     if (type === 'izin') {
       calculatedStatus = 'izin_diajukan';
       message = 'Pengajuan izin berhasil dikirim dan menunggu persetujuan musyrif.';
     } else {
-      if (!geoValidation.isAccuracyAcceptable) {
-        calculatedStatus = 'perlu_tinjauan';
-        message = 'Akurasi GPS rendah. Absensi tercatat namun perlu tinjauan musyrif.';
-      } else if (!geoValidation.isWithinRadius) {
+      if (!geoValidation.isWithinRadius) {
         calculatedStatus = 'ditolak_lokasi';
         message = `Anda berada di luar radius pondok (${Math.round(
           geoValidation.distanceMeters
         )}m). Absensi ditolak oleh sistem.`;
       } else {
         calculatedStatus = 'hadir_valid';
-        message = `Alhamdulillah! Kehadiran ${activity.name} berhasil divalidasi.`;
+        message = `Alhamdulillah! Kehadiran ${activity.name} berhasil divalidasi sistem.`;
       }
     }
 
@@ -1119,8 +1116,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (type === 'hadir' && calculatedStatus === 'hadir_valid') {
-        finalStatus = 'perlu_tinjauan';
-        message = `Alhamdulillah! Data setoran ${activity.name} terkirim. Menunggu ACC ${resolvedTahfidzUstadzName}.`;
+        finalStatus = 'hadir_valid';
+        message = `Alhamdulillah! Presensi & setoran ${activity.name} berhasil divalidasi sistem.`;
       }
     }
 
@@ -1141,7 +1138,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       musyrif_status: undefined,
       has_discrepancy: false,
       discrepancy_reason: undefined,
-      is_verified: !isTahfidzActivity,
+      is_verified: finalStatus === 'hadir_valid',
       photo_path: publicPhotoUrl,
       latitude: coords.latitude,
       longitude: coords.longitude,

@@ -40,7 +40,7 @@ export default function MusyrifTahfidzPage() {
   const todayStr = effectiveTime.toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'menunggu' | 'acc' | 'belum'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'sudah' | 'belum'>('all');
 
   // Determine initial active class: user's assigned class or the first class
   const initialClassId: TahfidzClassId = useMemo(() => {
@@ -113,24 +113,11 @@ export default function MusyrifTahfidzPage() {
       if (!matchSearch) return false;
 
       if (statusFilter === 'all') return true;
-      if (statusFilter === 'menunggu') {
-        return (
-          record &&
-          (record.tahfidz_status === 'menunggu_validasi' ||
-            record.status === 'perlu_tinjauan') &&
-          record.status !== 'hadir_valid'
-        );
-      }
-      if (statusFilter === 'acc') {
-        return (
-          record &&
-          (record.status === 'hadir_valid' ||
-            record.tahfidz_status === 'lancar' ||
-            record.tahfidz_status === 'perlu_diulang')
-        );
+      if (statusFilter === 'sudah') {
+        return record && (record.status === 'hadir_valid' || record.tahfidz_status === 'lancar' || record.tahfidz_status === 'perlu_diulang');
       }
       if (statusFilter === 'belum') {
-        return !record || record.tahfidz_status === 'tidak_lancar' || record.status === 'alpa';
+        return !record || record.status === 'alpa' || record.tahfidz_status === 'tidak_lancar';
       }
       return true;
     });
@@ -138,21 +125,14 @@ export default function MusyrifTahfidzPage() {
 
   // Metrics
   const totalSantri = santriList.length;
-  const sudahAccCount = santriSetoranData.filter(
+  const sudahSetorCount = santriSetoranData.filter(
     ({ record }) =>
       record &&
       (record.status === 'hadir_valid' ||
         record.tahfidz_status === 'lancar' ||
         record.tahfidz_status === 'perlu_diulang')
   ).length;
-  const menungguCount = santriSetoranData.filter(
-    ({ record }) =>
-      record &&
-      (record.tahfidz_status === 'menunggu_validasi' ||
-        record.status === 'perlu_tinjauan') &&
-      record.status !== 'hadir_valid'
-  ).length;
-  const belumCount = totalSantri - sudahAccCount - menungguCount;
+  const belumCount = totalSantri - sudahSetorCount;
 
   // 1-Click Fast ACC
   const handleFastAcc = async (record: AttendanceRecord) => {
@@ -253,7 +233,7 @@ export default function MusyrifTahfidzPage() {
       </div>
 
       {/* Active Class Controls & Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
           <div className="flex items-center justify-between text-stone-500 text-xs mb-1">
             <span>Total Santri</span>
@@ -267,24 +247,13 @@ export default function MusyrifTahfidzPage() {
 
         <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
           <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs mb-1">
-            <span>Sudah Di-ACC</span>
+            <span>Sudah Setor (Hadir Valid)</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-800 dark:text-emerald-200">
-            {sudahAccCount}
+            {sudahSetorCount}
           </div>
-          <span className="text-[11px] text-emerald-600">Presensi Sah & Valid</span>
-        </div>
-
-        <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
-          <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 text-xs mb-1">
-            <span>Menunggu ACC</span>
-            <Clock className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="text-2xl font-black text-amber-800 dark:text-amber-200">
-            {menungguCount}
-          </div>
-          <span className="text-[11px] text-amber-600">Sudah setor mandiri</span>
+          <span className="text-[11px] text-emerald-600">Presensi Sah &amp; Valid Sistem</span>
         </div>
 
         <div className="bg-stone-50 dark:bg-stone-800/40 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
@@ -295,7 +264,7 @@ export default function MusyrifTahfidzPage() {
           <div className="text-2xl font-black text-stone-800 dark:text-stone-100">
             {belumCount}
           </div>
-          <span className="text-[11px] text-stone-400">Belum ada rekaman</span>
+          <span className="text-[11px] text-stone-400">Belum ada rekaman sesi</span>
         </div>
       </div>
 
@@ -326,24 +295,14 @@ export default function MusyrifTahfidzPage() {
               Semua ({santriSetoranData.length})
             </button>
             <button
-              onClick={() => setStatusFilter('menunggu')}
+              onClick={() => setStatusFilter('sudah')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                statusFilter === 'menunggu'
-                  ? 'bg-white dark:bg-stone-700 text-amber-600 shadow-sm'
-                  : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
-              }`}
-            >
-              Menunggu ({menungguCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter('acc')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                statusFilter === 'acc'
+                statusFilter === 'sudah'
                   ? 'bg-white dark:bg-stone-700 text-emerald-600 shadow-sm'
                   : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
               }`}
             >
-              ACC ({sudahAccCount})
+              Sudah Setor ({sudahSetorCount})
             </button>
             <button
               onClick={() => setStatusFilter('belum')}
@@ -470,12 +429,7 @@ export default function MusyrifTahfidzPage() {
                       {isAcc ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-[#146B50] dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Sudah Di-ACC ({record?.tahfidz_status || 'Lancar'})</span>
-                        </span>
-                      ) : isMenunggu ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                          <Clock className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Menunggu Review ACC</span>
+                          <span>Sudah Setor • Valid Sistem</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700">
@@ -497,22 +451,12 @@ export default function MusyrifTahfidzPage() {
                         </button>
                       )}
 
-                      {record && isMenunggu && (
-                        <button
-                          onClick={() => handleFastAcc(record)}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#115b44] hover:to-[#082a20] text-white text-xs font-extrabold shadow-sm transition cursor-pointer active:scale-95 border border-[#D6A84F]/30"
-                        >
-                          <Check className="w-3.5 h-3.5 text-[#D6A84F]" />
-                          <span>ACC Lancar</span>
-                        </button>
-                      )}
-
                       {record && (
                         <button
                           onClick={() => setValidatingRecord(record)}
                           className="px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
                         >
-                          {isAcc ? 'Koreksi' : 'Review & Catatan'}
+                          Koreksi Bacaan / Catatan
                         </button>
                       )}
                     </div>

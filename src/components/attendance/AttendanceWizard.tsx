@@ -1072,8 +1072,8 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     </strong>
                   </span>
                 </div>
-                <span className="text-[10px] font-bold bg-white/80 dark:bg-stone-900/80 px-2 py-0.5 rounded-md border border-emerald-300 self-start sm:self-auto">
-                  Menunggu Validasi Musyrif
+                <span className="text-[10px] font-bold bg-white/80 dark:bg-stone-900/80 px-2 py-0.5 rounded-md border border-emerald-300 self-start sm:self-auto text-emerald-800 dark:text-emerald-200">
+                  Tervalidasi Sistem (Selfie &amp; GPS)
                 </span>
               </div>
             </div>
@@ -1196,7 +1196,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 text-[#146B50] border border-emerald-300 shrink-0">
-                    Menunggu ACC {assignedUstadzName}
+                    Hadir Sah (Disimak {assignedUstadzName})
                   </span>
                 </div>
               )}

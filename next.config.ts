@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.56.1', 'localhost:3000'],
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    cpus: 1,
+  },
   turbopack: {
     rules: {
       "*.css": {

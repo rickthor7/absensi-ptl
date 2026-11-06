@@ -142,9 +142,9 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
   }
 
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between h-full">
+    <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 sm:p-5 shadow-xs flex flex-col justify-between h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[#105943]" />
           <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
@@ -154,7 +154,7 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
       </div>
 
       {/* Month Navigator */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-2.5 sm:mb-3 px-1">
         <button
           type="button"
           onClick={handlePrev}
@@ -192,7 +192,7 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
         {gridCells.map((item, idx) => (
           <div
             key={idx}
-            className={`h-7 sm:h-8 flex items-center justify-center rounded-xl text-xs transition ${
+            className={`h-7 sm:h-8 flex items-center justify-center rounded-lg sm:rounded-xl text-[11px] sm:text-xs transition ${
               item.isToday
                 ? 'bg-[#105943] text-white font-black shadow-sm'
                 : item.isCurrentMonth
@@ -275,15 +275,15 @@ export default function SantriDashboardPage() {
   const isSafe = attendanceRate >= 70;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 sm:space-y-5">
       
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── ROW 1: HERO CARD + KEGIATAN TERBARU WIDGET ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
         
         {/* ── LEFT HERO CARD (Col 7 on Desktop) ── */}
-        <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B4A37] via-[#0E5B44] to-[#124233] text-white p-5 sm:p-6 lg:p-7 shadow-lg flex flex-col justify-between border border-[#146B50]/30 min-h-[300px]">
+        <div className="lg:col-span-7 relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B4A37] via-[#0E5B44] to-[#124233] text-white p-4 sm:p-6 lg:p-7 shadow-lg flex flex-col justify-between border border-[#146B50]/30 min-h-[290px] sm:min-h-[300px]">
           
           {/* Mosque building backdrop image blended smoothly on right */}
           <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-25 pointer-events-none overflow-hidden mix-blend-overlay hidden sm:block">
@@ -295,16 +295,16 @@ export default function SantriDashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#0B4A37] via-transparent to-transparent" />
           </div>
 
-          <div className="relative z-10 space-y-4">
+          <div className="relative z-10 space-y-3 sm:space-y-4">
             
             {/* Top row: Hijri date & WIB clock pills */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-emerald-100 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#D6A84F]" />
-                <span>{getEstimatedHijriDate(effectiveTime)}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-semibold text-emerald-100 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-[#D6A84F] shrink-0" />
+                <span className="truncate">{getEstimatedHijriDate(effectiveTime)}</span>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-bold text-white shadow-2xs font-mono">
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-bold text-white shadow-2xs font-mono shrink-0">
                 <Clock className="w-3.5 h-3.5 text-[#D6A84F]" />
                 <span>
                   {effectiveTime.toLocaleTimeString('id-ID', {
@@ -321,33 +321,33 @@ export default function SantriDashboardPage() {
               <p className="text-xs sm:text-sm text-emerald-200/90 font-medium">
                 {greeting},
               </p>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2 mt-0.5">
-                <span>{firstName.toUpperCase()}</span>
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2 mt-0.5 break-words">
+                <span className="break-all">{firstName.toUpperCase()}</span>
                 <span>👋</span>
               </h1>
-              <p className="text-xs text-emerald-100/80 font-medium tracking-wide uppercase mt-1">
+              <p className="text-[11px] sm:text-xs text-emerald-100/80 font-medium tracking-wide uppercase mt-1 break-words">
                 {currentUser.full_name}
               </p>
             </div>
 
             {/* Tag Badges Row (STR/NIS, Angkatan, Status Peringatan) */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="px-3 py-1 rounded-full bg-[#083327]/80 border border-[#146B50] text-[11px] font-mono font-bold text-emerald-200">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#083327]/80 border border-[#146B50] text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200">
                 {currentUser.student_number || 'STR. 2024 - 809'}
               </span>
 
-              <span className="px-3 py-1 rounded-full bg-amber-900/40 border border-amber-600/40 text-[11px] font-bold text-amber-200 flex items-center gap-1">
+              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-amber-900/40 border border-amber-600/40 text-[10px] sm:text-[11px] font-bold text-amber-200 flex items-center gap-1">
                 <span>🎓</span>
                 <span>Angkatan {currentUser.generation || '2024'}</span>
               </span>
 
               {isSafe ? (
-                <span className="px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-500/40 text-[11px] font-bold text-emerald-200 flex items-center gap-1">
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-900/50 border border-emerald-500/40 text-[10px] sm:text-[11px] font-bold text-emerald-200 flex items-center gap-1">
                   <span>✓</span>
                   <span>Aman (≥ 70%)</span>
                 </span>
               ) : (
-                <span className="px-3 py-1 rounded-full bg-rose-950/60 border border-rose-500/50 text-[11px] font-bold text-rose-200 flex items-center gap-1 animate-pulse">
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-rose-950/60 border border-rose-500/50 text-[10px] sm:text-[11px] font-bold text-rose-200 flex items-center gap-1 animate-pulse">
                   <span>⚠️</span>
                   <span>Peringatan</span>
                 </span>
@@ -357,54 +357,54 @@ export default function SantriDashboardPage() {
           </div>
 
           {/* Bottom 3 Glass Stat Cards */}
-          <div className="relative z-10 grid grid-cols-3 gap-2.5 sm:gap-3 pt-5">
+          <div className="relative z-10 grid grid-cols-3 gap-2 sm:gap-3 pt-4 sm:pt-5">
             {/* Box 1: Hadir */}
-            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
-              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-                <Calendar className="w-3.5 h-3.5" />
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-2 sm:p-3 text-center transition">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-1 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+              <div className="text-base sm:text-2xl font-black text-white leading-none">
                 {hadirCount}
               </div>
-              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+              <div className="text-[9px] sm:text-[10px] font-extrabold uppercase text-white/90 mt-1">
                 HADIR
               </div>
-              <div className="text-[9px] text-emerald-200/70">Bulan ini</div>
+              <div className="text-[8px] sm:text-[9px] text-emerald-200/70 truncate">Bulan ini</div>
             </div>
 
             {/* Box 2: Izin */}
-            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
-              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
-                <Check className="w-3.5 h-3.5" />
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-2 sm:p-3 text-center transition">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-1 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+              <div className="text-base sm:text-2xl font-black text-white leading-none">
                 {izinCount}
               </div>
-              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+              <div className="text-[9px] sm:text-[10px] font-extrabold uppercase text-white/90 mt-1">
                 IZIN
               </div>
-              <div className="text-[9px] text-emerald-200/70">Disetujui</div>
+              <div className="text-[8px] sm:text-[9px] text-emerald-200/70 truncate">Disetujui</div>
             </div>
 
             {/* Box 3: Streak */}
-            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 sm:p-3 text-center transition">
-              <div className="w-7 h-7 mx-auto mb-1 rounded-lg bg-[#D6A84F]/25 text-[#D6A84F] flex items-center justify-center">
-                <Flame className="w-3.5 h-3.5" />
+            <div className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-2 sm:p-3 text-center transition">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-1 rounded-lg bg-[#D6A84F]/25 text-[#D6A84F] flex items-center justify-center">
+                <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-lg sm:text-2xl font-black text-white leading-none">
+              <div className="text-base sm:text-2xl font-black text-white leading-none">
                 {streak}
               </div>
-              <div className="text-[10px] font-extrabold uppercase text-white/90 mt-1">
+              <div className="text-[9px] sm:text-[10px] font-extrabold uppercase text-white/90 mt-1">
                 STREAK
               </div>
-              <div className="text-[9px] text-emerald-200/70">Hari hadir</div>
+              <div className="text-[8px] sm:text-[9px] text-emerald-200/70 truncate">Hari hadir</div>
             </div>
           </div>
 
         </div>
 
         {/* ── RIGHT CARD: KEGIATAN TERBARU (Col 5 on Desktop) ── */}
-        <div className="lg:col-span-5 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 sm:p-6 shadow-xs flex flex-col justify-between">
           
           <div className="space-y-3.5">
             {/* Header: Title + Lihat Semua */}
@@ -425,9 +425,9 @@ export default function SantriDashboardPage() {
             </div>
 
             {/* Status Icon & Session Info */}
-            <div className="flex items-start gap-3.5 pt-1">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-[#105943] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">
-                <Calendar className="w-6 h-6" />
+            <div className="flex items-start gap-3 sm:gap-3.5 pt-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-[#105943] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
 
               <div className="space-y-1 min-w-0">
@@ -443,7 +443,7 @@ export default function SantriDashboardPage() {
                   </span>
                 </div>
 
-                <h3 className="font-extrabold text-base text-stone-900 dark:text-stone-100 truncate">
+                <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100 truncate">
                   {activeActivity ? activeActivity.name : 'Tidak Ada Kegiatan'}
                 </h3>
 
@@ -456,16 +456,16 @@ export default function SantriDashboardPage() {
             </div>
 
             {/* Next activity notice box */}
-            <div className="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 p-3 flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 min-w-0">
+            <div className="rounded-xl sm:rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 p-2.5 sm:p-3 flex flex-col xs:flex-row sm:flex-row items-start xs:items-center sm:items-center justify-between gap-1.5 sm:gap-2 text-xs">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 min-w-0 w-full sm:w-auto">
                 <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="truncate">
+                <span className="truncate text-[11px] sm:text-xs">
                   {activeResult.nextActivity
-                    ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time})`
+                    ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time.slice(0, 5)})`
                     : 'Semua sesi terjadwal hari ini selesai.'}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 shrink-0">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 shrink-0 self-end xs:self-center sm:self-center">
                 {isWindowOpen ? 'Aktif' : 'Di Luar Jam'}
               </span>
             </div>
@@ -473,9 +473,9 @@ export default function SantriDashboardPage() {
           </div>
 
           {/* Primary Action Button */}
-          <div className="pt-4">
+          <div className="pt-3 sm:pt-4">
             {todayAttendance ? (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-center gap-2 min-w-0">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate">
@@ -499,7 +499,7 @@ export default function SantriDashboardPage() {
             ) : isWindowOpen ? (
               <Link
                 href="/santri/absensi"
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#0B4A37] to-[#105943] hover:from-[#08382A] hover:to-[#0B4A37] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0B4A37] to-[#105943] hover:from-[#08382A] hover:to-[#0B4A37] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
               >
                 <Camera className="w-4 h-4 text-[#D6A84F]" />
                 <span>Ambil Absensi Selfie Sekarang</span>
@@ -508,7 +508,7 @@ export default function SantriDashboardPage() {
             ) : (
               <Link
                 href="/santri/absensi"
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#0B4A37] hover:bg-[#08382A] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-[#0B4A37] hover:bg-[#08382A] text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2"
               >
                 <Calendar className="w-4 h-4 text-[#D6A84F]" />
                 <span>Formulir Presensi &amp; Izin</span>
@@ -524,90 +524,90 @@ export default function SantriDashboardPage() {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── ROW 2: 4 QUICK NAVIGATION CARDS ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
         
         {/* Card 1: Absen / Selfie GPS */}
         <Link
           href="/santri/absensi"
-          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+          className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-3 sm:p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-[#105943] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Camera className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-[#105943] dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Absen
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 Selfie GPS
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#105943] group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#105943] group-hover:translate-x-0.5 transition hidden sm:block shrink-0" />
         </Link>
 
         {/* Card 2: Kalender / Bulanan */}
         <Link
           href="/santri/kalender"
-          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+          className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-3 sm:p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Calendar className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Kalender
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 Bulanan
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition hidden sm:block shrink-0" />
         </Link>
 
         {/* Card 3: Riwayat / Catatan */}
         <Link
           href="/santri/riwayat"
-          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+          className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-3 sm:p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <History className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <History className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Riwayat
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 Catatan
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-sky-600 group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-sky-600 group-hover:translate-x-0.5 transition hidden sm:block shrink-0" />
         </Link>
 
         {/* Card 4: SPP / Keuangan */}
         <Link
           href="/santri/spp"
-          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
+          className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-3 sm:p-4 shadow-xs hover:shadow-md transition flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <CreditCard className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-extrabold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 SPP
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 Keuangan
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition hidden sm:block shrink-0" />
         </Link>
 
       </div>
@@ -615,10 +615,10 @@ export default function SantriDashboardPage() {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── ROW 3: 3-COLUMN DETAILED INFORMATION GRID ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
         
         {/* ── COL 1: RINGKASAN KEHADIRAN (lg:col-span-4) ── */}
-        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           
           <div className="space-y-4">
             {/* Header */}
@@ -632,12 +632,12 @@ export default function SantriDashboardPage() {
             </div>
 
             {/* Donut Chart Row */}
-            <div className="flex items-center gap-4 pt-1">
+            <div className="flex items-center gap-3.5 sm:gap-4 pt-1">
               {/* Donut Ring */}
               <div className="relative shrink-0 flex items-center justify-center">
-                <DonutRing value={attendanceRate} size={82} strokeWidth={7} color="#105943" />
+                <DonutRing value={attendanceRate} size={76} strokeWidth={6.5} color="#105943" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-base font-black text-stone-900 dark:text-white">
+                  <span className="text-sm sm:text-base font-black text-stone-900 dark:text-white">
                     {attendanceRate}%
                   </span>
                 </div>
@@ -676,56 +676,56 @@ export default function SantriDashboardPage() {
           </div>
 
           {/* 4 Mini Stat Boxes Below */}
-          <div className="grid grid-cols-4 gap-2 pt-5 border-t border-stone-100 dark:border-stone-800 mt-4">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-4 sm:pt-5 border-t border-stone-100 dark:border-stone-800 mt-3 sm:mt-4">
             {/* Hadir */}
-            <div className="text-center p-2 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
-              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <Check className="w-3.5 h-3.5" />
+            <div className="text-center p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-sm font-black text-stone-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-black text-stone-900 dark:text-white">
                 {hadirCount}
               </div>
-              <div className="text-[10px] font-semibold text-stone-500">Hadir</div>
+              <div className="text-[9px] sm:text-[10px] font-semibold text-stone-500">Hadir</div>
             </div>
 
             {/* Izin */}
-            <div className="text-center p-2 rounded-2xl bg-amber-50 dark:bg-stone-800/50">
-              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
-                <DoorOpen className="w-3.5 h-3.5" />
+            <div className="text-center p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-stone-800/50">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                <DoorOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-sm font-black text-stone-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-black text-stone-900 dark:text-white">
                 {izinCount}
               </div>
-              <div className="text-[10px] font-semibold text-stone-500">Izin</div>
+              <div className="text-[9px] sm:text-[10px] font-semibold text-stone-500">Izin</div>
             </div>
 
             {/* Alpa */}
-            <div className="text-center p-2 rounded-2xl bg-rose-50 dark:bg-stone-800/50">
-              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
-                <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="text-center p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-stone-800/50">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
+                <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-sm font-black text-stone-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-black text-stone-900 dark:text-white">
                 {alpaCount}
               </div>
-              <div className="text-[10px] font-semibold text-stone-500">Alpa</div>
+              <div className="text-[9px] sm:text-[10px] font-semibold text-stone-500">Alpa</div>
             </div>
 
             {/* Review */}
-            <div className="text-center p-2 rounded-2xl bg-orange-50 dark:bg-stone-800/50">
-              <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center">
-                <Star className="w-3.5 h-3.5" />
+            <div className="text-center p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-orange-50 dark:bg-stone-800/50">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center">
+                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
-              <div className="text-sm font-black text-stone-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-black text-stone-900 dark:text-white">
                 {reviewCount}
               </div>
-              <div className="text-[10px] font-semibold text-stone-500">Review</div>
+              <div className="text-[9px] sm:text-[10px] font-semibold text-stone-500">Review</div>
             </div>
           </div>
 
         </div>
 
         {/* ── COL 2: RIWAYAT ABSENSI TERKINI (lg:col-span-4) ── */}
-        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-stone-800 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           
           <div>
             {/* Header: Title + Semua Riwayat */}
@@ -757,11 +757,11 @@ export default function SantriDashboardPage() {
                   return (
                     <div
                       key={rec.id}
-                      className="py-3 flex items-center justify-between gap-2.5 hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition rounded-xl px-1"
+                      className="py-2.5 sm:py-3 flex items-center justify-between gap-2 hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition rounded-xl px-1"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0 ${
                             rec.status === 'hadir_valid'
                               ? 'bg-emerald-500'
                               : rec.status.startsWith('izin')
@@ -785,9 +785,10 @@ export default function SantriDashboardPage() {
                       </div>
 
                       <span
-                        className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
+                        className={`shrink-0 px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border max-w-[110px] sm:max-w-none truncate ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}
+                        title={meta.label}
                       >
-                        {meta.label.split('—')[0].trim()}
+                        {meta.label.split('—')[0].split('(')[0].trim()}
                       </span>
                     </div>
                   );
@@ -817,7 +818,7 @@ export default function SantriDashboardPage() {
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── ROW 4: BOTTOM MOTIVATIONAL PESANTREN BANNER ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B4A37] via-[#0E5B44] to-[#146B50] p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#146B50]/40">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#0B4A37] via-[#0E5B44] to-[#146B50] p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border border-[#146B50]/40">
         
         {/* Subtle background mosque silhouette */}
         <div className="absolute right-0 top-0 bottom-0 w-80 opacity-20 pointer-events-none overflow-hidden mix-blend-overlay hidden md:block">
@@ -828,24 +829,24 @@ export default function SantriDashboardPage() {
           />
         </div>
 
-        <div className="relative z-10 flex items-center gap-3.5 min-w-0">
-          <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 text-white">
-            <BookOpen className="w-5 h-5 text-[#D6A84F]" />
+        <div className="relative z-10 flex items-center gap-3 sm:gap-3.5 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 text-white">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#D6A84F]" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-extrabold text-xs sm:text-sm text-white tracking-tight truncate">
+            <h4 className="font-extrabold text-xs sm:text-sm text-white tracking-tight line-clamp-2 sm:line-clamp-none">
               Mulai absensi hari ini dan raih streak berturut-turut, {firstName.toUpperCase()}!
             </h4>
-            <p className="text-[11px] text-emerald-100/70 truncate mt-0.5">
+            <p className="text-[10px] sm:text-[11px] text-emerald-100/70 truncate mt-0.5">
               Pondok Pesantren Nurul Falah - Ketintang, Surabaya
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 shrink-0 self-end sm:self-center">
+        <div className="relative z-10 shrink-0 w-full sm:w-auto">
           <Link
             href="/santri/absensi"
-            className="px-4 py-2 rounded-full bg-[#D7EFE5] hover:bg-white text-[#0B4A37] font-black text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-full bg-[#D7EFE5] hover:bg-white text-[#0B4A37] font-black text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer text-center"
           >
             <span>Semangat!</span>
             <ArrowRight className="w-3.5 h-3.5" />
