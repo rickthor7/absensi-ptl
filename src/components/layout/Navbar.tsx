@@ -112,14 +112,13 @@ export default function Navbar() {
     { href: '/santri/spp', label: 'SPP', icon: CreditCard },
     { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
     { href: '/santri/riwayat', label: 'Riwayat', icon: History },
-    { href: '/transparansi', label: 'Transparansi', icon: Wallet },
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
   const musyrifNav: NavItem[] = [
     { href: '/musyrif', label: 'Ringkasan', icon: Compass },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
-    { href: '/musyrif/keuangan', label: 'Keuangan & SPP', icon: Wallet, badge: pendingSppCount },
+    { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },
     { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
@@ -220,17 +219,6 @@ export default function Navbar() {
                 >
                   <Compass className="w-3.5 h-3.5" />
                   <span>Beranda</span>
-                </Link>
-                <Link
-                  href="/transparansi"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
-                    pathname === '/transparansi'
-                      ? 'bg-[#D4A24C] text-[#082F23] font-bold'
-                      : 'text-[#D4A24C] border border-[#D4A24C]/30 hover:bg-[#D4A24C]/10'
-                  }`}
-                >
-                  <Wallet className="w-3.5 h-3.5" />
-                  <span>Transparansi Kas Terbuka</span>
                 </Link>
                 <Link
                   href="/santri/absensi"
@@ -367,20 +355,6 @@ export default function Navbar() {
                             <span className="text-[10px] text-stone-400">Keamanan &amp; kredensial</span>
                           </div>
                         </button>
-
-                        <Link
-                          href="/transparansi"
-                          onClick={() => setShowUserMenu(false)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#162B22] transition group"
-                        >
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center group-hover:bg-blue-500/10 transition shrink-0">
-                            <Wallet className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <span className="block font-semibold text-stone-800 dark:text-white">Transparansi</span>
-                            <span className="text-[10px] text-stone-400">Laporan keuangan publik</span>
-                          </div>
-                        </Link>
                       </div>
 
                       {/* Logout */}

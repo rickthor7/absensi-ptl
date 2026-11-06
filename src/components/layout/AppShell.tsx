@@ -114,8 +114,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isPublicHome = pathname === '/';
   const isDashboardRoute =
     pathname.startsWith('/santri') ||
-    pathname.startsWith('/musyrif') ||
-    pathname.startsWith('/transparansi');
+    pathname.startsWith('/musyrif');
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -142,7 +141,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/santri/spp', label: 'SPP', icon: CreditCard },
     { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
     { href: '/santri/riwayat', label: 'Riwayat', icon: History },
-    { href: '/transparansi', label: 'Transparansi', icon: Wallet },
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
@@ -153,11 +151,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
-    { href: '/musyrif/keuangan', label: 'Keuangan & SPP', icon: CreditCard, badge: pendingSppCount },
+    { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
     { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
-    { href: '/transparansi', label: 'Transparansi', icon: Wallet },
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
@@ -177,7 +174,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { title: 'Ajukan Izin Presensi', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Pembayaran SPP Online', href: isMusyrif ? '/musyrif/keuangan' : '/santri/spp', category: 'Keuangan' },
     { title: 'Laporan Mutabaah Bulanan', href: isMusyrif ? '/musyrif/laporan' : '/santri/riwayat', category: 'Laporan' },
-    { title: 'Laporan Kas Terbuka', href: '/transparansi', category: 'Keuangan' },
   ].filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // User display name

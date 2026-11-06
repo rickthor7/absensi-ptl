@@ -527,29 +527,6 @@ export default function SantriSppPage() {
           )}
         </div>
 
-        {/* ── Public Transparency Banner Link ── */}
-        <div className="rounded-2xl p-5 bg-gradient-to-r from-emerald-900/10 via-[#D4A24C]/10 to-transparent border border-emerald-600/20 dark:border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#0D7B5F] dark:text-[#D4A24C]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Transparansi Kas Terbuka</span>
-            </div>
-            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
-              Ingin tahu dana SPP & kas pondok digunakan untuk apa saja?
-            </h3>
-            <p className="text-xs text-stone-600 dark:text-stone-400">
-              Pesantren Nurul Falah menyajikan transparansi seluruh pengeluaran operasional, konsumsi, dan perawatan fasilitas secara publik dan akuntabel.
-            </p>
-          </div>
-          <Link
-            href="/transparansi"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#152922] text-[#0D7B5F] dark:text-[#D4A24C] border border-stone-200 dark:border-stone-700 text-xs font-bold shadow-sm hover:shadow transition-all shrink-0"
-          >
-            <span>Buka Laporan Transparansi</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
       </div>
 
       {/* ══════════════════════════════════════════════

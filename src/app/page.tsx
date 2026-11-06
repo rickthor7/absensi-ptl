@@ -301,7 +301,7 @@ export default function HomePage() {
                     {[
                       'Monitoring absensi santri real-time tiap sesi kegiatan',
                       'Persetujuan izin syar\'i & verifikasi koreksi musyrif',
-                      'Verifikasi pembayaran SPP & pembukuan kas pondok',
+                      'Verifikasi bukti pembayaran SPP bulanan santri',
                       'Ekspor laporan & raport santri (Excel, CSV, PDF)',
                     ].map((item) => (
                       <div key={item} className="flex items-start gap-2 text-xs text-stone-600 dark:text-stone-300">
@@ -326,60 +326,22 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ══ TRANSPARANSI BANNER & STATS (Responsive Layout) ══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch">
-          
-          {/* Transparansi Card (Col 7 on Desktop) */}
-          <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950/60 via-emerald-900/40 to-[#D4A24C]/15 border border-[#0D7B5F]/30 p-5 sm:p-7 flex flex-col justify-between shadow-sm">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4A24C]/10 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3 pointer-events-none" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4A24C]/15 text-[#D4A24C] text-[10px] font-bold border border-[#D4A24C]/25 mb-3">
-                <Sparkles className="w-3 h-3" />
-                <span>Transparansi Publik & Akuntabilitas</span>
+        {/* ══ STATS HIGHLIGHT ══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-stretch">
+          {[
+            { icon: Users, value: '32+', label: 'Santri Aktif', desc: 'Terdaftar aktif pesantren', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
+            { icon: BookOpen, value: '8', label: 'Kegiatan/Hari', desc: 'Sesi sholat & taklim', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
+            { icon: Star, value: '4+', label: 'Tahun Khidmah', desc: 'Nurul Falah Ketintang', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
+          ].map(({ icon: Icon, value, label, desc, color, bg }) => (
+            <div key={label} className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm p-5 text-center flex flex-col items-center justify-center card-hover">
+              <div className={`w-12 h-12 rounded-2xl ${bg} flex items-center justify-center mb-2.5`}>
+                <Icon className={`w-6 h-6 ${color}`} />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-stone-900 dark:text-stone-100 mb-2">
-                Laporan Keuangan & Kas Terbuka
-              </h3>
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed mb-6">
-                Wali santri, donatur, dan masyarakat luas dapat meninjau seluruh arus kas masuk dari SPP santri serta rincian penggunaan operasional pondok secara real-time dan terbuka.
-              </p>
+              <div className="text-2xl font-black text-stone-900 dark:text-stone-100">{value}</div>
+              <div className="text-xs text-stone-700 dark:text-stone-300 font-bold uppercase tracking-wide mt-1">{label}</div>
+              <div className="text-[10px] text-stone-400 mt-0.5">{desc}</div>
             </div>
-
-            <div className="relative z-10 flex flex-col sm:flex-row gap-3 pt-2">
-              <Link
-                href="/transparansi"
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A6951] text-white text-xs font-bold transition btn-press shadow-md"
-              >
-                <Wallet className="w-4 h-4 text-[#D4A24C]" />
-                <span>Buka Laporan Transparansi</span>
-              </Link>
-              <Link
-                href={isAuthenticated ? '/santri/spp' : '/login/santri'}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white dark:bg-[#152922] border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold hover:border-[#D4A24C]/50 transition"
-              >
-                <CreditCard className="w-4 h-4 text-[#D4A24C]" />
-                <span>Portal SPP Santri</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Stats Badges (Col 5 on Desktop) */}
-          <div className="lg:col-span-5 grid grid-cols-3 gap-3 sm:gap-4 items-stretch">
-            {[
-              { icon: Users, value: '32+', label: 'Santri Aktif', desc: 'Terdaftar aktif', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-              { icon: BookOpen, value: '8', label: 'Kegiatan/Hari', desc: 'Sholat & taklim', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
-              { icon: Star, value: '4+', label: 'Tahun Khidmah', desc: 'Nurul Falah', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
-            ].map(({ icon: Icon, value, label, desc, color, bg }) => (
-              <div key={label} className="bg-white dark:bg-[#0F1E18] rounded-3xl border border-stone-200 dark:border-[#1C3A2E] shadow-sm p-4 sm:p-5 text-center flex flex-col items-center justify-center card-hover">
-                <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-2xl ${bg} flex items-center justify-center mb-2.5`}>
-                  <Icon className={`w-5 sm:w-6 h-5 sm:h-6 ${color}`} />
-                </div>
-                <div className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100">{value}</div>
-                <div className="text-[10px] sm:text-xs text-stone-700 dark:text-stone-300 font-bold uppercase tracking-wide mt-1">{label}</div>
-                <div className="text-[9px] text-stone-400 mt-0.5">{desc}</div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
 
         {/* ══ FOOTER ══ */}

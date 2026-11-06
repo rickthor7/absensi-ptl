@@ -13,15 +13,14 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.absenptl.web.id'),
-  title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP Terpadu',
+  title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Administrasi SPP Terpadu',
   description:
-    'Sistem presensi santri terpadu Pondok Pesantren Nurul Falah, Ketintang, Surabaya berbasis selfie kamera, geotag GPS presisi, pembayaran SPP bulanan, dan transparansi keuangan kas terbuka.',
+    'Sistem presensi santri terpadu Pondok Pesantren Nurul Falah, Ketintang, Surabaya berbasis selfie kamera, geotag GPS presisi, dan pembayaran SPP bulanan.',
   keywords: [
     'Absensi Santri',
     'Pondok Pesantren Nurul Falah',
     'Ketintang Surabaya',
     'SPP Santri',
-    'Transparansi Keuangan Pesantren',
     'Presensi GPS',
     'Absen PTL',
   ],
@@ -37,9 +36,9 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP',
+    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Administrasi SPP',
     description:
-      'Sistem presensi santri terpadu berbasis selfie kamera & validasi koordinat GPS pondok, pembayaran SPP bulanan, dan transparansi keuangan publik.',
+      'Sistem presensi santri terpadu berbasis selfie kamera & validasi koordinat GPS pondok, serta administrasi pembayaran SPP bulanan.',
     url: 'https://www.absenptl.web.id',
     siteName: 'Pesantren Nurul Falah Ketintang',
     images: [
@@ -47,7 +46,7 @@ export const metadata: Metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Pondok Pesantren Nurul Falah Surabaya — Presensi & Keuangan SPP',
+        alt: 'Pondok Pesantren Nurul Falah Surabaya — Presensi & Administrasi SPP',
       },
     ],
     locale: 'id_ID',
@@ -55,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Keuangan SPP',
+    title: 'Pondok Pesantren Nurul Falah — Presensi GPS & Administrasi SPP',
     description:
-      'Sistem presensi santri terpadu berbasis selfie kamera, geotag GPS presisi, pembayaran SPP bulanan, dan transparansi kas terbuka.',
+      'Sistem presensi santri terpadu berbasis selfie kamera, geotag GPS presisi, dan administrasi pembayaran SPP bulanan.',
     images: ['/og-image.jpg'],
   },
 };

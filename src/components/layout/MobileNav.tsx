@@ -49,12 +49,12 @@ export default function MobileNav() {
     { href: '/santri/spp', label: 'SPP', icon: CreditCard },
     { href: '/santri/absensi', label: 'Absen', icon: Camera, center: true },
     { href: '/santri/kalender', label: 'Kalender', icon: Calendar },
-    { href: '/transparansi', label: 'Kas', icon: Wallet },
+    { href: '/santri/riwayat', label: 'Riwayat', icon: History },
   ];
 
   const musyrifItems: NavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
-    { href: '/musyrif/keuangan', label: 'Keuangan', icon: Wallet, badge: pendingSppCount },
+    { href: '/musyrif/keuangan', label: 'SPP', icon: CreditCard, badge: pendingSppCount },
     { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2, center: true },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Santri', icon: Users },
