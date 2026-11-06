@@ -388,16 +388,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         const mappedRecords: AttendanceRecord[] = (recData as any[]).map((r) => {
           const student = availableProfiles.find((p) => p.id === r.student_id);
-          const act = availableActs.find((a) => a.id === r.activity_id);
+          let act = availableActs.find((a) => a.id === r.activity_id);
+          if (!act && r.session_id) {
+            act = availableActs.find((a) => r.session_id.toLowerCase().includes(a.code.toLowerCase()));
+          }
+          const actId =
+            r.activity_id ||
+            act?.id ||
+            (r.session_id?.includes('setoran_pagi')
+              ? 'act-3'
+              : r.session_id?.includes('setoran_malam')
+              ? 'act-7'
+              : undefined);
+
+          const dateMatch = r.session_id?.match(/sess-(\d{4}-\d{2}-\d{2})/);
+          const opDate =
+            r.operational_date ||
+            dateMatch?.[1] ||
+            (r.submitted_at ? r.submitted_at.split('T')[0] : new Date().toISOString().split('T')[0]);
+
           return {
             ...r,
+            activity_id: actId,
             student_name: r.student_name || student?.full_name || 'Santri',
             student_number: r.student_number || student?.student_number,
             group_name: r.group_name || student?.group_name,
             activity_name: r.activity_name || act?.name || 'Kegiatan Pondok',
-            operational_date:
-              r.operational_date ||
-              (r.submitted_at ? r.submitted_at.split('T')[0] : new Date().toISOString().split('T')[0]),
+            operational_date: opDate,
           };
         });
 
@@ -1183,6 +1200,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('attendance_records').upsert({
           id: targetRecordId,
           session_id: sessionId,
+          activity_id: activity.id,
+          operational_date: todayStr,
           student_id: currentUser.id,
           attendance_type: type,
           status: finalStatus,
@@ -1200,12 +1219,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           submitted_at: effectiveTime.toISOString(),
           permission_reason: type === 'izin' ? permissionReason : null,
           permission_batch_id: type === 'izin' ? (existing?.permission_batch_id || `batch-${Date.now()}`) : null,
-          tahfidz_mode: tahfidzMode || (tahfidzJuz ? 'ziyadah' : null),
-          tahfidz_juz: tahfidzJuz || null,
-          tahfidz_halaman: tahfidzHalaman || null,
-          tahfidz_halaman_end: tahfidzHalamanEnd || tahfidzHalaman || null,
-          tahfidz_notes: tahfidzNotes || null,
-          tahfidz_status: tahfidzJuz ? 'menunggu_validasi' : null,
+          tahfidz_mode: tahfidzMode || (tahfidzJuz ? (existing?.tahfidz_mode || 'ziyadah') : null),
+          tahfidz_juz: tahfidzJuz !== undefined ? tahfidzJuz : (existing?.tahfidz_juz ?? null),
+          tahfidz_halaman: tahfidzHalaman !== undefined ? tahfidzHalaman : (existing?.tahfidz_halaman ?? null),
+          tahfidz_halaman_end:
+            tahfidzHalamanEnd !== undefined
+              ? tahfidzHalamanEnd
+              : tahfidzHalaman !== undefined
+              ? tahfidzHalaman
+              : (existing?.tahfidz_halaman_end ?? null),
+          tahfidz_notes: tahfidzNotes || existing?.tahfidz_notes || null,
+          tahfidz_class: resolvedTahfidzClass || existing?.tahfidz_class || null,
+          tahfidz_ustadz_name: resolvedTahfidzUstadzName || existing?.tahfidz_ustadz_name || null,
+          tahfidz_status: tahfidzJuz ? (existing?.tahfidz_status || 'menunggu_validasi') : (existing?.tahfidz_status || null),
         });
       } catch (err) {
         console.warn('Failed to insert attendance into Supabase:', err);
@@ -1321,6 +1347,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           await supabase.from('attendance_records').upsert({
             id: targetRecordId,
             session_id: sessionId,
+            activity_id: activity.id,
+            operational_date: targetDate,
             student_id: currentUser.id,
             attendance_type: 'izin',
             status: 'izin_diajukan',
@@ -1840,17 +1868,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ? halamanEnd
         : (record.tahfidz_halaman_end || targetHalaman);
 
+    const newStatus: AttendanceStatus =
+      status === 'lancar' || status === 'perlu_diulang'
+        ? 'hadir_valid'
+        : status === 'tidak_lancar'
+        ? 'alpa'
+        : record.status;
+
     const updated = attendanceRecords.map((r) => {
       if (r.id === recordId) {
-        // Jika di-ACC (lancar atau perlu diulang), status presensi menjadi hadir_valid
-        // Jika tidak lancar / belum setor sama sekali, status presensi menjadi alpa
-        const newStatus: AttendanceStatus =
-          status === 'lancar' || status === 'perlu_diulang'
-            ? 'hadir_valid'
-            : status === 'tidak_lancar'
-            ? 'alpa'
-            : r.status;
-
         return {
           ...r,
           status: newStatus,
@@ -1904,12 +1930,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await supabase
           .from('attendance_records')
           .update({
+            status: newStatus,
+            is_verified: status === 'lancar' || status === 'perlu_diulang',
             tahfidz_mode: targetMode,
             tahfidz_juz: targetJuz,
             tahfidz_halaman: targetHalaman,
             tahfidz_halaman_end: targetHalamanEnd,
             tahfidz_status: status,
             tahfidz_validated_by: currentUser.id,
+            tahfidz_validated_by_name: currentUser.full_name,
             tahfidz_validated_at: nowIso,
             tahfidz_validation_note: note || null,
           })

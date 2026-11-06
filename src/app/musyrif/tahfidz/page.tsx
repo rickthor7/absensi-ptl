@@ -40,7 +40,7 @@ export default function MusyrifTahfidzPage() {
   const todayStr = effectiveTime.toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'sudah' | 'belum'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'menunggu' | 'sudah' | 'belum'>('all');
 
   // Determine initial active class: user's assigned class or the first class
   const initialClassId: TahfidzClassId = useMemo(() => {
@@ -69,7 +69,8 @@ export default function MusyrifTahfidzPage() {
 
   // List santri belonging to this tahfidz class
   const santriList = useMemo(() => {
-    return profiles.filter((p) => {
+    // 1. Santri explicitly assigned to this class letter in profiles
+    const assigned = profiles.filter((p) => {
       if (p.role !== 'santri') return false;
       if (activeClassConfig.session === 'pagi') {
         return p.class_tahfidz_pagi === activeClassConfig.classLetter;
@@ -77,19 +78,70 @@ export default function MusyrifTahfidzPage() {
         return p.class_tahfidz_malam === activeClassConfig.classLetter;
       }
     });
-  }, [profiles, activeClassConfig]);
+
+    // 2. Santri with attendance records for this class or activity today
+    const actCode = activeClassConfig.activityCode.toLowerCase();
+    const recordStudentIds = attendanceRecords
+      .filter((r) => {
+        const matchesClass = r.tahfidz_class === activeClassId;
+        const matchesAct =
+          (currentActivity && r.activity_id === currentActivity.id) ||
+          (r.session_id && r.session_id.toLowerCase().includes(actCode));
+        const rDate = r.operational_date || (r.submitted_at ? r.submitted_at.split('T')[0] : '');
+        return (matchesClass || matchesAct) && rDate === selectedDate;
+      })
+      .map((r) => r.student_id);
+
+    // 3. Fallback: if no santri has halaqoh set in profiles yet, distribute evenly so page isn't empty
+    const allSantri = profiles.filter((p) => p.role === 'santri');
+    const hasAnyAssignments = profiles.some((p) =>
+      activeClassConfig.session === 'pagi' ? !!p.class_tahfidz_pagi : !!p.class_tahfidz_malam
+    );
+
+    let baseList = assigned;
+    if (!hasAnyAssignments && allSantri.length > 0) {
+      const isClassA = activeClassConfig.classLetter === 'A';
+      const half = Math.ceil(allSantri.length / 2);
+      baseList = isClassA ? allSantri.slice(0, half) : allSantri.slice(half);
+    }
+
+    // Merge in any santri who recorded attendance for this class
+    const mergedMap = new Map<string, Profile>();
+    baseList.forEach((s) => mergedMap.set(s.id, s));
+    recordStudentIds.forEach((sId) => {
+      const found = profiles.find((p) => p.id === sId);
+      if (found) mergedMap.set(found.id, found);
+    });
+
+    return Array.from(mergedMap.values());
+  }, [profiles, activeClassConfig, attendanceRecords, currentActivity, selectedDate, activeClassId]);
 
   // Attendance records for this class and date
   const classAttendanceRecords = useMemo(() => {
-    if (!currentActivity) return [];
-    return attendanceRecords.filter(
-      (r) =>
-        r.activity_id === currentActivity.id &&
-        r.operational_date === selectedDate &&
-        (r.tahfidz_class === activeClassId ||
-          santriList.some((s) => s.id === r.student_id))
-    );
-  }, [attendanceRecords, currentActivity, selectedDate, activeClassId, santriList]);
+    const actCode = activeClassConfig.activityCode.toLowerCase();
+    return attendanceRecords.filter((r) => {
+      const matchesActivity =
+        (currentActivity && r.activity_id === currentActivity.id) ||
+        (r.session_id && r.session_id.toLowerCase().includes(actCode)) ||
+        (activeClassConfig.session === 'pagi' &&
+          (r.activity_name?.toLowerCase().includes('setoran pagi') ||
+            r.session_id?.toLowerCase().includes('setoran_pagi') ||
+            r.activity_id === 'act-3')) ||
+        (activeClassConfig.session === 'malam' &&
+          (r.activity_name?.toLowerCase().includes('setoran malam') ||
+            r.session_id?.toLowerCase().includes('setoran_malam') ||
+            r.activity_id === 'act-7'));
+
+      const rDate = r.operational_date || (r.submitted_at ? r.submitted_at.split('T')[0] : '');
+      const matchesDate = rDate === selectedDate;
+      if (!matchesActivity || !matchesDate) return false;
+
+      return (
+        r.tahfidz_class === activeClassId ||
+        santriList.some((s) => s.id === r.student_id)
+      );
+    });
+  }, [attendanceRecords, currentActivity, activeClassConfig, selectedDate, activeClassId, santriList]);
 
   // Map each santri to their attendance record (if any)
   const santriSetoranData = useMemo(() => {
@@ -112,13 +164,21 @@ export default function MusyrifTahfidzPage() {
 
       if (!matchSearch) return false;
 
+      const isAcc =
+        record &&
+        (record.tahfidz_status === 'lancar' || record.tahfidz_status === 'perlu_diulang');
+      const isMenunggu =
+        record &&
+        !isAcc &&
+        (record.tahfidz_status === 'menunggu_validasi' ||
+          record.status === 'perlu_tinjauan' ||
+          (record.status === 'hadir_valid' && record.tahfidz_status !== 'tidak_lancar'));
+      const isBelum = !record || record.tahfidz_status === 'tidak_lancar' || record.status === 'alpa';
+
       if (statusFilter === 'all') return true;
-      if (statusFilter === 'sudah') {
-        return record && (record.status === 'hadir_valid' || record.tahfidz_status === 'lancar' || record.tahfidz_status === 'perlu_diulang');
-      }
-      if (statusFilter === 'belum') {
-        return !record || record.status === 'alpa' || record.tahfidz_status === 'tidak_lancar';
-      }
+      if (statusFilter === 'menunggu') return isMenunggu;
+      if (statusFilter === 'sudah') return isAcc;
+      if (statusFilter === 'belum') return isBelum;
       return true;
     });
   }, [santriSetoranData, searchQuery, statusFilter]);
@@ -128,11 +188,19 @@ export default function MusyrifTahfidzPage() {
   const sudahSetorCount = santriSetoranData.filter(
     ({ record }) =>
       record &&
-      (record.status === 'hadir_valid' ||
-        record.tahfidz_status === 'lancar' ||
-        record.tahfidz_status === 'perlu_diulang')
+      (record.tahfidz_status === 'lancar' || record.tahfidz_status === 'perlu_diulang')
   ).length;
-  const belumCount = totalSantri - sudahSetorCount;
+  const menungguCount = santriSetoranData.filter(
+    ({ record }) =>
+      record &&
+      (record.tahfidz_status === 'menunggu_validasi' ||
+        (!record.tahfidz_status && !!record.tahfidz_juz) ||
+        (record.status === 'hadir_valid' &&
+          record.tahfidz_status !== 'lancar' &&
+          record.tahfidz_status !== 'perlu_diulang' &&
+          record.tahfidz_status !== 'tidak_lancar'))
+  ).length;
+  const belumCount = Math.max(0, totalSantri - sudahSetorCount - menungguCount);
 
   // 1-Click Fast ACC
   const handleFastAcc = async (record: AttendanceRecord) => {
@@ -233,7 +301,7 @@ export default function MusyrifTahfidzPage() {
       </div>
 
       {/* Active Class Controls & Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
           <div className="flex items-center justify-between text-stone-500 text-xs mb-1">
             <span>Total Santri</span>
@@ -245,15 +313,26 @@ export default function MusyrifTahfidzPage() {
           <span className="text-[11px] text-stone-400">Terdaftar di kelas ini</span>
         </div>
 
+        <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
+          <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 text-xs mb-1">
+            <span>Menunggu ACC Ust.</span>
+            <Sparkles className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-black text-amber-800 dark:text-amber-200">
+            {menungguCount}
+          </div>
+          <span className="text-[11px] text-amber-600 dark:text-amber-400">Siap disimak &amp; di-ACC</span>
+        </div>
+
         <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
           <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs mb-1">
-            <span>Sudah Setor (Hadir Valid)</span>
+            <span>Disimak Sah (ACC)</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-800 dark:text-emerald-200">
             {sudahSetorCount}
           </div>
-          <span className="text-[11px] text-emerald-600">Presensi Sah &amp; Valid Sistem</span>
+          <span className="text-[11px] text-emerald-600">Disimak &amp; disahkan ustadz</span>
         </div>
 
         <div className="bg-stone-50 dark:bg-stone-800/40 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm">
@@ -283,7 +362,7 @@ export default function MusyrifTahfidzPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Status Filter */}
-          <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 p-1 rounded-xl text-xs font-semibold">
+          <div className="flex flex-wrap items-center gap-1 bg-stone-100 dark:bg-stone-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
@@ -295,6 +374,16 @@ export default function MusyrifTahfidzPage() {
               Semua ({santriSetoranData.length})
             </button>
             <button
+              onClick={() => setStatusFilter('menunggu')}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                statusFilter === 'menunggu'
+                  ? 'bg-white dark:bg-stone-700 text-amber-600 shadow-sm'
+                  : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+              }`}
+            >
+              Menunggu ACC ({menungguCount})
+            </button>
+            <button
               onClick={() => setStatusFilter('sudah')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 statusFilter === 'sudah'
@@ -302,7 +391,7 @@ export default function MusyrifTahfidzPage() {
                   : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
               }`}
             >
-              Sudah Setor ({sudahSetorCount})
+              Disimak / Sah ({sudahSetorCount})
             </button>
             <button
               onClick={() => setStatusFilter('belum')}
@@ -353,15 +442,15 @@ export default function MusyrifTahfidzPage() {
             {filteredData.map(({ santri, record }) => {
               const isAcc =
                 record &&
-                (record.status === 'hadir_valid' ||
-                  record.tahfidz_status === 'lancar' ||
+                (record.tahfidz_status === 'lancar' ||
                   record.tahfidz_status === 'perlu_diulang');
               const isMenunggu =
                 record &&
                 !isAcc &&
                 (record.tahfidz_status === 'menunggu_validasi' ||
-                  record.status === 'perlu_tinjauan');
-              const isBelumSetor = !record || record.tahfidz_status === 'tidak_lancar';
+                  record.status === 'perlu_tinjauan' ||
+                  (record.status === 'hadir_valid' && record.tahfidz_status !== 'tidak_lancar'));
+              const isBelumSetor = !record || record.tahfidz_status === 'tidak_lancar' || record.status === 'alpa';
 
               return (
                 <div
@@ -429,7 +518,14 @@ export default function MusyrifTahfidzPage() {
                       {isAcc ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-[#146B50] dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Sudah Setor • Valid Sistem</span>
+                          <span>
+                            Disimak Sah • {record.tahfidz_status === 'perlu_diulang' ? 'Perlu Diulang' : 'Lancar'}
+                          </span>
+                        </span>
+                      ) : isMenunggu ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping inline-block" />
+                          <span>Menunggu Ditinjau Ust.</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700">
@@ -441,6 +537,17 @@ export default function MusyrifTahfidzPage() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
+                      {isMenunggu && record && (
+                        <button
+                          onClick={() => handleFastAcc(record)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                          title="ACC langsung bahwa setoran telah disimak & lancar"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>ACC Setoran</span>
+                        </button>
+                      )}
+
                       {record && (
                         <button
                           onClick={() => setViewingDetailRecord(record)}
@@ -454,9 +561,9 @@ export default function MusyrifTahfidzPage() {
                       {record && (
                         <button
                           onClick={() => setValidatingRecord(record)}
-                          className="px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
                         >
-                          Koreksi Bacaan / Catatan
+                          {isAcc ? 'Koreksi Nilai' : 'Koreksi / Detail'}
                         </button>
                       )}
                     </div>
