@@ -400,8 +400,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             (r.session_id?.includes('setoran_pagi')
               ? 'act-3'
               : r.session_id?.includes('setoran_malam')
-              ? 'act-7'
-              : undefined);
+                ? 'act-7'
+                : undefined);
 
           const dateMatch = r.session_id?.match(/sess-(\d{4}-\d{2}-\d{2})/);
           const opDate =
@@ -486,12 +486,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Initial load
   useEffect(() => {
     try {
-      // Theme setup
+      // Theme setup (default is light mode)
       const storedTheme = localStorage.getItem('absensi_santri_theme') as 'light' | 'dark' | null;
-      if (
-        storedTheme === 'dark' ||
-        (!storedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
-      ) {
+      if (storedTheme === 'dark') {
         setThemeState('dark');
         document.documentElement.classList.add('dark');
       } else {
@@ -781,8 +778,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const loginEmail = matchedProfile?.email
           ? matchedProfile.email.toLowerCase()
           : cleanId.includes('@')
-          ? cleanId.toLowerCase()
-          : `${cleanId.toLowerCase()}@santri.nurulfalah.ac.id`;
+            ? cleanId.toLowerCase()
+            : `${cleanId.toLowerCase()}@santri.nurulfalah.ac.id`;
 
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: loginEmail,
@@ -844,7 +841,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(matchedProfile));
 
       if (supabase && isSupabaseConnected) {
-        syncSupabaseData().catch(() => {});
+        syncSupabaseData().catch(() => { });
       }
 
       return {
@@ -1228,8 +1225,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             tahfidzHalamanEnd !== undefined
               ? tahfidzHalamanEnd
               : tahfidzHalaman !== undefined
-              ? tahfidzHalaman
-              : (existing?.tahfidz_halaman_end ?? null),
+                ? tahfidzHalaman
+                : (existing?.tahfidz_halaman_end ?? null),
           tahfidz_notes: tahfidzNotes || existing?.tahfidz_notes || null,
           tahfidz_class: resolvedTahfidzClass || existing?.tahfidz_class || null,
           tahfidz_ustadz_name: resolvedTahfidzUstadzName || existing?.tahfidz_ustadz_name || null,
@@ -1403,10 +1400,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const targetRecords =
       applyToBatch && record.permission_batch_id
         ? attendanceRecords.filter(
-            (r) =>
-              r.permission_batch_id === record.permission_batch_id &&
-              r.student_id === record.student_id
-          )
+          (r) =>
+            r.permission_batch_id === record.permission_batch_id &&
+            r.student_id === record.student_id
+        )
         : [record];
 
     const targetIds = new Set(targetRecords.map((r) => r.id));
@@ -1826,15 +1823,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
-      message: `Presensi ${record.student_name} berhasil diverifikasi menjadi ${
-        finalStatus === 'hadir_valid'
-          ? 'Hadir'
-          : finalStatus === 'izin_disetujui'
+      message: `Presensi ${record.student_name} berhasil diverifikasi menjadi ${finalStatus === 'hadir_valid'
+        ? 'Hadir'
+        : finalStatus === 'izin_disetujui'
           ? 'Izin'
           : finalStatus === 'alpa'
-          ? 'Alpa'
-          : finalStatus
-      }.`,
+            ? 'Alpa'
+            : finalStatus
+        }.`,
     };
   };
 
@@ -1874,8 +1870,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       status === 'lancar' || status === 'perlu_diulang'
         ? 'hadir_valid'
         : status === 'tidak_lancar'
-        ? 'alpa'
-        : record.status;
+          ? 'alpa'
+          : record.status;
 
     const updated = attendanceRecords.map((r) => {
       if (r.id === recordId) {
@@ -1956,14 +1952,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       targetHalaman && targetHalamanEnd && targetHalamanEnd !== targetHalaman
         ? ` Hal ${targetHalaman}-${targetHalamanEnd}`
         : targetHalaman
-        ? ` Hal ${targetHalaman}`
-        : '';
+          ? ` Hal ${targetHalaman}`
+          : '';
 
     return {
       success: true,
-      message: `Setoran ${record.student_name} (${targetMode === 'murojaah' ? 'Murojaah' : 'Ziyadah'} ${
-        targetJuz ? `Juz ${targetJuz}` : ''
-      }${halStr}) berhasil divalidasi!`,
+      message: `Setoran ${record.student_name} (${targetMode === 'murojaah' ? 'Murojaah' : 'Ziyadah'} ${targetJuz ? `Juz ${targetJuz}` : ''
+        }${halStr}) berhasil divalidasi!`,
     };
   };
 
@@ -2099,11 +2094,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       prev.map((rec) =>
         rec.student_id === cleanStudent.id
           ? {
-              ...rec,
-              student_name: cleanStudent.full_name,
-              student_number: cleanStudent.student_number,
-              group_name: cleanStudent.group_name,
-            }
+            ...rec,
+            student_name: cleanStudent.full_name,
+            student_number: cleanStudent.student_number,
+            group_name: cleanStudent.group_name,
+          }
           : rec
       )
     );
@@ -2187,11 +2182,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       prev.map((rec) =>
         rec.student_id === updatedProfile.id
           ? {
-              ...rec,
-              student_name: updatedProfile.full_name,
-              student_number: updatedProfile.student_number,
-              group_name: updatedProfile.group_name,
-            }
+            ...rec,
+            student_name: updatedProfile.full_name,
+            student_number: updatedProfile.student_number,
+            group_name: updatedProfile.group_name,
+          }
           : rec
       )
     );

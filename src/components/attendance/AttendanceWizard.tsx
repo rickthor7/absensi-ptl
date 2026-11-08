@@ -35,11 +35,11 @@ import confetti from 'canvas-confetti';
 import Link from 'next/link';
 
 const QUICK_PERMIT_REASONS = [
-  'Sakit demam & istirahat di UKS / Kamar',
-  'Izin rawat medis / periksa ke dokter RS',
-  'Izin pulang urusan keluarga mendesak',
-  'Dispensasi tugas khidmah pondok pesantren',
-  'Terkendala keterlambatan perjalanan balik pondok',
+  'Izin mengerjakan tugas',
+  'Izin rapat organisasi',
+  'Sakit',
+  'Izin acara keluarga',
+  'Lain-lain',
 ];
 
 interface AttendanceWizardProps {
@@ -685,7 +685,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     rows={2}
                     value={permissionReason}
                     onChange={(e) => setPermissionReason(e.target.value)}
-                    placeholder="Contoh: Sakit demam beristirahat di kamar/UKS, urusan keluarga mendesak..."
+                    placeholder="Pilih saran alasan cepat di bawah atau tulis alasan Anda..."
                     className="w-full text-xs p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
                   />
 
