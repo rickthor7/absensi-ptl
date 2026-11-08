@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { Activity, AttendanceRecord, Profile } from '@/types';
 import { checkDiscrepancy } from '@/lib/store';
+import { getActivitiesForDate } from '@/lib/schedule';
 import ActivitySelectDropdown from '@/components/schedule/ActivitySelectDropdown';
 import CustomSelect from '@/components/ui/CustomSelect';
 import {
@@ -45,10 +46,32 @@ export default function ManualAttendanceSheet({
 
   const todayStr = effectiveTime.toISOString().split('T')[0];
 
-  const [selectedActivityId, setSelectedActivityId] = useState<string>(
-    initialActivityId || activities[0]?.id || ''
-  );
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+
+  const selectedDateObj = useMemo(() => {
+    const d = new Date(selectedDate);
+    return isNaN(d.getTime()) ? effectiveTime : d;
+  }, [selectedDate, effectiveTime]);
+
+  // Filter activities scheduled on the selected date
+  const activitiesForSelectedDate = useMemo(() => {
+    return getActivitiesForDate(activities, selectedDateObj);
+  }, [activities, selectedDateObj]);
+
+  const [selectedActivityId, setSelectedActivityId] = useState<string>(
+    initialActivityId || activitiesForSelectedDate[0]?.id || activities[0]?.id || ''
+  );
+
+  // If selected activity is not valid for the date, auto-select first activity of the day
+  React.useEffect(() => {
+    if (activitiesForSelectedDate.length > 0) {
+      const isValid = activitiesForSelectedDate.some((a) => a.id === selectedActivityId);
+      if (!isValid) {
+        setSelectedActivityId(activitiesForSelectedDate[0].id);
+      }
+    }
+  }, [activitiesForSelectedDate, selectedActivityId]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<string>('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -270,7 +293,7 @@ export default function ManualAttendanceSheet({
               Pilih Kegiatan:
             </label>
             <ActivitySelectDropdown
-              activities={activities}
+              activities={activitiesForSelectedDate}
               selectedActivityId={selectedActivityId}
               onSelect={(act) => handleActivityOrDateChange(act.id, selectedDate)}
               className="w-full"

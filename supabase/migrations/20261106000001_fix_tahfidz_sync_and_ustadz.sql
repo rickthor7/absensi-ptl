@@ -130,3 +130,4 @@ CREATE INDEX IF NOT EXISTS idx_attendance_records_activity_date
 
 CREATE INDEX IF NOT EXISTS idx_attendance_records_tahfidz_class
   ON public.attendance_records(tahfidz_class, operational_date);
+

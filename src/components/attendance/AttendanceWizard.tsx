@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
-import { isTahfidzActivity } from '@/lib/schedule';
+import { isTahfidzActivity, getActivitiesForDate } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
 import LocationChecker from './LocationChecker';
 import {
@@ -26,6 +26,10 @@ import {
   RotateCcw,
   Layers,
   CalendarDays,
+  UploadCloud,
+  FileText,
+  Paperclip,
+  Trash2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
@@ -62,11 +66,21 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const activeActivities = activities.filter((a) => a.is_active);
+  // Activities specifically scheduled for today and tomorrow based on day of week
+  const todayActivities = React.useMemo(() => {
+    return getActivitiesForDate(activities, effectiveTime);
+  }, [activities, effectiveTime]);
+
+  const tomorrowActivities = React.useMemo(() => {
+    return getActivitiesForDate(activities, tomorrow);
+  }, [activities, tomorrow]);
 
   // Multi-activity selection state for Izin: array of `${activityId}_${dateStr}`
   const [selectedIzinKeys, setSelectedIzinKeys] = useState<string[]>([`${activity.id}_${todayStr}`]);
   const [izinDateTab, setIzinDateTab] = useState<'today' | 'tomorrow'>('today');
+
+  const activeActivitiesForTab = izinDateTab === 'today' ? todayActivities : tomorrowActivities;
+  const activeDateStrForTab = izinDateTab === 'today' ? todayStr : tomorrowStr;
 
   // Synchronize when parent changes the selected activity
   React.useEffect(() => {
@@ -87,6 +101,55 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   const [attendanceType, setAttendanceType] = useState<AttendanceType>('hadir');
   const [permissionReason, setPermissionReason] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  // Perizinan file upload / proof options
+  const [izinProofMode, setIzinProofMode] = useState<'upload' | 'camera'>('upload');
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    // Limit to 10 MB
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Ukuran file terlalu besar. Maksimal 10 MB.');
+      return;
+    }
+
+    const sizeStr =
+      file.size < 1024 * 1024
+        ? `${(file.size / 1024).toFixed(1)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+
+    setUploadedFileName(file.name);
+    setUploadedFileSize(sizeStr);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setPhotoUrl(result);
+    };
+    reader.onerror = () => {
+      setUploadError('Gagal membaca file. Silakan coba pilih file lain.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearUploadedFile = () => {
+    setPhotoUrl(null);
+    setUploadedFileName(null);
+    setUploadedFileSize(null);
+    setUploadError(null);
+  };
+
+  const isPdf = Boolean(
+    (photoUrl && photoUrl.startsWith('data:application/pdf')) ||
+    (uploadedFileName && uploadedFileName.toLowerCase().endsWith('.pdf'))
+  );
   const [locationData, setLocationData] = useState<{
     latitude: number;
     longitude: number;
@@ -189,6 +252,9 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
       setAttendanceType('hadir');
       setPermissionReason('');
       setPhotoUrl(null);
+      setUploadedFileName(null);
+      setUploadedFileSize(null);
+      setUploadError(null);
       setLocationData(null);
       setSubmissionResult(null);
       setRetakeNotification(res.message);
@@ -473,9 +539,9 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     <span className="text-[10px] text-stone-500 font-semibold py-1">Pilih Cepat:</span>
                     <button
                       type="button"
-                      onClick={() => setSelectedIzinKeys([`${activity.id}_${todayStr}`])}
+                      onClick={() => setSelectedIzinKeys([`${activity.id}_${activeDateStrForTab}`])}
                       className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition cursor-pointer active:scale-95 border ${
-                        selectedIzinKeys.length === 1 && selectedIzinKeys[0] === `${activity.id}_${todayStr}`
+                        selectedIzinKeys.length === 1 && selectedIzinKeys[0] === `${activity.id}_${activeDateStrForTab}`
                           ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                           : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:border-amber-400'
                       }`}
@@ -485,7 +551,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     <button
                       type="button"
                       onClick={() => {
-                        const remaining = activeActivities
+                        const remaining = todayActivities
                           .filter((a) => a.start_time >= activity.start_time)
                           .map((a) => `${a.id}_${todayStr}`);
                         setSelectedIzinKeys(remaining.length > 0 ? remaining : [`${activity.id}_${todayStr}`]);
@@ -496,22 +562,22 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedIzinKeys(activeActivities.map((a) => `${a.id}_${todayStr}`))}
+                      onClick={() => setSelectedIzinKeys(todayActivities.map((a) => `${a.id}_${todayStr}`))}
                       className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400 transition cursor-pointer active:scale-95"
                     >
-                      Semua Hari Ini ({activeActivities.length})
+                      Semua Hari Ini ({todayActivities.length})
                     </button>
                     <button
                       type="button"
                       onClick={() =>
                         setSelectedIzinKeys([
-                          ...activeActivities.map((a) => `${a.id}_${todayStr}`),
-                          ...activeActivities.map((a) => `${a.id}_${tomorrowStr}`),
+                          ...todayActivities.map((a) => `${a.id}_${todayStr}`),
+                          ...tomorrowActivities.map((a) => `${a.id}_${tomorrowStr}`),
                         ])
                       }
                       className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-400 transition cursor-pointer active:scale-95"
                     >
-                      Hari Ini &amp; Besok ({activeActivities.length * 2})
+                      Hari Ini &amp; Besok ({todayActivities.length + tomorrowActivities.length})
                     </button>
                   </div>
 
@@ -527,7 +593,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                       }`}
                     >
                       <Calendar className="w-3.5 h-3.5" />
-                      <span>Hari Ini ({todayStr})</span>
+                      <span>Hari Ini ({todayStr}) • {todayActivities.length} Sesi</span>
                     </button>
                     <button
                       type="button"
@@ -539,68 +605,74 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                       }`}
                     >
                       <CalendarDays className="w-3.5 h-3.5" />
-                      <span>Besok ({tomorrowStr})</span>
+                      <span>Besok ({tomorrowStr}) • {tomorrowActivities.length} Sesi</span>
                     </button>
                   </div>
 
                   {/* List of activities for the active tab */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1">
-                    {activeActivities.map((act) => {
-                      const curDate = izinDateTab === 'today' ? todayStr : tomorrowStr;
-                      const key = `${act.id}_${curDate}`;
-                      const isSelected = selectedIzinKeys.includes(key);
+                    {activeActivitiesForTab.length === 0 ? (
+                      <div className="col-span-full py-8 text-center text-xs text-stone-400">
+                        Tidak ada kegiatan pondok yang terjadwal untuk hari ini.
+                      </div>
+                    ) : (
+                      activeActivitiesForTab.map((act) => {
+                        const curDate = activeDateStrForTab;
+                        const key = `${act.id}_${curDate}`;
+                        const isSelected = selectedIzinKeys.includes(key);
 
-                      const exist = attendanceRecords.find(
-                        (r) =>
-                          r.student_id === currentUser.id &&
-                          r.activity_id === act.id &&
-                          r.operational_date === curDate
-                      );
+                        const exist = attendanceRecords.find(
+                          (r) =>
+                            r.student_id === currentUser.id &&
+                            r.activity_id === act.id &&
+                            r.operational_date === curDate
+                        );
 
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => {
-                            setSelectedIzinKeys((prev) =>
-                              prev.includes(key)
-                                ? prev.filter((k) => k !== key)
-                                : [...prev, key]
-                            );
-                          }}
-                          className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between gap-2.5 ${
-                            isSelected
-                              ? 'border-amber-500 bg-amber-100/70 dark:bg-amber-950/60 shadow-xs ring-1 ring-amber-500/20'
-                              : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-amber-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 overflow-hidden">
-                            <div
-                              className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition ${
-                                isSelected
-                                  ? 'bg-amber-600 text-white'
-                                  : 'border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
-                              }`}
-                            >
-                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => {
+                              setSelectedIzinKeys((prev) =>
+                                prev.includes(key)
+                                  ? prev.filter((k) => k !== key)
+                                  : [...prev, key]
+                              );
+                            }}
+                            className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between gap-2.5 ${
+                              isSelected
+                                ? 'border-amber-500 bg-amber-100/70 dark:bg-amber-950/60 shadow-xs ring-1 ring-amber-500/20'
+                                : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-amber-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 overflow-hidden">
+                              <div
+                                className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition ${
+                                  isSelected
+                                    ? 'bg-amber-600 text-white'
+                                    : 'border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'
+                                }`}
+                              >
+                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                              </div>
+                              <div className="truncate">
+                                <p className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+                                  {act.name}
+                                </p>
+                                <p className="text-[10px] text-stone-500 font-mono">
+                                  {act.start_time} - {act.end_time} WIB
+                                </p>
+                              </div>
                             </div>
-                            <div className="truncate">
-                              <p className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
-                                {act.name}
-                              </p>
-                              <p className="text-[10px] text-stone-500 font-mono">
-                                {act.start_time} - {act.end_time} WIB
-                              </p>
-                            </div>
+
+                            {exist && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 uppercase shrink-0">
+                                {exist.status.replace(/_/g, ' ')}
+                              </span>
+                            )}
                           </div>
-
-                          {exist && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 uppercase shrink-0">
-                              {exist.status.replace(/_/g, ' ')}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -664,27 +736,173 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
           </div>
         )}
 
-        {/* STEP 2: Ambil Selfie */}
+        {/* STEP 2: Ambil Selfie / Upload Berkas Bukti */}
         {currentStep === 2 && (
           <div className="space-y-6">
             <div className="text-center space-y-1">
               <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
                 {attendanceType === 'izin'
-                  ? 'Foto Bukti / Selfie Santri'
+                  ? 'Lampiran Berkas / Bukti Perizinan'
                   : 'Validasi Wajah (Selfie)'}
               </h3>
               <p className="text-xs text-stone-500">
                 {attendanceType === 'izin'
-                  ? 'Posisikan wajah Anda atau foto surat izin/keterangan dokter di depan kamera'
+                  ? 'Unggah surat dokter, surat izin wali, tiket, atau ambil foto selfie langsung'
                   : 'Posisikan wajah Anda pada area bingkai panduan kamera'}
               </p>
             </div>
 
-            <SelfieCapture
-              photoUrl={photoUrl}
-              onCapture={(url) => setPhotoUrl(url)}
-              onRetake={() => setPhotoUrl(null)}
-            />
+            {attendanceType === 'izin' ? (
+              <div className="space-y-4">
+                {/* Mode Switcher: Upload File vs Kamera Langsung */}
+                <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-100 dark:bg-stone-800/80 max-w-sm mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIzinProofMode('upload');
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      izinProofMode === 'upload'
+                        ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 shadow-xs'
+                        : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                    }`}
+                  >
+                    <UploadCloud className="w-4 h-4 text-amber-600" />
+                    <span>Upload File / Berkas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIzinProofMode('camera');
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      izinProofMode === 'camera'
+                        ? 'bg-white dark:bg-stone-900 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                        : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                    }`}
+                  >
+                    <Camera className="w-4 h-4 text-emerald-600" />
+                    <span>Kamera Langsung</span>
+                  </button>
+                </div>
+
+                {izinProofMode === 'upload' ? (
+                  /* UPLOAD FILE SECTION */
+                  <div className="space-y-4">
+                    {photoUrl ? (
+                      /* Preview of uploaded file */
+                      <div className="max-w-md mx-auto p-4 sm:p-5 rounded-3xl bg-amber-50/70 dark:bg-amber-950/40 border-2 border-amber-400 dark:border-amber-700 space-y-4 shadow-sm">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white dark:bg-stone-900 border border-amber-300 dark:border-amber-700 flex items-center justify-center shrink-0 shadow-xs">
+                            {isPdf ? (
+                              <FileText className="w-8 h-8 text-rose-500" />
+                            ) : (
+                              <img
+                                src={photoUrl}
+                                alt="Pratinjau Berkas"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-extrabold">
+                                ✓ Berkas Terlampir
+                              </span>
+                            </div>
+                            <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate mt-1">
+                              {uploadedFileName || 'Berkas Lampiran Izin'}
+                            </h4>
+                            <p className="text-[11px] text-stone-500">
+                              {uploadedFileSize || (isPdf ? 'Dokumen PDF' : 'Gambar Lampiran')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-amber-200 dark:border-amber-800/60 text-xs">
+                          <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-50 text-stone-700 dark:text-stone-200 font-bold cursor-pointer transition">
+                            <Paperclip className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Ganti File</span>
+                            <input
+                              type="file"
+                              accept="image/*,.pdf,application/pdf"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={handleClearUploadedFile}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold transition cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus Berkas</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Drag & Drop File Picker Box */
+                      <div className="max-w-md mx-auto">
+                        <label className="relative flex flex-col items-center justify-center p-8 sm:p-10 rounded-3xl border-2 border-dashed border-amber-300 dark:border-amber-700/70 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/80 dark:hover:bg-amber-950/30 transition cursor-pointer group text-center space-y-3">
+                          <input
+                            type="file"
+                            accept="image/*,.pdf,application/pdf"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center group-hover:scale-105 transition shadow-xs">
+                            <UploadCloud className="w-8 h-8 text-amber-600" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-extrabold text-stone-900 dark:text-stone-100 block">
+                              Unggah Berkas / Dokumen Izin
+                            </span>
+                            <p className="text-xs text-stone-500 mt-1 max-w-xs">
+                              Dapat berupa surat keterangan dokter, surat izin wali, tiket, atau bukti tertulis
+                            </p>
+                          </div>
+                          <span className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition active:scale-95">
+                            Pilih File dari Perangkat
+                          </span>
+                          <span className="text-[10px] text-stone-400">
+                            Format didukung: JPG, PNG, WEBP, PDF (Maks. 10 MB)
+                          </span>
+                        </label>
+
+                        {uploadError && (
+                          <div className="mt-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <span>{uploadError}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* CAMERA MODE */
+                  <SelfieCapture
+                    photoUrl={photoUrl}
+                    onCapture={(url) => {
+                      setPhotoUrl(url);
+                      setUploadedFileName('Foto Kamera Langsung');
+                      setUploadedFileSize('Foto');
+                    }}
+                    onRetake={() => {
+                      setPhotoUrl(null);
+                      setUploadedFileName(null);
+                    }}
+                  />
+                )}
+              </div>
+            ) : (
+              /* HADIR MODE (Selfie Wajib) */
+              <SelfieCapture
+                photoUrl={photoUrl}
+                onCapture={(url) => setPhotoUrl(url)}
+                onRetake={() => setPhotoUrl(null)}
+              />
+            )}
 
             <div className="flex justify-between items-center pt-4 border-t border-stone-100 dark:border-stone-800 gap-3">
               <button
@@ -1115,16 +1333,25 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
             {/* Boarding Pass Style Card */}
             <div className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-800/40 p-4 sm:p-5 space-y-4">
               <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
-                <div className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-[#146B50] shadow-md shrink-0 bg-black">
+                <div className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-[#146B50] shadow-md shrink-0 bg-stone-100 dark:bg-stone-900 flex items-center justify-center">
                   {photoUrl && (
-                    <img
-                      src={photoUrl}
-                      alt="Selfie Preview"
-                      className="w-full h-full object-cover"
-                    />
+                    isPdf ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-rose-50 dark:bg-rose-950/40 text-rose-600 p-2 text-center">
+                        <FileText className="w-9 h-9 mb-1 text-rose-500" />
+                        <span className="text-[9px] font-bold truncate max-w-full">
+                          {uploadedFileName || 'Dokumen PDF'}
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={photoUrl}
+                        alt="Bukti Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   )}
                   <span className="absolute bottom-1 right-1 bg-black/60 text-[9px] text-[#D6A84F] px-1.5 py-0.5 rounded-md font-mono">
-                    Selfie OK
+                    {attendanceType === 'izin' ? (isPdf ? 'PDF Berkas' : 'Berkas OK') : 'Selfie OK'}
                   </span>
                 </div>
 

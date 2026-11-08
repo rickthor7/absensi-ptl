@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
-import { X, CheckCircle, XCircle, MapPin, Clock, Layers, CheckCheck } from 'lucide-react';
+import { X, CheckCircle, XCircle, MapPin, Clock, Layers, CheckCheck, FileText, ExternalLink } from 'lucide-react';
 
 interface PermissionReviewModalProps {
   record: AttendanceRecord;
@@ -67,11 +67,31 @@ export default function PermissionReviewModal({
         <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
           {/* Photo & GPS Geotag metadata */}
           <div className="flex flex-col sm:flex-row gap-4 items-center bg-stone-50 dark:bg-stone-800/40 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
-            <img
-              src={record.photo_path}
-              alt="Foto Bukti Izin"
-              className="w-24 h-24 rounded-2xl object-cover border-2 border-amber-400 shadow-md shrink-0"
-            />
+            {record.photo_path?.startsWith('data:application/pdf') || record.photo_path?.toLowerCase().endsWith('.pdf') ? (
+              <a
+                href={record.photo_path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-24 h-24 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 flex flex-col items-center justify-center p-2 text-rose-600 hover:bg-rose-100 transition shrink-0 shadow-md group cursor-pointer"
+                title="Buka Dokumen PDF Lampiran"
+              >
+                <FileText className="w-8 h-8 group-hover:scale-110 transition" />
+                <span className="text-[10px] font-bold mt-1 text-center truncate max-w-full">
+                  Dokumen PDF
+                </span>
+                <span className="text-[8px] underline text-stone-500 flex items-center gap-0.5 mt-0.5">
+                  Buka File <ExternalLink className="w-2.5 h-2.5" />
+                </span>
+              </a>
+            ) : (
+              <img
+                src={record.photo_path}
+                alt="Foto Bukti Izin"
+                className="w-24 h-24 rounded-2xl object-cover border-2 border-amber-400 shadow-md shrink-0 cursor-pointer hover:opacity-90 transition"
+                onClick={() => record.photo_path && window.open(record.photo_path, '_blank')}
+                title="Klik untuk perbesar foto"
+              />
+            )}
             <div className="text-xs space-y-1.5 flex-1 w-full">
               <p>
                 <strong>Kegiatan:</strong> {record.activity_name} ({record.operational_date})

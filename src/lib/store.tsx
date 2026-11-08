@@ -198,12 +198,14 @@ async function uploadSelfieToStorage(photoDataUrl: string, studentId: string): P
     const res = await fetch(photoDataUrl);
     const blob = await res.blob();
     const cleanId = studentId.replace(/[^a-zA-Z0-9_-]/g, '') || 'santri';
-    const fileName = `${cleanId}/${Date.now()}-${Math.random().toString(36).substring(2, 7)}.jpg`;
+    const mimeType = blob.type || (photoDataUrl.startsWith('data:application/pdf') ? 'application/pdf' : 'image/jpeg');
+    const ext = mimeType.includes('pdf') ? 'pdf' : mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg';
+    const fileName = `${cleanId}/${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from('attendance-photos')
       .upload(fileName, blob, {
-        contentType: 'image/jpeg',
+        contentType: mimeType,
         upsert: true,
       });
 

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { AttendanceRecord } from '@/types';
 import { STATUS_META } from '@/lib/constants';
+import { getActivitiesForDate } from '@/lib/schedule';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import CorrectionModal from '@/components/attendance/CorrectionModal';
 import TahfidzValidationModal from '@/components/attendance/TahfidzValidationModal';
@@ -51,6 +52,13 @@ export default function MusyrifAbsensiPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>(todayStr);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter activities matching the selected date (or all if no date selected)
+  const dateActivities = useMemo(() => {
+    if (!filterDate) return activities;
+    const d = new Date(filterDate);
+    return isNaN(d.getTime()) ? activities : getActivitiesForDate(activities, d);
+  }, [activities, filterDate]);
 
   // Filtered records based on controls
   const filteredRecords = attendanceRecords.filter((r) => {
@@ -163,7 +171,7 @@ export default function MusyrifAbsensiPage() {
             onChange={(val) => setFilterActivity(val)}
             options={[
               { value: 'all', label: 'Semua Kegiatan' },
-              ...activities.map((a) => ({ value: a.id, label: a.name })),
+              ...dateActivities.map((a) => ({ value: a.id, label: a.name })),
             ]}
             className="w-full sm:w-44"
           />

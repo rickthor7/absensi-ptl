@@ -169,3 +169,16 @@ export function isTahfidzActivity(activity?: { code?: string; name?: string } | 
     name.includes('tahfidz')
   );
 }
+
+/**
+ * Returns activities that are scheduled and active on a specific date (matching ISO day of week 1=Senin..7=Ahad).
+ * If none match or active_days is not configured, gracefully falls back to all active activities.
+ */
+export function getActivitiesForDate(activities: Activity[], date: Date): Activity[] {
+  if (!activities || activities.length === 0) return [];
+  const isoDay = getIsoDayOfWeek(date);
+  const matching = activities.filter(
+    (act) => act.is_active && Array.isArray(act.active_days) && act.active_days.includes(isoDay)
+  );
+  return matching.length > 0 ? matching : activities.filter((act) => act.is_active);
+}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
 import { STATUS_META } from '@/lib/constants';
-import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw, Layers } from 'lucide-react';
+import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw, Layers, FileText, ExternalLink } from 'lucide-react';
 
 interface AttendanceDetailModalProps {
   record: AttendanceRecord;
@@ -72,13 +72,33 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
 
           {/* Photo & GPS */}
           <div className="flex flex-col sm:flex-row gap-4 items-center bg-stone-50 dark:bg-stone-800/40 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
-            <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-stone-300 dark:border-stone-700 shadow-sm bg-black shrink-0">
-              <img
-                src={record.photo_path}
-                alt="Selfie"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {record.photo_path?.startsWith('data:application/pdf') || record.photo_path?.toLowerCase().endsWith('.pdf') ? (
+              <a
+                href={record.photo_path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-32 h-32 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 flex flex-col items-center justify-center p-3 text-rose-600 hover:bg-rose-100 transition shrink-0 shadow-sm group cursor-pointer"
+                title="Buka Dokumen PDF Lampiran"
+              >
+                <FileText className="w-10 h-10 group-hover:scale-110 transition" />
+                <span className="text-xs font-bold mt-1 text-center truncate max-w-full">
+                  Dokumen PDF
+                </span>
+                <span className="text-[10px] underline text-stone-500 flex items-center gap-1 mt-0.5">
+                  Buka File <ExternalLink className="w-3 h-3" />
+                </span>
+              </a>
+            ) : (
+              <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-stone-300 dark:border-stone-700 shadow-sm bg-black shrink-0">
+                <img
+                  src={record.photo_path}
+                  alt="Selfie / Bukti"
+                  className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition"
+                  onClick={() => record.photo_path && window.open(record.photo_path, '_blank')}
+                  title="Klik untuk perbesar foto"
+                />
+              </div>
+            )}
 
             <div className="text-xs space-y-2 flex-1 w-full">
               <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
