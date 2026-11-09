@@ -407,14 +407,22 @@ export default function MusyrifDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-4 mt-2">
+          <div className="pt-4 mt-2 flex flex-col sm:flex-row gap-2">
+            <Link
+              href={`/musyrif/kegiatan?tab=absensi${activeActivity ? `&activityId=${activeActivity.id}` : ''}`}
+              className="flex-1 py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+              <span>Edit Absensi Sesi Ini {activeActivity ? `(${activeActivity.name})` : ''}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
             <Link
               href="/musyrif/laporan"
-              className="w-full py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
+              className="py-3 px-4 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs transition flex items-center justify-center gap-1.5"
             >
-              <BarChart3 className="w-4 h-4 text-emerald-200" />
-              <span>Buka Rekapitulasi &amp; Laporan</span>
-              <ArrowRight className="w-4 h-4" />
+              <BarChart3 className="w-4 h-4" />
+              <span>Rekap Laporan</span>
             </Link>
           </div>
         </div>
@@ -494,25 +502,25 @@ export default function MusyrifDashboardPage() {
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 transition shrink-0 hidden sm:block" />
         </Link>
 
-        {/* Card 4: Laporan */}
+        {/* Card 4: Edit Presensi Sesi */}
         <Link
-          href="/musyrif/laporan"
+          href="/musyrif/kegiatan?tab=absensi"
           className="clean-card clean-card-hover p-4 flex items-center justify-between group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#0D7B5F] dark:text-teal-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
-                Laporan
+                Presensi Sesi
               </h4>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                Raport &amp; PDF
+                Edit per Kegiatan
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-sky-600 transition shrink-0 hidden sm:block" />
+          <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#0D7B5F] transition shrink-0 hidden sm:block" />
         </Link>
 
         {/* Card 5: Keuangan SPP */}

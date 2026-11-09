@@ -144,7 +144,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
-    { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
+    { href: '/musyrif/kegiatan', label: 'Kegiatan & Absensi', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
     { href: '/santri/profil', label: 'Profil', icon: User },

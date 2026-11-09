@@ -62,6 +62,13 @@ export default function ManualAttendanceSheet({
     initialActivityId || activitiesForSelectedDate[0]?.id || activities[0]?.id || ''
   );
 
+  // If initialActivityId changes or passed, sync selectedActivityId
+  React.useEffect(() => {
+    if (initialActivityId) {
+      handleActivityOrDateChange(initialActivityId, selectedDate);
+    }
+  }, [initialActivityId]);
+
   // If selected activity is not valid for the date, auto-select first activity of the day
   React.useEffect(() => {
     if (activitiesForSelectedDate.length > 0) {
