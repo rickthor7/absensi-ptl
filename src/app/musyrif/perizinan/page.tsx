@@ -6,6 +6,7 @@ import { AttendanceRecord } from '@/types';
 import PermissionReviewModal from '@/components/attendance/PermissionReviewModal';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import { STATUS_META } from '@/lib/constants';
+import { formatTime24 } from '@/lib/schedule';
 import {
   FileText,
   CheckCircle,
@@ -171,11 +172,7 @@ export default function MusyrifPerizinanPage() {
                     <div className="flex flex-wrap items-center gap-3 text-[11px] text-stone-500 dark:text-stone-400">
                       <span className="flex items-center gap-1 font-medium">
                         <Clock className="w-3.5 h-3.5 text-stone-400" />
-                        {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}{' '}
-                        WIB
+                        {formatTime24(rec.submitted_at)} WIB
                       </span>
                       <span className="flex items-center gap-1 font-bold text-[#146B50] dark:text-[#D6A84F]">
                         <MapPin className="w-3.5 h-3.5" />

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AttendanceRecord, AttendanceStatus } from '@/types';
 import { STATUS_META } from '@/lib/constants';
+import { formatTime24 } from '@/lib/schedule';
 import {
   X,
   AlertTriangle,
@@ -178,11 +179,7 @@ export default function DiscrepancyVerificationModal({
                 <div className="flex items-center justify-between">
                   <span className="text-stone-400">Waktu Kirim:</span>
                   <span className="font-mono">
-                    {new Date(record.submitted_at).toLocaleTimeString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                    WIB
+                    {formatTime24(record.submitted_at)} WIB
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -240,10 +237,7 @@ export default function DiscrepancyVerificationModal({
                     <span>
                       Dicatat:{' '}
                       {record.reviewed_at
-                        ? new Date(record.reviewed_at).toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }) + ' WIB'
+                        ? `${formatTime24(record.reviewed_at)} WIB`
                         : 'Saat absensi manual kegiatan'}
                     </span>
                   </div>

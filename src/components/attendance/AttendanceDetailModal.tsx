@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
 import { STATUS_META } from '@/lib/constants';
+import { formatTime24 } from '@/lib/schedule';
 import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw, Layers, FileText, ExternalLink } from 'lucide-react';
 
 interface AttendanceDetailModalProps {
@@ -111,7 +112,7 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
               </div>
               <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
                 <Clock className="w-3.5 h-3.5 text-stone-400" />
-                <span>Waktu Kirim: {new Date(record.submitted_at).toLocaleTimeString('id-ID')} WIB</span>
+                <span>Waktu Kirim: {formatTime24(record.submitted_at)} WIB</span>
               </div>
               <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
                 <MapPin className="w-3.5 h-3.5 text-[#146B50]" />
@@ -251,7 +252,7 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
                 <div key={idx} className="p-2 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 text-[11px] space-y-0.5">
                   <div className="flex justify-between font-semibold">
                     <span>{corr.corrected_by}</span>
-                    <span className="text-stone-400">{new Date(corr.corrected_at).toLocaleTimeString('id-ID')}</span>
+                    <span className="text-stone-400">{formatTime24(corr.corrected_at)}</span>
                   </div>
                   <p className="text-stone-500">
                     Status: <span className="line-through">{corr.original_status}</span> &rarr; <span className="font-bold text-emerald-600">{corr.corrected_status}</span>

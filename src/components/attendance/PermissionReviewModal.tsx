@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
+import { formatTime24 } from '@/lib/schedule';
 import { X, CheckCircle, XCircle, MapPin, Clock, Layers, CheckCheck, FileText, ExternalLink } from 'lucide-react';
 
 interface PermissionReviewModalProps {
@@ -98,7 +99,7 @@ export default function PermissionReviewModal({
               </p>
               <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
                 <Clock className="w-3.5 h-3.5 text-stone-400" />
-                <span>Pengajuan: {new Date(record.submitted_at).toLocaleTimeString('id-ID')} WIB</span>
+                <span>Pengajuan: {formatTime24(record.submitted_at)} WIB</span>
               </div>
               <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
                 <MapPin className="w-3.5 h-3.5 text-[#146B50]" />

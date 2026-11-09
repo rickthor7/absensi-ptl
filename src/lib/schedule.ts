@@ -125,6 +125,24 @@ export function determineActiveActivity(
 }
 
 /**
+ * Format jam tegas 24 jam "HH:mm" (misal: "14:30", "04:15", "03:00")
+ * Menjamin tidak ada format 12 jam (AM/PM) agar tidak membingungkan pengguna.
+ */
+export function formatTime24(date: Date | string | number | null | undefined, includeSeconds = false): string {
+  if (!date) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  if (includeSeconds) {
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  return `${hours}:${minutes}`;
+}
+
+/**
  * Formats a date into Indonesian locale string: "Jumat, 9 Oktober 2026"
  */
 export function formatIndonesianDate(date: Date): string {

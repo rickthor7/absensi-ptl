@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { AttendanceRecord } from '@/types';
 import { STATUS_META } from '@/lib/constants';
+import { formatTime24 } from '@/lib/schedule';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import { useRouter } from 'next/navigation';
 import {
@@ -182,11 +183,7 @@ export default function SantriRiwayatPage() {
                       </span>
                       <span className="flex items-center gap-1 font-medium">
                         <Clock className="w-3.5 h-3.5 text-stone-400" />
-                        {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}{' '}
-                        WIB
+                        {formatTime24(rec.submitted_at)} WIB
                       </span>
                       <span className="flex items-center gap-1 font-bold text-[#146B50] dark:text-[#D6A84F]">
                         <MapPin className="w-3.5 h-3.5" />

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, getEstimatedHijriDate } from '@/lib/schedule';
+import { determineActiveActivity, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
 import {
   Camera,
   Shield,
@@ -45,9 +45,7 @@ export default function HomePage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
                   <Clock className="w-3.5 h-3.5 text-[#E0B45C]" />
-                  <span>
-                    {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <span>{formatTime24(effectiveTime)}</span>
                   <span className="text-[9px] text-emerald-300">WIB</span>
                 </span>
               </div>

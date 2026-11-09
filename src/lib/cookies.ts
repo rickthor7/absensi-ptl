@@ -67,3 +67,4 @@ export function clearSessionCookie(): void {
   if (typeof document === 'undefined') return;
   document.cookie = `${SESSION_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
 }
+

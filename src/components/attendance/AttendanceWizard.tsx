@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
-import { isTahfidzActivity, getActivitiesForDate } from '@/lib/schedule';
+import { isTahfidzActivity, getActivitiesForDate, formatTime24 } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
 import LocationChecker from './LocationChecker';
 import {
@@ -414,7 +414,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                       Anda Sudah Melakukan Presensi Hari Ini
                     </h4>
                     <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                      Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> ({new Date(existingAttendance.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB).
+                      Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> ({formatTime24(existingAttendance.submitted_at)} WIB).
                     </p>
                   </div>
                 </div>
@@ -1363,11 +1363,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                   <div className="flex justify-between py-1 border-b border-stone-200 dark:border-stone-700/60">
                     <span className="text-stone-500">Waktu Kirim:</span>
                     <span className="font-semibold text-stone-800 dark:text-stone-200">
-                      {effectiveTime.toLocaleTimeString('id-ID', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      WIB
+                      {formatTime24(effectiveTime)} WIB
                     </span>
                   </div>
                   <div className="flex justify-between py-1">

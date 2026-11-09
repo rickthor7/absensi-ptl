@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
+import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
 import { STATUS_META } from '@/lib/constants';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import PermissionReviewModal from '@/components/attendance/PermissionReviewModal';
@@ -301,12 +301,7 @@ export default function MusyrifDashboardPage() {
 
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
                   <Clock className="w-3.5 h-3.5 text-[#E0B45C]" />
-                  <span>
-                    {effectiveTime.toLocaleTimeString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+                  <span>{formatTime24(effectiveTime)}</span>
                   <span className="text-[9px] text-emerald-300">WIB</span>
                 </span>
               </div>

@@ -31,7 +31,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
-import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
+import { formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
 
 interface NavItem {
   href: string;
@@ -174,7 +174,7 @@ export default function Navbar() {
                 {/* Compact date + time — only md+ */}
                 <span className="hidden md:block text-[9px] text-stone-400 leading-none mt-0.5 font-mono tabular-nums whitespace-nowrap">
                   {formatIndonesianDate(effectiveTime)}&nbsp;
-                  {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                  {formatTime24(effectiveTime)} WIB
                 </span>
               </div>
             </Link>

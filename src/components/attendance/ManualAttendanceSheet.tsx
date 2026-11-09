@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { Activity, AttendanceRecord, Profile } from '@/types';
 import { checkDiscrepancy } from '@/lib/store';
-import { getActivitiesForDate } from '@/lib/schedule';
+import { getActivitiesForDate, formatTime24 } from '@/lib/schedule';
 import ActivitySelectDropdown from '@/components/schedule/ActivitySelectDropdown';
 import CustomSelect from '@/components/ui/CustomSelect';
 import {
@@ -491,10 +491,7 @@ export default function ManualAttendanceSheet({
                                 : 'Perlu Tinjauan'}
                         </span>
                         <span className="text-stone-400 text-[10px] font-mono">
-                          ({new Date(existingRecord.submitted_at).toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })})
+                          ({formatTime24(existingRecord.submitted_at)})
                         </span>
                       </div>
                     ) : (

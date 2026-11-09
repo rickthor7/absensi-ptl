@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
+import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
 import {
   CheckCircle2,
   Calendar,
@@ -280,12 +280,7 @@ export default function SantriDashboardPage() {
 
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
                 <Clock className="w-3.5 h-3.5 text-[#E0B45C]" />
-                <span>
-                  {effectiveTime.toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+                <span>{formatTime24(effectiveTime)}</span>
                 <span className="text-[9px] text-emerald-300">WIB</span>
               </span>
             </div>
@@ -609,12 +604,7 @@ export default function SantriDashboardPage() {
                           {rec.activity_name || 'Kegiatan Pondok'}
                         </p>
                         <p className="text-[10px] text-stone-400">
-                          {rec.operational_date} •{' '}
-                          {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}{' '}
-                          WIB
+                          {rec.operational_date} • {formatTime24(rec.submitted_at)} WIB
                         </p>
                       </div>
 

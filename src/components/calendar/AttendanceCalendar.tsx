@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { AttendanceRecord, AttendanceStatus } from '@/types';
 import { STATUS_META } from '@/lib/constants';
+import { formatTime24 } from '@/lib/schedule';
 import {
   ChevronLeft,
   ChevronRight,
@@ -276,7 +277,7 @@ export default function AttendanceCalendar() {
                         {r.activity_name}
                       </p>
                       <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                        {r.operational_date} • {new Date(r.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                        {r.operational_date} • {formatTime24(r.submitted_at)} WIB
                       </p>
                     </div>
                     <span
@@ -323,11 +324,7 @@ export default function AttendanceCalendar() {
                         {rec.activity_name}
                       </h4>
                       <p className="text-[11px] text-stone-500">
-                        Pukul {new Date(rec.submitted_at).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}{' '}
-                        WIB
+                        Pukul {formatTime24(rec.submitted_at)} WIB
                       </p>
                     </div>
                     <span
