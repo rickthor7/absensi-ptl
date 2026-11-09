@@ -409,11 +409,11 @@ export default function MusyrifDashboardPage() {
 
           <div className="pt-4 mt-2">
             <Link
-              href="/musyrif/absensi"
+              href="/musyrif/laporan"
               className="w-full py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>Buka Presensi Santri &amp; Rekap</span>
+              <BarChart3 className="w-4 h-4 text-emerald-200" />
+              <span>Buka Rekapitulasi &amp; Laporan</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -426,21 +426,21 @@ export default function MusyrifDashboardPage() {
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         
-        {/* Card 1: Absensi */}
+        {/* Card 1: Data Santri */}
         <Link
-          href="/musyrif/absensi"
+          href="/musyrif/santri"
           className="clean-card clean-card-hover p-4 flex items-center justify-between group"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-300 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+              <Users className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
-                Presensi
+                Data Santri
               </h4>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                Rekap &amp; GPS
+                {santriList.length} Santri Aktif
               </p>
             </div>
           </div>

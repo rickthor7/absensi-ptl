@@ -28,6 +28,7 @@ import {
   Key,
   Wallet,
   CreditCard,
+  BookOpen,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, getEstimatedHijriDate } from '@/lib/schedule';
@@ -119,8 +120,8 @@ export default function Navbar() {
     { href: '/musyrif', label: 'Ringkasan', icon: Compass },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
-    { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },
+    { href: '/musyrif/tahfidz', label: 'Tahfidz', icon: BookOpen },
     { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },

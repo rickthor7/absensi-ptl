@@ -141,7 +141,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const musyrifNavItems: ShellNavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
     { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
-    { href: '/musyrif/absensi', label: 'Absensi', icon: CheckCircle2 },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
@@ -163,7 +162,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const searchItems = [
     ...navItems.map((item) => ({ title: item.label, href: item.href, category: 'Menu' })),
     { title: 'Setoran Tahfidz & Rekap WA', href: '/musyrif/tahfidz', category: 'Tahfidz' },
-    { title: 'Presensi Kamera & GPS', href: isMusyrif ? '/musyrif/absensi' : '/santri/absensi', category: 'Aksi' },
+    { title: 'Presensi Kamera & GPS (Santri)', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Ajukan Izin Presensi', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Pembayaran SPP Online', href: isMusyrif ? '/musyrif/keuangan' : '/santri/spp', category: 'Keuangan' },
     { title: 'Laporan Mutabaah Bulanan', href: isMusyrif ? '/musyrif/laporan' : '/santri/riwayat', category: 'Laporan' },
