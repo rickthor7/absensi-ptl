@@ -344,47 +344,38 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   const totalSteps = stepLabels.length;
 
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xl overflow-hidden max-w-2xl mx-auto">
-      {/* Top Header */}
-      <div className="bg-gradient-to-r from-[#07241B] via-[#0B3D2E] to-[#146B50] p-5 sm:p-6 text-white relative">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#D6A84F] tracking-wide uppercase">
+    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-lg overflow-hidden max-w-2xl mx-auto">
+      {/* Top Header - Compact & Sleek */}
+      <div className="bg-[#061F17] p-3.5 sm:p-4 text-white border-b border-stone-800">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#D6A84F]">
             <Sparkles className="w-3.5 h-3.5" />
             <span>
-              {isTahfidz ? 'Presensi & Setoran Tahfidz' : 'Presensi Santri Berbasis Geotag'}
+              {isTahfidz ? 'Presensi & Setoran Tahfidz' : 'Presensi Geotag & Selfie'}
             </span>
           </div>
-          <span className="text-[11px] bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-emerald-200 font-semibold border border-white/10">
+          <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-emerald-200 font-semibold border border-white/10">
             Langkah {currentStep} / {totalSteps}
           </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">{activity.name}</h2>
-            <p className="text-xs text-emerald-100/80 mt-0.5">
-              Santri: <strong className="text-white">{currentUser.full_name}</strong> ({currentUser.student_number || 'Santri'})
+            <h2 className="text-base sm:text-lg font-extrabold tracking-tight text-white">{activity.name}</h2>
+            <p className="text-[11px] text-emerald-200/80 font-mono">
+              {activity.start_time} - {activity.end_time} WIB • Radius: {activity.radius_m}m
             </p>
-          </div>
-          <div className="text-left sm:text-right mt-1 sm:mt-0">
-            <span className="text-xs bg-emerald-950/60 text-[#D6A84F] font-bold px-2.5 py-1 rounded-xl border border-[#D6A84F]/30 inline-block">
-              {activity.start_time} - {activity.end_time} WIB
-            </span>
           </div>
         </div>
 
-        {/* Step Indicator Pills */}
-        <div
-          className={`mt-5 grid gap-1.5 ${
-            totalSteps === 6 ? 'grid-cols-6' : 'grid-cols-5'
-          }`}
-        >
+        {/* Step Indicator Progress Bar */}
+        <div className="mt-2.5 flex items-center gap-1">
           {stepLabels.map((label, idx) => {
             const stepNum = idx + 1;
             const isActive = stepNum === currentStep;
             const isCompleted = stepNum < currentStep;
             return (
-              <div key={stepNum} className="flex flex-col gap-1 items-center">
+              <div key={stepNum} className="flex-1 flex flex-col gap-1">
                 <div
                   className={`h-1.5 w-full rounded-full transition-all duration-300 ${
                     isCompleted
@@ -395,8 +386,8 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                   }`}
                 />
                 <span
-                  className={`text-[9px] uppercase font-bold tracking-wider hidden sm:block ${
-                    isActive ? 'text-[#D6A84F]' : 'text-emerald-200/60'
+                  className={`text-[8.5px] uppercase font-bold tracking-wider text-center truncate hidden sm:block ${
+                    isActive ? 'text-[#D6A84F]' : isCompleted ? 'text-white/70' : 'text-white/30'
                   }`}
                 >
                   {label}
@@ -407,27 +398,23 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
         </div>
       </div>
 
-      <div className="p-4 sm:p-6">
+      <div className="p-3.5 sm:p-5">
         {/* STEP 1: Pilih Status (Hadir vs Izin) */}
         {currentStep === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Banner jika santri sudah presensi di kegiatan ini hari ini */}
             {existingAttendance && !submissionResult && (
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 space-y-2.5 animate-in fade-in">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <RotateCcw className="w-4 h-4" />
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 space-y-2 animate-in fade-in">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <RotateCcw className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
                       Anda Sudah Melakukan Presensi Hari Ini
                     </h4>
                     <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                      Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> tercatat pada pukul{' '}
-                      {new Date(existingAttendance.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB.
-                    </p>
-                    <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90">
-                      Foto selfie kurang jelas, salah pilih juz/halaman tahfidz, atau koordinat perlu diperbaiki? Anda dapat menghapus data absensi kegiatan ini untuk keperluan retake (ambil ulang).
+                      Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> ({new Date(existingAttendance.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB).
                     </p>
                   </div>
                 </div>
@@ -436,9 +423,9 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     type="button"
                     disabled={isRetaking}
                     onClick={() => handleRetake(existingAttendance.id)}
-                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                   >
-                    <RotateCcw className={`w-3.5 h-3.5 ${isRetaking ? 'animate-spin' : ''}`} />
+                    <RotateCcw className={`w-3 h-3 ${isRetaking ? 'animate-spin' : ''}`} />
                     <span>{isRetaking ? 'Menghapus Data...' : 'Hapus & Ambil Ulang Absen (Retake)'}</span>
                   </button>
                 </div>
@@ -446,78 +433,65 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
             )}
 
             {retakeNotification && (
-              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{retakeNotification}</span>
               </div>
             )}
 
-            <div className="text-center space-y-1">
-              <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
-                Pilih Jenis Absensi
-              </h3>
-              <p className="text-xs text-stone-500">
-                Tentukan apakah Anda mengikuti kegiatan langsung di pondok atau mengajukan izin udzur
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Card Hadir */}
+            {/* Segmented Switch: Hadir vs Izin */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700">
               <button
                 type="button"
                 onClick={() => setAttendanceType('hadir')}
-                className={`p-5 rounded-2xl border-2 text-left transition relative cursor-pointer group ${
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                   attendanceType === 'hadir'
-                    ? 'border-[#146B50] bg-emerald-50/60 dark:bg-emerald-950/30 shadow-md ring-2 ring-emerald-600/20'
-                    : 'border-stone-200 dark:border-stone-800 hover:border-emerald-200 bg-stone-50/40 dark:bg-stone-800/20'
+                    ? 'bg-white dark:bg-stone-900 text-[#146B50] dark:text-emerald-400 shadow-xs border border-emerald-500/20'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-[#146B50] flex items-center justify-center mb-3">
-                    <UserCheck className="w-6 h-6" />
-                  </div>
-                  {attendanceType === 'hadir' && (
-                    <div className="w-6 h-6 rounded-full bg-[#146B50] text-white flex items-center justify-center shadow-xs">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-                <h4 className="font-bold text-sm text-stone-900 dark:text-stone-100 group-hover:text-[#146B50]">
-                  Hadir di Pesantren
-                </h4>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
-                  Saya hadir di lokasi pondok dan siap melakukan validasi wajah serta koordinat GPS.
-                </p>
+                <UserCheck className="w-4 h-4" />
+                <span>Hadir di Pesantren</span>
               </button>
 
-              {/* Card Izin */}
               <button
                 type="button"
                 onClick={() => setAttendanceType('izin')}
-                className={`p-5 rounded-2xl border-2 text-left transition relative cursor-pointer group ${
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                   attendanceType === 'izin'
-                    ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 shadow-md ring-2 ring-amber-500/20'
-                    : 'border-stone-200 dark:border-stone-800 hover:border-amber-200 bg-stone-50/40 dark:bg-stone-800/20'
+                    ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-400 shadow-xs border border-amber-500/20'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 flex items-center justify-center mb-3">
-                    <FileQuestion className="w-6 h-6" />
-                  </div>
-                  {attendanceType === 'izin' && (
-                    <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-                <h4 className="font-bold text-sm text-stone-900 dark:text-stone-100 group-hover:text-amber-700">
-                  Pengajuan Izin
-                </h4>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
-                  Izin udzur syar’i, sakit, atau tugas luar dengan persetujuan verifikasi musyrif.
-                </p>
+                <FileQuestion className="w-4 h-4" />
+                <span>Pengajuan Izin</span>
               </button>
             </div>
+
+            {/* When Hadir: Clean single-view readiness card */}
+            {attendanceType === 'hadir' && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Kegiatan Sesi:</span>
+                  <span className="font-extrabold text-[#146B50] dark:text-emerald-300">{activity.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Jam Pelaksanaan:</span>
+                  <span className="font-semibold text-stone-800 dark:text-stone-200 font-mono">
+                    {activity.start_time} - {activity.end_time} WIB
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Radius Kehadiran:</span>
+                  <span className="font-bold text-[#146B50] dark:text-[#D6A84F] bg-white dark:bg-stone-900 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 text-[11px]">
+                    Maksimal {activity.radius_m} meter
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
+                  Langkah selanjutnya akan mengaktifkan kamera selfie dan validasi koordinat GPS Anda.
+                </p>
+              </div>
+            )}
 
             {/* If Izin selected */}
             {attendanceType === 'izin' && (
@@ -715,7 +689,7 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
               </div>
             )}
 
-            <div className="flex justify-end pt-4 border-t border-stone-100 dark:border-stone-800">
+            <div className="flex justify-end pt-3 border-t border-stone-100 dark:border-stone-800">
               <button
                 type="button"
                 disabled={
@@ -723,12 +697,14 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                   (!permissionReason.trim() || selectedIzinKeys.length === 0)
                 }
                 onClick={() => setCurrentStep(2)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold transition shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border border-[#D6A84F]/30"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold transition shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border border-[#D6A84F]/30"
               >
                 <span>
                   {attendanceType === 'izin' && selectedIzinKeys.length > 1
                     ? `Lanjut (${selectedIzinKeys.length} Kegiatan Dipilih)`
-                    : 'Lanjut ke Foto Selfie / Bukti'}
+                    : attendanceType === 'izin'
+                    ? 'Lanjut ke Lampiran Bukti'
+                    : 'Mulai Presensi (Selfie & GPS)'}
                 </span>
                 <ArrowRight className="w-4 h-4 text-[#D6A84F]" />
               </button>
@@ -738,16 +714,16 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
 
         {/* STEP 2: Ambil Selfie / Upload Berkas Bukti */}
         {currentStep === 2 && (
-          <div className="space-y-6">
-            <div className="text-center space-y-1">
-              <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
+          <div className="space-y-4">
+            <div className="text-center space-y-0.5">
+              <h3 className="text-sm sm:text-base font-extrabold text-stone-900 dark:text-stone-100">
                 {attendanceType === 'izin'
                   ? 'Lampiran Berkas / Bukti Perizinan'
                   : 'Validasi Wajah (Selfie)'}
               </h3>
               <p className="text-xs text-stone-500">
                 {attendanceType === 'izin'
-                  ? 'Unggah surat dokter, surat izin wali, tiket, atau ambil foto selfie langsung'
+                  ? 'Unggah surat dokter, surat izin wali, tiket, atau ambil foto langsung'
                   : 'Posisikan wajah Anda pada area bingkai panduan kamera'}
               </p>
             </div>
