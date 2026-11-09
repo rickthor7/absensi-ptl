@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
+import { getSppAmountForStudent } from '@/lib/constants';
 import {
   CreditCard,
   Upload,
@@ -46,11 +47,18 @@ export default function SantriSppPage() {
   const [selectedYear, setSelectedYear] = useState<number>(effectiveTime.getFullYear());
   const [copiedAccount, setCopiedAccount] = useState(false);
 
+  // Student specific custom SPP amount
+  const mySppAmount = getSppAmountForStudent(currentUser, sppSettings);
+
   // Modal Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadMonth, setUploadMonth] = useState<number>(effectiveTime.getMonth() + 1);
   const [uploadYear, setUploadYear] = useState<number>(effectiveTime.getFullYear());
-  const [uploadAmount, setUploadAmount] = useState<number>(sppSettings.monthly_amount);
+  const [uploadAmount, setUploadAmount] = useState<number>(mySppAmount);
+
+  useEffect(() => {
+    setUploadAmount(mySppAmount);
+  }, [mySppAmount]);
   const [paymentDate, setPaymentDate] = useState<string>(
     effectiveTime.toISOString().split('T')[0]
   );
@@ -117,7 +125,7 @@ export default function SantriSppPage() {
   const openUploadForMonth = (month: number) => {
     setUploadMonth(month);
     setUploadYear(selectedYear);
-    setUploadAmount(sppSettings.monthly_amount);
+    setUploadAmount(mySppAmount);
     setPreviewImage(null);
     setSelectedFile(null);
     setNotes('');
@@ -224,14 +232,16 @@ export default function SantriSppPage() {
                   Tarif SPP Bulanan
                 </span>
                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-md border border-white/15">
-                  Resmi
+                  {currentUser.generation ? `Angkatan ${currentUser.generation}` : 'Resmi'}
                 </span>
               </div>
               <div className="text-3xl font-extrabold tracking-tight text-white mb-1">
-                {formatRupiah(sppSettings.monthly_amount)}
+                {formatRupiah(mySppAmount)}
               </div>
               <p className="text-xs text-emerald-100/70">
-                Per santri / bulan. Termasuk ta’lim, operasional asrama, dan kajian kitab.
+                {String(currentUser.generation) === '2026'
+                  ? 'Tarif khusus santri Angkatan 2026. Termasuk ta’lim, operasional asrama, dan kajian kitab.'
+                  : 'Per santri / bulan. Termasuk ta’lim, operasional asrama, dan kajian kitab.'}
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-emerald-200/80 flex items-center gap-1.5">
@@ -401,7 +411,7 @@ export default function SantriSppPage() {
                     <div className="text-xs text-stone-600 dark:text-stone-300">
                       Tagihan:{' '}
                       <span className="font-semibold">
-                        {payment ? formatRupiah(payment.amount) : formatRupiah(sppSettings.monthly_amount)}
+                        {payment ? formatRupiah(payment.amount) : formatRupiah(mySppAmount)}
                       </span>
                     </div>
 

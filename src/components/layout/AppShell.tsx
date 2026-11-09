@@ -16,7 +16,6 @@ import {
   Wallet,
   User,
   Search,
-  Bell,
   ChevronDown,
   Menu,
   X,
@@ -62,21 +61,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
-  const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on click outside or ESC
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (notifRef.current && !notifRef.current.contains(target)) {
-        setIsNotifOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setIsUserMenuOpen(false);
       }
@@ -89,7 +83,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
-        setIsNotifOpen(false);
         setIsUserMenuOpen(false);
         setIsMobileDrawerOpen(false);
       }
@@ -180,60 +173,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const displayName = currentUser.nickname || currentUser.full_name?.split(' ')[0] || 'User';
   const roleLabel = isMusyrif ? 'Musyrif' : 'Santri';
 
-  // Notifications mock items for notification bell
-  const notificationItems = [
-    {
-      id: '1',
-      title: 'Jadwal Mutabaah',
-      desc: 'Sesi berikutnya akan dimulai sesuai jam jadwal pesantren.',
-      time: 'Baru saja',
-      unread: true,
-    },
-    {
-      id: '2',
-      title: 'Status Kehadiran',
-      desc: 'Presensi harian tercatat dalam sistem mutabaah yaumiyah.',
-      time: '1 jam lalu',
-      unread: true,
-    },
-    {
-      id: '3',
-      title: 'Info Pesantren Nurul Falah',
-      desc: 'Selamat datang di Madrasah Digital Ponpes Nurul Falah.',
-      time: 'Hari ini',
-      unread: false,
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#F4F7F5] dark:bg-[#07130F] text-stone-900 dark:text-stone-100 flex flex-col lg:flex-row font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F8FAF9] dark:bg-[#070D0A] text-stone-900 dark:text-stone-100 flex flex-col lg:flex-row font-sans transition-colors duration-200">
       
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ── DESKTOP PERSISTENT LEFT SIDEBAR (lg+) ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 z-30 bg-gradient-to-b from-[#06291F] via-[#083327] to-[#0A3D2F] text-white shadow-xl overflow-hidden border-r border-[#105943]/40">
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 z-30 bg-[#061F17] dark:bg-[#05140F] text-stone-200 border-r border-[#0D382A] dark:border-[#142921] select-none">
         
         {/* Brand Header */}
-        <div className="p-5 pb-4 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#105943] to-[#D4A24C] p-[2px] shadow-lg shadow-black/30 overflow-hidden shrink-0">
+        <div className="p-5 pb-4 border-b border-white/5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#0D7B5F] p-0.5 shadow-sm overflow-hidden shrink-0 border border-white/10">
             <img
               src="/icon.jpg"
               alt="Logo PP Nurul Falah"
-              className="w-full h-full object-cover rounded-[14px]"
+              className="w-full h-full object-cover rounded-[10px]"
             />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="font-extrabold text-base text-white tracking-tight leading-tight">
+            <span className="font-extrabold text-sm text-white tracking-tight leading-tight">
               Nurul Falah
             </span>
-            <span className="text-[11px] font-medium text-emerald-300/80 leading-none mt-0.5">
-              Madrasah Digital
+            <span className="text-[10px] font-medium text-emerald-400/80 leading-none mt-0.5">
+              Portal Madrasah Digital
             </span>
           </div>
         </div>
 
         {/* Navigation Menu Links */}
-        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-1.5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar">
           {navItems.map((item) => {
             const isActive =
               item.href === '/santri' || item.href === '/musyrif'
@@ -245,16 +213,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 group ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors duration-150 group ${
                   isActive
-                    ? 'bg-[#13634B] text-white shadow-md shadow-emerald-950/40 font-bold'
-                    : 'text-emerald-100/75 hover:text-white hover:bg-white/8'
+                    ? 'bg-[#0D7B5F] text-white font-bold shadow-xs'
+                    : 'text-stone-300 hover:text-white hover:bg-white/5 font-medium'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
-                    className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                      isActive ? 'text-[#D6A84F]' : 'text-emerald-200/70 group-hover:text-emerald-100'
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                      isActive ? 'text-[#E0B45C]' : 'text-stone-400 group-hover:text-stone-200'
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
@@ -270,28 +238,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        {/* Decorative Mosque Silhouette Pattern at Bottom */}
-        <div className="relative px-3.5 pb-4 pt-2">
-          {/* Subtle Mosque SVG Silhouette Backdrop */}
-          <div className="absolute inset-x-0 bottom-0 h-32 pointer-events-none opacity-10 flex items-end justify-center overflow-hidden">
-            <svg viewBox="0 0 300 120" className="w-full text-white fill-current">
-              <path d="M0,120 L0,90 Q40,90 40,60 Q40,30 60,30 Q80,30 80,60 Q80,90 120,90 L120,40 Q135,40 135,10 Q150,10 150,40 L150,90 Q190,90 190,60 Q190,30 210,30 Q230,30 230,60 Q230,90 270,90 L270,120 Z" />
-              <rect x="25" y="10" width="8" height="110" rx="3" />
-              <rect x="265" y="10" width="8" height="110" rx="3" />
-              <polygon points="29,0 23,12 35,12" />
-              <polygon points="269,0 263,12 275,12" />
-            </svg>
-          </div>
-
-          {/* Bottom Card: "Butuh Bantuan? Hubungi Admin" */}
-          <div className="relative z-10 rounded-2xl p-3 bg-white/6 backdrop-blur-md border border-white/12 flex items-center justify-between gap-3 shadow-sm hover:bg-white/10 transition-colors">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0 text-emerald-300">
-                <Headphones className="w-4 h-4" />
+        {/* Bottom Help Area */}
+        <div className="p-3 border-t border-white/5">
+          <div className="rounded-xl p-3 bg-white/5 border border-white/10 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                <Headphones className="w-3.5 h-3.5" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-white truncate">Butuh Bantuan?</span>
-                <span className="text-[10px] text-emerald-200/70 truncate">Hubungi Admin</span>
+                <span className="text-[11px] font-bold text-white truncate">Pusat Bantuan</span>
+                <span className="text-[10px] text-stone-400 truncate">WhatsApp Pengasuhan</span>
               </div>
             </div>
 
@@ -299,7 +255,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               href="https://wa.me/6281234567890?text=Halo%20Admin%20Nurul%20Falah,%20saya%20butuh%20bantuan%20aplikasi"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 text-white transition shrink-0"
+              className="p-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white transition shrink-0"
               title="Hubungi Admin WhatsApp"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -397,67 +353,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Moon className="w-4 h-4 text-stone-600" />
               )}
             </button>
-
-            {/* Notification Bell with Badge */}
-            <div className="relative" ref={notifRef}>
-              <button
-                type="button"
-                onClick={() => setIsNotifOpen((prev) => !prev)}
-                className="relative p-2 rounded-xl text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
-                title="Pemberitahuan"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center shadow-xs">
-                  3
-                </span>
-              </button>
-
-              {/* Notification Popover Dropdown */}
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-88 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-4 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Bell className="w-4 h-4 text-[#105943]" />
-                      <span className="text-xs font-extrabold text-stone-900 dark:text-white">
-                        Notifikasi Terkini
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
-                      3 Baru
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-stone-100 dark:divide-stone-800 max-h-80 overflow-y-auto">
-                    {notificationItems.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`p-3.5 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition cursor-pointer ${
-                          n.unread ? 'bg-emerald-50/30 dark:bg-emerald-950/20' : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                            {n.title}
-                          </p>
-                          <span className="text-[10px] text-stone-400 shrink-0 font-medium">
-                            {n.time}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 leading-relaxed">
-                          {n.desc}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-2 border-t border-stone-100 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900 text-center">
-                    <span className="text-[11px] font-semibold text-stone-500">
-                      Pondok Pesantren Nurul Falah
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* User Profile Pill & Dropdown */}
             <div className="relative" ref={userMenuRef}>

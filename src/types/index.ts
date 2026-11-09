@@ -127,6 +127,7 @@ export interface AuditLog {
 export interface SppSettings {
   id: string; // 'default'
   monthly_amount: number; // e.g. 120000
+  generation_amounts?: Record<string, number>; // Custom nominal per angkatan, e.g. { '2026': 170000 }
   bank_name: string; // e.g. 'Bank Syariah Indonesia (BSI)'
   bank_account_number: string; // e.g. '7128938475'
   bank_account_holder: string; // e.g. 'Pondok Pesantren Nurul Falah'

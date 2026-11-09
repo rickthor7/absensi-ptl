@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import { SppPayment } from '@/types';
+import { getSppAmountForStudent } from '@/lib/constants';
 import {
   CheckCircle2,
   Clock,
@@ -63,11 +64,23 @@ export default function MusyrifKeuanganPage() {
 
   // Settings State
   const [settingsMonthlyAmount, setSettingsMonthlyAmount] = useState<number>(sppSettings.monthly_amount);
+  const [settingsAmount2026, setSettingsAmount2026] = useState<number>(
+    sppSettings.generation_amounts?.['2026'] ?? 170000
+  );
   const [settingsBankName, setSettingsBankName] = useState<string>(sppSettings.bank_name);
   const [settingsAccountNumber, setSettingsAccountNumber] = useState<string>(sppSettings.bank_account_number);
   const [settingsAccountHolder, setSettingsAccountHolder] = useState<string>(sppSettings.bank_account_holder);
   const [settingsNotes, setSettingsNotes] = useState<string>(sppSettings.notes || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
+
+  useEffect(() => {
+    setSettingsMonthlyAmount(sppSettings.monthly_amount);
+    setSettingsAmount2026(sppSettings.generation_amounts?.['2026'] ?? 170000);
+    setSettingsBankName(sppSettings.bank_name);
+    setSettingsAccountNumber(sppSettings.bank_account_number);
+    setSettingsAccountHolder(sppSettings.bank_account_holder);
+    setSettingsNotes(sppSettings.notes || '');
+  }, [sppSettings]);
 
   // Matriks Month/Year Filter
   const [matriksMonth, setMatriksMonth] = useState<number>(effectiveTime.getMonth() + 1);
@@ -115,6 +128,10 @@ export default function MusyrifKeuanganPage() {
     e.preventDefault();
     await updateSppSettings({
       monthly_amount: Number(settingsMonthlyAmount),
+      generation_amounts: {
+        ...(sppSettings.generation_amounts || {}),
+        '2026': Number(settingsAmount2026),
+      },
       bank_name: settingsBankName,
       bank_account_number: settingsAccountNumber,
       bank_account_holder: settingsAccountHolder,
@@ -170,7 +187,9 @@ export default function MusyrifKeuanganPage() {
   // Copy WhatsApp Reminder for Student
   const handleCopyWaReminder = (student: typeof santriList[0]) => {
     const monthName = MONTH_NAMES[matriksMonth - 1];
-    const text = `Assalamu'alaikum Warahmatullahi Wabarakatuh.\n\nYth. Wali Santri dari ananda *${student.full_name}* (${student.student_number || 'Santri'} - ${student.group_name || 'Nurul Falah'}).\n\nKami menginformasikan bahwa tagihan SPP bulanan untuk bulan *${monthName} ${matriksYear}* sebesar *${formatRupiah(sppSettings.monthly_amount)}* dapat ditransfer melalui:\n\nBank: *${sppSettings.bank_name}*\nNo Rekening: *${sppSettings.bank_account_number}*\na.n. *${sppSettings.bank_account_holder}*\n\nSetelah transfer, mohon untuk mengunggah bukti pembayaran langsung melalui tautan portal santri berikut:\n👉 https://www.absenptl.web.id/santri/spp\natau konfirmasi langsung ke Musyrif. Syukron Katsiran atas perhatian dan kerjasamanya.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh.\n*Pengasuhan Pondok Pesantren Nurul Falah Ketintang*`;
+    const studentAmount = getSppAmountForStudent(student, sppSettings);
+    const angkatanInfo = student.generation ? ` - Angkatan ${student.generation}` : '';
+    const text = `Assalamu'alaikum Warahmatullahi Wabarakatuh.\n\nYth. Wali Santri dari ananda *${student.full_name}* (${student.student_number || 'Santri'} - ${student.group_name || 'Nurul Falah'}${angkatanInfo}).\n\nKami menginformasikan bahwa tagihan SPP bulanan untuk bulan *${monthName} ${matriksYear}* sebesar *${formatRupiah(studentAmount)}* dapat ditransfer melalui:\n\nBank: *${sppSettings.bank_name}*\nNo Rekening: *${sppSettings.bank_account_number}*\na.n. *${sppSettings.bank_account_holder}*\n\nSetelah transfer, mohon untuk mengunggah bukti pembayaran langsung melalui tautan portal santri berikut:\n👉 https://www.absenptl.web.id/santri/spp\natau konfirmasi langsung ke Musyrif. Syukron Katsiran atas perhatian dan kerjasamanya.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh.\n*Pengasuhan Pondok Pesantren Nurul Falah Ketintang*`;
 
     navigator.clipboard.writeText(text);
     setCopiedWaStudentId(student.id);
@@ -207,7 +226,13 @@ export default function MusyrifKeuanganPage() {
               onClick={() => {
                 setCashMonth(currentMonthNum);
                 setCashYear(currentYearNum);
-                setCashAmount(sppSettings.monthly_amount);
+                const firstStudent = santriList[0];
+                if (firstStudent) {
+                  setCashStudentId(firstStudent.id);
+                  setCashAmount(getSppAmountForStudent(firstStudent, sppSettings));
+                } else {
+                  setCashAmount(sppSettings.monthly_amount);
+                }
                 setIsCashModalOpen(true);
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md transition-all active:scale-95"
@@ -561,7 +586,13 @@ export default function MusyrifKeuanganPage() {
                     onClick={() => {
                       setCashMonth(matriksMonth);
                       setCashYear(matriksYear);
-                      setCashAmount(sppSettings.monthly_amount);
+                      const firstStudent = santriList[0];
+                      if (firstStudent) {
+                        setCashStudentId(firstStudent.id);
+                        setCashAmount(getSppAmountForStudent(firstStudent, sppSettings));
+                      } else {
+                        setCashAmount(sppSettings.monthly_amount);
+                      }
                       setIsCashModalOpen(true);
                     }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0D7B5F] text-white text-xs font-bold hover:bg-[#0b6b52] transition-colors"
@@ -633,6 +664,7 @@ export default function MusyrifKeuanganPage() {
                       <th className="py-2.5 px-3">Nama Santri</th>
                       <th className="py-2.5 px-3">NIS</th>
                       <th className="py-2.5 px-3">Kamar / Kelompok</th>
+                      <th className="py-2.5 px-3">Tagihan</th>
                       <th className="py-2.5 px-3 text-center">Status {MONTH_NAMES[matriksMonth - 1]}</th>
                       <th className="py-2.5 px-3 text-right">Aksi Cepat</th>
                     </tr>
@@ -654,13 +686,27 @@ export default function MusyrifKeuanganPage() {
                               {idx + 1}
                             </td>
                             <td className="py-3 px-3 font-bold text-stone-900 dark:text-stone-100">
-                              {student.full_name}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{student.full_name}</span>
+                                {student.generation && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                    String(student.generation) === '2026'
+                                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300'
+                                  }`}>
+                                    Angk. {student.generation}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 px-3 text-stone-600 dark:text-stone-400 font-mono">
                               {student.student_number || '-'}
                             </td>
                             <td className="py-3 px-3 text-stone-600 dark:text-stone-400">
                               {student.group_name || '-'}
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-stone-800 dark:text-stone-200 font-mono">
+                              {formatRupiah(getSppAmountForStudent(student, sppSettings))}
                             </td>
                             <td className="py-3 px-3 text-center">
                               {payment?.status === 'verified' && (
@@ -691,7 +737,7 @@ export default function MusyrifKeuanganPage() {
                                         setCashStudentId(student.id);
                                         setCashMonth(matriksMonth);
                                         setCashYear(matriksYear);
-                                        setCashAmount(sppSettings.monthly_amount);
+                                        setCashAmount(getSppAmountForStudent(student, sppSettings));
                                         setIsCashModalOpen(true);
                                       }}
                                       className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#0D7B5F] text-white hover:bg-[#0b6b52] transition-colors"
@@ -757,18 +803,37 @@ export default function MusyrifKeuanganPage() {
               )}
 
               <form onSubmit={handleSaveSettings} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Nominal SPP Bulanan per Santri (Rp) *
-                  </label>
-                  <input
-                    type="number"
-                    value={settingsMonthlyAmount}
-                    onChange={(e) => setSettingsMonthlyAmount(Number(e.target.value))}
-                    placeholder="Contoh: 350000"
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#152922] text-xs font-bold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]"
-                    required
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Tarif SPP Standar / Umum (Rp) *
+                    </label>
+                    <input
+                      type="number"
+                      value={settingsMonthlyAmount}
+                      onChange={(e) => setSettingsMonthlyAmount(Number(e.target.value))}
+                      placeholder="Contoh: 120000"
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#152922] text-xs font-bold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]"
+                      required
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1">Tarif umum santri angkatan sebelum 2026.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#D4A24C] mb-1 flex items-center justify-between">
+                      <span>Tarif Khusus Angkatan 2026 (Rp) *</span>
+                      <span className="text-[10px] bg-[#D4A24C]/15 text-[#D4A24C] px-1.5 py-0.5 rounded font-bold">Kustom</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={settingsAmount2026}
+                      onChange={(e) => setSettingsAmount2026(Number(e.target.value))}
+                      placeholder="170000"
+                      className="w-full px-3 py-2 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/40 dark:bg-[#1f2b20] text-xs font-bold text-amber-900 dark:text-amber-300 focus:outline-none focus:ring-2 focus:ring-[#D4A24C]"
+                      required
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1">Khusus santri baru angkatan 2026.</p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -999,14 +1064,21 @@ export default function MusyrifKeuanganPage() {
                 </label>
                 <select
                   value={cashStudentId}
-                  onChange={(e) => setCashStudentId(e.target.value)}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setCashStudentId(id);
+                    const selected = santriList.find((s) => s.id === id);
+                    if (selected) {
+                      setCashAmount(getSppAmountForStudent(selected, sppSettings));
+                    }
+                  }}
                   className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#152922] text-xs font-bold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#0D7B5F]"
                   required
                 >
                   <option value="">-- Pilih Santri --</option>
                   {santriList.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.full_name} ({s.student_number || 'Santri'} - {s.group_name || 'Nurul Falah'})
+                      {s.full_name} ({s.student_number || 'Santri'} - {s.group_name || 'Nurul Falah'}{s.generation ? ` • Angk. ${s.generation}` : ''} • {formatRupiah(getSppAmountForStudent(s, sppSettings))})
                     </option>
                   ))}
                 </select>

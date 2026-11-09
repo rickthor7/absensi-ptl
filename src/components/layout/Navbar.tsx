@@ -134,18 +134,18 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 transition-all duration-300">
-      {/* Main Navbar — Slim h-12, Glass Effect */}
-      <div className="bg-[#082F23]/95 backdrop-blur-xl border-b border-[#0D7B5F]/25 shadow-md">
+      {/* Main Navbar — Slim h-12, Clean Surface */}
+      <div className="bg-[#061F17]/95 dark:bg-[#07140F]/95 backdrop-blur-md border-b border-[#0D382A] dark:border-[#1A3327] shadow-xs">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center h-12 gap-2">
 
             {/* ── Brand Logo ── */}
             <Link href="/" className="flex items-center gap-2 group shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0D7B5F] to-[#D4A24C] p-[1.5px] shadow-lg shadow-emerald-900/30 overflow-hidden shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-[#0D7B5F] p-0.5 shadow-sm overflow-hidden shrink-0 border border-white/10">
                 <img
                   src="/icon.jpg"
                   alt="Logo PP Nurul Falah"
-                  className="w-full h-full object-cover rounded-[9px]"
+                  className="w-full h-full object-cover rounded-[6px]"
                 />
               </div>
               <div className="flex flex-col min-w-0">
@@ -155,32 +155,32 @@ export default function Navbar() {
                   </span>
                   {/* Live / Lokal chip */}
                   <span
-                    className={`hidden sm:flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
+                    className={`hidden sm:flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
                       isSupabaseConnected
-                        ? 'bg-[#D4A24C]/15 text-[#D4A24C] border-[#D4A24C]/30'
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
                         : 'bg-white/5 text-stone-400 border-white/10'
                     }`}
                     title={supabaseStatusMessage}
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        isSupabaseConnected ? 'bg-[#D4A24C] dot-pulse' : 'bg-stone-500'
+                        isSupabaseConnected ? 'bg-emerald-400' : 'bg-stone-500'
                       }`}
                     />
                     {isSupabaseConnected ? 'Live' : 'Lokal'}
                   </span>
                 </div>
                 {/* Compact date + time — only md+ */}
-                <span className="hidden md:block text-[9px] text-emerald-300/50 leading-none mt-0.5 font-mono tabular-nums whitespace-nowrap">
+                <span className="hidden md:block text-[9px] text-stone-400 leading-none mt-0.5 font-mono tabular-nums whitespace-nowrap">
                   {formatIndonesianDate(effectiveTime)}&nbsp;
-                  {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  {effectiveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
                 </span>
               </div>
             </Link>
 
             {/* ── Desktop Navigation Links — shown lg+ ── */}
             {isAuthenticated ? (
-              <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center min-w-0 overflow-hidden">
+              <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center min-w-0 overflow-hidden">
                 {desktopNavLinks.map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
@@ -188,18 +188,18 @@ export default function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-1 px-2 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                         item.highlight
-                          ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm hover:shadow-md btn-press'
+                          ? 'bg-[#0D7B5F] text-white font-bold shadow-xs'
                           : isActive
-                          ? 'bg-[#0D7B5F] text-white font-semibold'
-                          : 'text-emerald-200/70 hover:text-white hover:bg-white/8'
+                          ? 'bg-white/10 text-white font-semibold'
+                          : 'text-stone-300 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <Icon className="w-3 h-3 shrink-0" />
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
                       <span>{item.label}</span>
                       {item.badge && item.badge > 0 ? (
-                        <span className="px-1 py-0.5 rounded-full text-[8px] font-black bg-amber-500 text-white leading-none">
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500 text-white leading-none">
                           {item.badge}
                         </span>
                       ) : null}
@@ -211,10 +211,10 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
                 <Link
                   href="/"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                     pathname === '/'
                       ? 'bg-white/10 text-white font-bold'
-                      : 'text-emerald-200/70 hover:text-white hover:bg-white/5'
+                      : 'text-stone-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
@@ -283,48 +283,30 @@ export default function Navbar() {
 
                   {/* ── User Dropdown ── */}
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-3 w-72 rounded-2xl bg-white dark:bg-[#0F1E18] border border-stone-200 dark:border-[#1C3A2E] shadow-2xl overflow-hidden z-50 animate-fade-up">
-                      {/* Header gradient */}
-                      <div className="p-4 bg-gradient-to-br from-[#082F23] to-[#0D7B5F]/80 relative overflow-hidden">
+                    <div className="absolute right-0 mt-3 w-64 rounded-xl bg-white dark:bg-[#0E1713] border border-stone-200 dark:border-stone-800 shadow-xl overflow-hidden z-50 animate-in-fade">
+                      {/* Header */}
+                      <div className="p-4 bg-stone-50 dark:bg-[#14221C] border-b border-stone-200/80 dark:border-stone-800 flex items-center gap-3">
                         <div
-                          className="absolute inset-0 opacity-10"
-                          style={{
-                            backgroundImage: 'radial-gradient(rgba(212,162,76,0.4) 1px, transparent 1px)',
-                            backgroundSize: '16px 16px',
-                          }}
-                        />
-                        <div className="relative flex flex-col items-center text-center gap-2">
-                          <div
-                            className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ring-4 ring-white/20 shadow-xl ${
-                              isMusyrif
-                                ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23]'
-                                : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white'
-                            }`}
-                          >
-                            {currentUser.full_name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-white leading-tight">
-                              {currentUser.full_name}
-                            </p>
-                            <span
-                              className={`inline-block mt-1 text-[10px] uppercase px-2.5 py-0.5 rounded-full font-bold ${
-                                isMusyrif
-                                  ? 'bg-[#D4A24C]/25 text-[#D4A24C] border border-[#D4A24C]/40'
-                                  : 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30'
-                              }`}
-                            >
-                              {currentUser.role}
-                            </span>
-                            <p className="text-[10px] text-white/50 mt-1">
-                              {currentUser.group_name || 'Peserta Didik'}
-                            </p>
-                          </div>
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${
+                            isMusyrif
+                              ? 'bg-[#E0B45C] text-[#06241B]'
+                              : 'bg-[#0D7B5F] text-white'
+                          }`}
+                        >
+                          {currentUser.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+                            {currentUser.full_name}
+                          </p>
+                          <span className="inline-block text-[9px] uppercase font-bold text-stone-500 dark:text-stone-400">
+                            {currentUser.role} • {currentUser.group_name || 'Santri'}
+                          </span>
                         </div>
                       </div>
 
                       {/* Menu items */}
-                      <div className="p-2 space-y-0.5">
+                      <div className="p-1.5 space-y-0.5">
                         <Link
                           href={isMusyrif ? '/musyrif' : '/santri/profil'}
                           onClick={() => setShowUserMenu(false)}

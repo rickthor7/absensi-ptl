@@ -19,6 +19,7 @@ import {
   SEED_AUDIT_LOGS,
   SEED_PROFILES,
   DEFAULT_SPP_SETTINGS,
+  getSppAmountForStudent,
   SEED_SPP_PAYMENTS,
   SEED_FINANCIAL_TRANSACTIONS,
 } from './constants';
@@ -2412,7 +2413,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        await supabase.from('spp_settings').upsert({
+        const payload: Record<string, any> = {
           id: 'default',
           monthly_amount: updated.monthly_amount,
           bank_name: updated.bank_name,
@@ -2422,7 +2423,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           notes: updated.notes,
           updated_at: updated.updated_at,
           updated_by: updated.updated_by,
-        });
+        };
+        if (updated.generation_amounts) {
+          payload.generation_amounts = updated.generation_amounts;
+        }
+        const { error: upsertErr } = await supabase.from('spp_settings').upsert(payload);
+        if (upsertErr) {
+          delete payload.generation_amounts;
+          await supabase.from('spp_settings').upsert(payload);
+        }
       } catch (err) {
         console.warn('Supabase update spp_settings error:', err);
       }
@@ -2447,6 +2456,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     notes?: string;
   }) => {
     const storedProofUrl = await uploadSppProofToStorage(proofDataUrl, currentUser.id);
+    const expectedAmount = getSppAmountForStudent(currentUser, sppSettings);
 
     const newPayment: SppPayment = {
       id: `spp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -2456,7 +2466,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       group_name: currentUser.group_name,
       month,
       year,
-      amount: amount || sppSettings.monthly_amount,
+      amount: amount || expectedAmount,
       payment_date: paymentDate || new Date().toISOString().split('T')[0],
       proof_image_url: storedProofUrl,
       notes: notes || '',
@@ -2626,6 +2636,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const paymentId = `spp-tunai-${Date.now()}`;
     const now = new Date().toISOString();
     const monthLabel = INDO_MONTH_NAMES[month] || `Bulan ${month}`;
+    const expectedAmount = getSppAmountForStudent(student, sppSettings);
 
     const newPayment: SppPayment = {
       id: paymentId,
@@ -2635,7 +2646,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       group_name: student.group_name,
       month,
       year,
-      amount: amount || sppSettings.monthly_amount,
+      amount: amount || expectedAmount,
       payment_date: paymentDate || now.split('T')[0],
       proof_image_url: '',
       notes: notes ? `Pembayaran tunai: ${notes}` : 'Pembayaran tunai langsung ke kantor pesantren',

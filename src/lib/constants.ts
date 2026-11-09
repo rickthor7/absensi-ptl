@@ -1442,6 +1442,9 @@ export const SEED_AUDIT_LOGS: AuditLog[] = [
 export const DEFAULT_SPP_SETTINGS: SppSettings = {
   id: 'default',
   monthly_amount: 120000,
+  generation_amounts: {
+    '2026': 170000,
+  },
   bank_name: 'Bank Syariah Indonesia (BSI)',
   bank_account_number: '7128938475',
   bank_account_holder: 'Pondok Pesantren Nurul Falah',
@@ -1450,6 +1453,25 @@ export const DEFAULT_SPP_SETTINGS: SppSettings = {
   updated_at: '2026-10-01T08:00:00+07:00',
   updated_by: 'Ustadz Mansur Hidayat, M.Ag',
 };
+
+/**
+ * Menghitung nominal SPP untuk seorang santri berdasarkan angkatannya.
+ * Santri angkatan 2026 bayar Rp 170.000, angkatan lain mengikuti tarif default (Rp 120.000) atau tarif kustom per angkatan.
+ */
+export function getSppAmountForStudent(
+  student?: { generation?: string | number } | null,
+  sppSettings?: Partial<SppSettings> | null
+): number {
+  const gen = student?.generation ? String(student.generation).trim() : '';
+  if (sppSettings?.generation_amounts && gen && sppSettings.generation_amounts[gen] !== undefined) {
+    return Number(sppSettings.generation_amounts[gen]);
+  }
+  // Default custom rule: santri angkatan 2026 bayar 170.000
+  if (gen === '2026') {
+    return 170000;
+  }
+  return sppSettings?.monthly_amount ?? 120000;
+}
 
 // Kategori Keuangan
 export const FINANCIAL_CATEGORIES = {
