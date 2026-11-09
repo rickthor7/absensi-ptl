@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useStore } from '@/lib/store';
 import {
   GraduationCap,
   Shield,
@@ -15,6 +17,18 @@ import {
 } from 'lucide-react';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { isAuthenticated, currentUser, isLoadingAuth } = useStore();
+
+  useEffect(() => {
+    if (!isLoadingAuth && isAuthenticated) {
+      if (currentUser.role === 'santri') {
+        router.replace('/santri');
+      } else {
+        router.replace('/musyrif');
+      }
+    }
+  }, [isLoadingAuth, isAuthenticated, currentUser, router]);
   return (
     <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden py-12 px-4 sm:px-6">
       {/* Background layers */}

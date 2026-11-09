@@ -65,14 +65,14 @@ export default function ManualAttendanceSheet({
   // If initialActivityId changes or passed, sync selectedActivityId
   React.useEffect(() => {
     if (initialActivityId) {
-      handleActivityOrDateChange(initialActivityId, selectedDate);
+      setSelectedActivityId(initialActivityId);
     }
   }, [initialActivityId]);
 
   // If selected activity is not valid for the date, auto-select first activity of the day
   React.useEffect(() => {
     if (activitiesForSelectedDate.length > 0) {
-      const isValid = activitiesForSelectedDate.some((a) => a.id === selectedActivityId);
+      const isValid = activitiesForSelectedDate.some((a: Activity) => a.id === selectedActivityId);
       if (!isValid) {
         setSelectedActivityId(activitiesForSelectedDate[0].id);
       }
@@ -300,7 +300,7 @@ export default function ManualAttendanceSheet({
               Pilih Kegiatan:
             </label>
             <ActivitySelectDropdown
-              activities={activitiesForSelectedDate}
+              activities={activities}
               selectedActivityId={selectedActivityId}
               onSelect={(act) => handleActivityOrDateChange(act.id, selectedDate)}
               className="w-full"
@@ -379,13 +379,12 @@ export default function ManualAttendanceSheet({
       {/* Feedback Toast Banner */}
       {feedbackMessage && (
         <div
-          className={`p-4 rounded-3xl border flex items-center justify-between gap-3 text-xs font-semibold animate-in fade-in duration-200 ${
-            feedbackMessage.type === 'success'
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'
-              : feedbackMessage.type === 'warning'
+          className={`p-4 rounded-3xl border flex items-center justify-between gap-3 text-xs font-semibold animate-in fade-in duration-200 ${feedbackMessage.type === 'success'
+            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'
+            : feedbackMessage.type === 'warning'
               ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
               : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2">
             {feedbackMessage.type === 'success' ? (
@@ -426,11 +425,10 @@ export default function ManualAttendanceSheet({
               return (
                 <div
                   key={santri.id}
-                  className={`p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition ${
-                    disc.hasDiscrepancy
-                      ? 'bg-amber-50/40 dark:bg-amber-950/15 border-l-4 border-amber-500'
-                      : 'hover:bg-stone-50/60 dark:hover:bg-stone-800/40'
-                  }`}
+                  className={`p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition ${disc.hasDiscrepancy
+                    ? 'bg-amber-50/40 dark:bg-amber-950/15 border-l-4 border-amber-500'
+                    : 'hover:bg-stone-50/60 dark:hover:bg-stone-800/40'
+                    }`}
                 >
                   {/* Left: Santri Information */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -473,8 +471,8 @@ export default function ManualAttendanceSheet({
                   {/* Middle: Santri Self-Attendance Badge */}
                   <div className="flex items-center gap-2 self-start md:self-auto pl-8 md:pl-0">
                     {existingRecord &&
-                    existingRecord.santri_status &&
-                    existingRecord.santri_status !== 'belum_absen' ? (
+                      existingRecord.santri_status &&
+                      existingRecord.santri_status !== 'belum_absen' ? (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-[11px] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
                         {existingRecord.photo_path && (
                           <img
@@ -487,10 +485,10 @@ export default function ManualAttendanceSheet({
                           {existingRecord.santri_status === 'hadir_valid'
                             ? 'Selfie Hadir'
                             : existingRecord.santri_status === 'izin_diajukan'
-                            ? 'Izin Mandiri'
-                            : existingRecord.santri_status === 'ditolak_lokasi'
-                            ? 'Ditolak Lokasi'
-                            : 'Perlu Tinjauan'}
+                              ? 'Izin Mandiri'
+                              : existingRecord.santri_status === 'ditolak_lokasi'
+                                ? 'Ditolak Lokasi'
+                                : 'Perlu Tinjauan'}
                         </span>
                         <span className="text-stone-400 text-[10px] font-mono">
                           ({new Date(existingRecord.submitted_at).toLocaleTimeString('id-ID', {
@@ -523,11 +521,10 @@ export default function ManualAttendanceSheet({
                     <button
                       type="button"
                       onClick={() => handleSingleSelect(santri.id, 'hadir')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
-                        currentChoice === 'hadir'
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${currentChoice === 'hadir'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        }`}
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Hadir</span>
@@ -537,11 +534,10 @@ export default function ManualAttendanceSheet({
                     <button
                       type="button"
                       onClick={() => handleSingleSelect(santri.id, 'izin')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
-                        currentChoice === 'izin'
-                          ? 'bg-amber-600 text-white shadow-xs'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${currentChoice === 'izin'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        }`}
                     >
                       <span>Izin</span>
                     </button>
@@ -550,11 +546,10 @@ export default function ManualAttendanceSheet({
                     <button
                       type="button"
                       onClick={() => handleSingleSelect(santri.id, 'alpa')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
-                        currentChoice === 'alpa'
-                          ? 'bg-rose-600 text-white shadow-xs'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${currentChoice === 'alpa'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        }`}
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Alpa</span>

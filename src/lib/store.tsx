@@ -25,6 +25,11 @@ import {
 } from './constants';
 import { validateAttendanceLocation } from './geo';
 import {
+  setSessionCookie,
+  getSessionCookie,
+  clearSessionCookie,
+} from './cookies';
+import {
   getSupabase,
   getSupabaseConfig,
   checkSupabaseConnection,
@@ -510,17 +515,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (data.financialTransactions?.length) setFinancialTransactions(data.financialTransactions);
       }
 
-      // Initial check authentic logged-in user in localStorage
+      // Initial check authentic logged-in user in cookies or localStorage
+      const cookieUser = getSessionCookie();
       const storedUser = localStorage.getItem(AUTH_USER_KEY);
+      let parsedStored: Profile | null = null;
       if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser && parsedUser.id && parsedUser.id !== 'guest') {
-          setCurrentUserState(parsedUser);
-          setIsAuthenticated(true);
-        } else {
-          setCurrentUserState(GUEST_USER);
-          setIsAuthenticated(false);
+        try {
+          parsedStored = JSON.parse(storedUser);
+        } catch {
+          parsedStored = null;
         }
+      }
+
+      const initialUser =
+        cookieUser && cookieUser.id && cookieUser.id !== 'guest'
+          ? cookieUser
+          : parsedStored && parsedStored.id && parsedStored.id !== 'guest'
+          ? parsedStored
+          : null;
+
+      if (initialUser && initialUser.id) {
+        setCurrentUserState(initialUser);
+        setIsAuthenticated(true);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(initialUser));
+        setSessionCookie(initialUser);
       } else {
         setCurrentUserState(GUEST_USER);
         setIsAuthenticated(false);
@@ -558,22 +576,55 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 .eq('id', session.user.id)
                 .maybeSingle();
 
-              if (profile) {
+              if (profile && profile.is_active !== false) {
                 setCurrentUserState(profile);
                 setIsAuthenticated(true);
                 localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
-              } else {
-                // User has Supabase auth account but profile record is missing
-                setCurrentUserState(GUEST_USER);
-                setIsAuthenticated(false);
-                localStorage.removeItem(AUTH_USER_KEY);
+                setSessionCookie(profile);
               }
             } else {
-              // Sesi Supabase habis / expired token / logout
-              // Bersihkan user expired di localStorage agar kembali ke login
-              setCurrentUserState(GUEST_USER);
-              setIsAuthenticated(false);
-              localStorage.removeItem(AUTH_USER_KEY);
+              // Not a Supabase JWT session, check persistent session in cookies/localStorage
+              const activeUser =
+                getSessionCookie() ||
+                (localStorage.getItem(AUTH_USER_KEY)
+                  ? JSON.parse(localStorage.getItem(AUTH_USER_KEY)!)
+                  : null);
+
+              if (activeUser && activeUser.id && activeUser.id !== 'guest') {
+                // Verify fresh profile from database if available
+                try {
+                  const { data: freshProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', activeUser.id)
+                    .maybeSingle();
+
+                  if (freshProfile) {
+                    if (freshProfile.is_active !== false) {
+                      setCurrentUserState(freshProfile);
+                      setIsAuthenticated(true);
+                      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(freshProfile));
+                      setSessionCookie(freshProfile);
+                    } else {
+                      // Profile was deactivated by admin
+                      setCurrentUserState(GUEST_USER);
+                      setIsAuthenticated(false);
+                      localStorage.removeItem(AUTH_USER_KEY);
+                      clearSessionCookie();
+                    }
+                  } else {
+                    // Keep existing active user
+                    setCurrentUserState(activeUser);
+                    setIsAuthenticated(true);
+                    setSessionCookie(activeUser);
+                  }
+                } catch {
+                  // Fallback: keep existing active user
+                  setCurrentUserState(activeUser);
+                  setIsAuthenticated(true);
+                  setSessionCookie(activeUser);
+                }
+              }
             }
 
             await syncSupabaseData();
@@ -608,21 +659,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               setCurrentUserState(profile);
               setIsAuthenticated(true);
               localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+              setSessionCookie(profile);
             }
           } catch (err) {
             console.warn('onAuthStateChange profile fetch error:', err);
           }
           setIsLoadingAuth(false);
         } else if (event === 'SIGNED_OUT') {
-          setCurrentUserState(GUEST_USER);
-          setIsAuthenticated(false);
-          localStorage.removeItem(AUTH_USER_KEY);
+          const cookieUser = getSessionCookie();
+          if (!cookieUser) {
+            setCurrentUserState(GUEST_USER);
+            setIsAuthenticated(false);
+            localStorage.removeItem(AUTH_USER_KEY);
+            clearSessionCookie();
+          }
           setIsLoadingAuth(false);
         } else if (event === 'TOKEN_REFRESHED' && !session) {
-          // Token refresh failed -> session expired!
-          setCurrentUserState(GUEST_USER);
-          setIsAuthenticated(false);
-          localStorage.removeItem(AUTH_USER_KEY);
+          const cookieUser = getSessionCookie();
+          if (!cookieUser) {
+            setCurrentUserState(GUEST_USER);
+            setIsAuthenticated(false);
+            localStorage.removeItem(AUTH_USER_KEY);
+            clearSessionCookie();
+          }
           setIsLoadingAuth(false);
         }
       });
@@ -811,6 +870,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setCurrentUserState(userProfile);
           setIsAuthenticated(true);
           localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userProfile));
+          setSessionCookie(userProfile);
           await syncSupabaseData();
 
           return {
@@ -840,6 +900,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCurrentUserState(matchedProfile);
       setIsAuthenticated(true);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(matchedProfile));
+      setSessionCookie(matchedProfile);
 
       if (supabase && isSupabaseConnected) {
         syncSupabaseData().catch(() => { });
@@ -963,12 +1024,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCurrentUserState(GUEST_USER);
     setIsAuthenticated(false);
     localStorage.removeItem(AUTH_USER_KEY);
+    clearSessionCookie();
   };
 
   const setCurrentUser = (user: Profile) => {
     setCurrentUserState(user);
-    setIsAuthenticated(user.id !== 'guest');
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    const isAuth = user.id !== 'guest';
+    setIsAuthenticated(isAuth);
+    if (isAuth) {
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      setSessionCookie(user);
+    } else {
+      localStorage.removeItem(AUTH_USER_KEY);
+      clearSessionCookie();
+    }
   };
 
   // Theme toggle
@@ -2106,6 +2175,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (currentUser.id === cleanStudent.id) {
       setCurrentUserState(cleanStudent);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(cleanStudent));
+      setSessionCookie(cleanStudent);
     }
 
     const audit: AuditLog = {
@@ -2192,6 +2262,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       )
     );
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedProfile));
+    setSessionCookie(updatedProfile);
 
     const audit: AuditLog = {
       id: `aud-${Date.now()}`,

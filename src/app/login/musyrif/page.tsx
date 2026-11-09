@@ -24,7 +24,14 @@ import Link from 'next/link';
 
 export default function MusyrifLoginPage() {
   const router = useRouter();
-  const { login } = useStore();
+  const { login, isAuthenticated, currentUser, isLoadingAuth } = useStore();
+
+  // Jika musyrif sudah login dan cookies/sesi aktif, otomatis masuk ke dashboard musyrif
+  React.useEffect(() => {
+    if (!isLoadingAuth && isAuthenticated && (currentUser.role === 'musyrif' || currentUser.role === 'admin')) {
+      router.replace('/musyrif');
+    }
+  }, [isLoadingAuth, isAuthenticated, currentUser, router]);
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');

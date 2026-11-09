@@ -24,7 +24,14 @@ import Link from 'next/link';
 
 export default function SantriLoginPage() {
   const router = useRouter();
-  const { login } = useStore();
+  const { login, isAuthenticated, currentUser, isLoadingAuth } = useStore();
+
+  // Jika santri sudah login dan cookies/sesi aktif, otomatis masuk ke dashboard santri
+  React.useEffect(() => {
+    if (!isLoadingAuth && isAuthenticated && currentUser.role === 'santri') {
+      router.replace('/santri');
+    }
+  }, [isLoadingAuth, isAuthenticated, currentUser, router]);
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
