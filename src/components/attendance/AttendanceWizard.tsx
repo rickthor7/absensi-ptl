@@ -44,12 +44,13 @@ const QUICK_PERMIT_REASONS = [
 
 interface AttendanceWizardProps {
   activity: Activity;
+  initialType?: AttendanceType;
   onFinished?: () => void;
 }
 
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
-export default function AttendanceWizard({ activity, onFinished }: AttendanceWizardProps) {
+export default function AttendanceWizard({ activity, initialType, onFinished }: AttendanceWizardProps) {
   const {
     currentUser,
     activities,
@@ -98,7 +99,13 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
   const [retakeNotification, setRetakeNotification] = useState<string | null>(null);
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
-  const [attendanceType, setAttendanceType] = useState<AttendanceType>('hadir');
+  const [attendanceType, setAttendanceType] = useState<AttendanceType>(initialType || 'hadir');
+
+  React.useEffect(() => {
+    if (initialType) {
+      setAttendanceType(initialType);
+    }
+  }, [initialType]);
   const [permissionReason, setPermissionReason] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
@@ -439,32 +446,34 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
               </div>
             )}
 
-            {/* Segmented Switch: Hadir vs Izin */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700">
+            {/* Tombol Pilihan Hadir & Izin: Sebaris & Bersampingan di Mobile */}
+            <div className="grid grid-cols-2 gap-2 p-1.5 bg-stone-100 dark:bg-stone-800/80 rounded-2xl border border-stone-200/80 dark:border-stone-700/80">
+              {/* Tombol Hadir */}
               <button
                 type="button"
                 onClick={() => setAttendanceType('hadir')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                   attendanceType === 'hadir'
-                    ? 'bg-white dark:bg-stone-900 text-[#146B50] dark:text-emerald-400 shadow-xs border border-emerald-500/20'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-[#146B50] text-white shadow-md ring-2 ring-[#146B50]/30'
+                    : 'bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 border border-stone-200/60 dark:border-stone-700/60'
                 }`}
               >
-                <UserCheck className="w-4 h-4" />
-                <span>Hadir di Pesantren</span>
+                <UserCheck className={`w-4 h-4 shrink-0 ${attendanceType === 'hadir' ? 'text-emerald-200' : 'text-[#146B50] dark:text-emerald-400'}`} />
+                <span className="truncate">Absen Hadir</span>
               </button>
 
+              {/* Tombol Izin */}
               <button
                 type="button"
                 onClick={() => setAttendanceType('izin')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                   attendanceType === 'izin'
-                    ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-400 shadow-xs border border-amber-500/20'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-500/30'
+                    : 'bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 border border-stone-200/60 dark:border-stone-700/60'
                 }`}
               >
-                <FileQuestion className="w-4 h-4" />
-                <span>Pengajuan Izin</span>
+                <FileQuestion className={`w-4 h-4 shrink-0 ${attendanceType === 'izin' ? 'text-amber-200' : 'text-amber-600 dark:text-amber-400'}`} />
+                <span className="truncate">Pengajuan Izin</span>
               </button>
             </div>
 
@@ -555,31 +564,31 @@ export default function AttendanceWizard({ activity, onFinished }: AttendanceWiz
                     </button>
                   </div>
 
-                  {/* Date Tabs (Hari Ini vs Besok) */}
-                  <div className="flex items-center gap-2 pt-1.5">
+                  {/* Date Tabs (Hari Ini vs Besok) - Sebaris Bersampingan */}
+                  <div className="grid grid-cols-2 gap-2 pt-1.5">
                     <button
                       type="button"
                       onClick={() => setIzinDateTab('today')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center whitespace-nowrap ${
                         izinDateTab === 'today'
                           ? 'bg-amber-600 text-white shadow-xs'
                           : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:bg-stone-50'
                       }`}
                     >
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Hari Ini ({todayStr}) • {todayActivities.length} Sesi</span>
+                      <Calendar className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">Hari Ini ({todayActivities.length} Sesi)</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setIzinDateTab('tomorrow')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center whitespace-nowrap ${
                         izinDateTab === 'tomorrow'
                           ? 'bg-amber-600 text-white shadow-xs'
                           : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 hover:bg-stone-50'
                       }`}
                     >
-                      <CalendarDays className="w-3.5 h-3.5" />
-                      <span>Besok ({tomorrowStr}) • {tomorrowActivities.length} Sesi</span>
+                      <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">Besok ({tomorrowActivities.length} Sesi)</span>
                     </button>
                   </div>
 

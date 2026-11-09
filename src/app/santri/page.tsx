@@ -22,6 +22,7 @@ import {
   DoorOpen,
   HelpCircle,
   FileText,
+  FileQuestion,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
@@ -392,14 +393,20 @@ export default function SantriDashboardPage() {
             )}
           </div>
 
-          <div className="pt-4 mt-2">
+          <div className="pt-3 mt-2 grid grid-cols-2 gap-2">
             <Link
-              href="/santri/absensi"
-              className="w-full py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
+              href="/santri/absensi?type=hadir"
+              className="py-2.5 sm:py-3 px-3 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-extrabold text-xs shadow-xs transition flex items-center justify-center gap-1.5 btn-press whitespace-nowrap cursor-pointer"
             >
-              <Camera className="w-4 h-4 text-emerald-200" />
-              <span>{isWindowOpen ? 'Buka Kamera & Absen Sekarang' : 'Buka Halaman Presensi & Izin'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <Camera className="w-4 h-4 text-emerald-200 shrink-0" />
+              <span>Absen Hadir</span>
+            </Link>
+            <Link
+              href="/santri/absensi?type=izin"
+              className="py-2.5 sm:py-3 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-xs transition flex items-center justify-center gap-1.5 btn-press whitespace-nowrap cursor-pointer"
+            >
+              <FileQuestion className="w-4 h-4 text-amber-200 shrink-0" />
+              <span>Ajukan Izin</span>
             </Link>
           </div>
         </div>

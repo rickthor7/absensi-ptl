@@ -5,11 +5,23 @@ import { useStore } from '@/lib/store';
 import { determineActiveActivity, getActivitiesForDate } from '@/lib/schedule';
 import AttendanceWizard from '@/components/attendance/AttendanceWizard';
 import { formatTimeRange } from '@/components/schedule/ActivitySelectDropdown';
-import { Activity } from '@/types';
+import { Activity, AttendanceType } from '@/types';
 import { Sparkles, Calendar, CheckCircle2 } from 'lucide-react';
 
 export default function SantriAbsensiPage() {
   const { activities, effectiveTime } = useStore();
+  const [initialType, setInitialType] = useState<AttendanceType>('hadir');
+
+  // Read URL query param ?type=hadir|izin safely
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('type');
+      if (t === 'hadir' || t === 'izin') {
+        setInitialType(t as AttendanceType);
+      }
+    }
+  }, []);
 
   // Filter activities scheduled specifically for today (based on day of week)
   const todayActivities = useMemo(() => {
@@ -98,6 +110,7 @@ export default function SantriAbsensiPage() {
       {selectedActivity && (
         <AttendanceWizard
           activity={selectedActivity}
+          initialType={initialType}
           onFinished={() => {}}
         />
       )}

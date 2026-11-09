@@ -512,8 +512,8 @@ export default function ManualAttendanceSheet({
                     )}
                   </div>
 
-                  {/* Right: Musyrif 3-Way Choice Pills */}
-                  <div className="flex items-center gap-1.5 self-end md:self-auto pl-8 md:pl-0">
+                  {/* Right: Musyrif 3-Way Choice Pills - Selalu Sebaris Bersampingan */}
+                  <div className="flex items-center gap-1.5 self-end md:self-auto pl-8 md:pl-0 shrink-0">
                     {/* Hadir Pill */}
                     <button
                       type="button"
