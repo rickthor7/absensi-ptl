@@ -7,6 +7,7 @@ import { TahfidzClassId, AttendanceRecord, Profile } from '@/types';
 import TahfidzWhatsAppModal from '@/components/attendance/TahfidzWhatsAppModal';
 import TahfidzValidationModal from '@/components/attendance/TahfidzValidationModal';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
+import { getWibDateStr } from '@/lib/schedule';
 import {
   BookOpen,
   Share2,
@@ -37,7 +38,7 @@ export default function MusyrifTahfidzPage() {
     validateTahfidzSetoran,
   } = useStore();
 
-  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const todayStr = getWibDateStr(effectiveTime);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'menunggu' | 'sudah' | 'belum'>('all');

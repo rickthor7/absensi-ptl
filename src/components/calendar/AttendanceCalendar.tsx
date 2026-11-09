@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { AttendanceRecord, AttendanceStatus } from '@/types';
 import { STATUS_META } from '@/lib/constants';
-import { formatTime24 } from '@/lib/schedule';
+import { formatTime24, getWibDateStr } from '@/lib/schedule';
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,7 +24,7 @@ export default function AttendanceCalendar() {
   const [currentYear, setCurrentYear] = useState(effectiveTime.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(effectiveTime.getMonth()); // 0-indexed
   const [selectedDateStr, setSelectedDateStr] = useState<string>(
-    effectiveTime.toISOString().split('T')[0]
+    getWibDateStr(effectiveTime)
   );
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
@@ -208,7 +208,7 @@ export default function AttendanceCalendar() {
               const dayRecords = studentRecords.filter((r) => r.operational_date === dateStr);
               const isSelected = selectedDateStr === dateStr;
               const isToday =
-                effectiveTime.toISOString().split('T')[0] === dateStr;
+                getWibDateStr(effectiveTime) === dateStr;
 
               return (
                 <button

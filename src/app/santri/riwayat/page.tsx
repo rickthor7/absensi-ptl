@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { AttendanceRecord } from '@/types';
 import { STATUS_META } from '@/lib/constants';
-import { formatTime24 } from '@/lib/schedule';
+import { formatTime24, getWibDateStr } from '@/lib/schedule';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,7 +28,7 @@ import RaportSantriModal from '@/components/reports/RaportSantriModal';
 export default function SantriRiwayatPage() {
   const router = useRouter();
   const { currentUser, attendanceRecords, activities, effectiveTime, deleteSantriAttendance } = useStore();
-  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const todayStr = getWibDateStr(effectiveTime);
 
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [isRaportOpen, setIsRaportOpen] = useState(false);

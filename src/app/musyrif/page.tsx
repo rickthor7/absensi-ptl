@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
+import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24, getWibDateStr } from '@/lib/schedule';
 import { STATUS_META } from '@/lib/constants';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import PermissionReviewModal from '@/components/attendance/PermissionReviewModal';
@@ -224,7 +224,7 @@ export default function MusyrifDashboardPage() {
     undefined
   );
 
-  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const todayStr = getWibDateStr(effectiveTime);
   const santriList = profiles.filter((p) => p.role === 'santri' && p.is_active);
 
   // Active activity evaluation
@@ -253,7 +253,7 @@ export default function MusyrifDashboardPage() {
   );
 
   // Monthly stats
-  const currentMonthKey = effectiveTime.toISOString().substring(0, 7);
+  const currentMonthKey = getWibDateStr(effectiveTime).substring(0, 7);
   const monthlyStats = calculateMonthlyScores(
     profiles,
     activities,

@@ -23,14 +23,14 @@ import {
   TrendingUp,
   GraduationCap,
 } from 'lucide-react';
-import { formatIndonesianDate } from '@/lib/schedule';
+import { formatIndonesianDate, getWibDateStr } from '@/lib/schedule';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 export default function MusyrifLaporanPage() {
   const { attendanceRecords, activities, profiles, effectiveTime, currentUser } = useStore();
 
-  const defaultMonth = effectiveTime.toISOString().substring(0, 7); // e.g. "2026-10"
+  const defaultMonth = getWibDateStr(effectiveTime).substring(0, 7); // e.g. "2026-11"
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGroup, setFilterGroup] = useState('all');

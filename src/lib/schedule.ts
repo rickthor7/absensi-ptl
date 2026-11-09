@@ -2,8 +2,11 @@ import { Activity } from '@/types';
 
 /**
  * Schedule evaluation engine for Santri activities
- * Supports Asia/Jakarta timezone and midnight-crossing activities
+ * Strictly operates in Indonesian Time (WIB / Asia/Jakarta, UTC+7)
+ * Supports midnight-crossing activities and timezone-independent calculations
  */
+
+export const WIB_TIMEZONE = 'Asia/Jakarta';
 
 export interface ActiveActivityResult {
   activeActivity: Activity | null;
@@ -11,6 +14,64 @@ export interface ActiveActivityResult {
   timeRemainingMinutes?: number;
   nextActivity?: Activity | null;
   conflictingActivities?: Activity[];
+}
+
+/**
+ * Extracts hour (0-23), minute (0-59), and ISO day of week (1=Senin..7=Ahad)
+ * strictly in Asia/Jakarta (WIB) timezone, regardless of the host/browser local timezone.
+ */
+export function getWibTimeParts(date: Date | string | number): {
+  hours: number;
+  minutes: number;
+  seconds: number;
+  dayOfWeek: number;
+} {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) {
+    return { hours: 0, minutes: 0, seconds: 0, dayOfWeek: 1 };
+  }
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: WIB_TIMEZONE,
+    weekday: 'short', // Mon, Tue, Wed, Thu, Fri, Sat, Sun
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(d);
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
+  let weekdayStr = 'Mon';
+
+  for (const part of parts) {
+    if (part.type === 'hour') hours = parseInt(part.value, 10);
+    if (part.type === 'minute') minutes = parseInt(part.value, 10);
+    if (part.type === 'second') seconds = parseInt(part.value, 10);
+    if (part.type === 'weekday') weekdayStr = part.value;
+  }
+
+  // Handle midnight 24 edge case in some JS engines
+  if (hours === 24) hours = 0;
+
+  const dayMap: Record<string, number> = {
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+    Sun: 7,
+  };
+
+  return {
+    hours,
+    minutes,
+    seconds,
+    dayOfWeek: dayMap[weekdayStr] || 1,
+  };
 }
 
 /**
@@ -22,15 +83,15 @@ export function timeStringToMinutes(timeStr: string): number {
 }
 
 /**
- * Returns ISO day of week (1=Monday, ..., 7=Sunday)
+ * Returns ISO day of week (1=Senin, ..., 7=Ahad) evaluated in WIB (Asia/Jakarta)
  */
 export function getIsoDayOfWeek(date: Date): number {
-  const day = date.getDay();
-  return day === 0 ? 7 : day;
+  return getWibTimeParts(date).dayOfWeek;
 }
 
 /**
  * Evaluates whether an activity is currently within its operational attendance window.
+ * Evaluated strictly in Asia/Jakarta (WIB) time.
  */
 export function isActivityActiveAt(
   activity: Activity,
@@ -40,8 +101,8 @@ export function isActivityActiveAt(
     return { isActive: false, timeRemainingMinutes: 0 };
   }
 
-  const currentIsoDay = getIsoDayOfWeek(currentDate);
-  const currentMinutes = currentDate.getHours() * 60 + currentDate.getMinutes();
+  const { hours, minutes, dayOfWeek: currentIsoDay } = getWibTimeParts(currentDate);
+  const currentMinutes = hours * 60 + minutes;
 
   const startMinutes = timeStringToMinutes(activity.start_time);
   const endMinutes = timeStringToMinutes(activity.end_time);
@@ -81,6 +142,7 @@ export function isActivityActiveAt(
 
 /**
  * Finds the currently active activity, or the next upcoming activity today.
+ * Evaluated strictly in Asia/Jakarta (WIB) time.
  */
 export function determineActiveActivity(
   activities: Activity[],
@@ -105,8 +167,8 @@ export function determineActiveActivity(
   }
 
   // Find next upcoming activity
-  const currentIsoDay = getIsoDayOfWeek(currentDate);
-  const currentMinutes = currentDate.getHours() * 60 + currentDate.getMinutes();
+  const { hours, minutes, dayOfWeek: currentIsoDay } = getWibTimeParts(currentDate);
+  const currentMinutes = hours * 60 + minutes;
 
   const upcoming = activities
     .filter((act) => act.is_active && act.active_days.includes(currentIsoDay))
@@ -125,42 +187,70 @@ export function determineActiveActivity(
 }
 
 /**
- * Format jam tegas 24 jam "HH:mm" (misal: "14:30", "04:15", "03:00")
- * Menjamin tidak ada format 12 jam (AM/PM) agar tidak membingungkan pengguna.
+ * Format jam tegas 24 jam "HH:mm" atau "HH:mm:ss" di zona waktu Indonesia (WIB - Asia/Jakarta).
+ * Menjamin tidak ada format 12 jam (AM/PM) dan tidak terpengaruh timezone UTC perangkat pengguna.
  */
-export function formatTime24(date: Date | string | number | null | undefined, includeSeconds = false): string {
+export function formatTime24(
+  date: Date | string | number | null | undefined,
+  includeSeconds = false
+): string {
   if (!date) return '';
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) return '';
 
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  if (includeSeconds) {
-    const seconds = String(d.getSeconds()).padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  }
-  return `${hours}:${minutes}`;
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: WIB_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: includeSeconds ? '2-digit' : undefined,
+    hour12: false,
+  });
+
+  return formatter.format(d);
 }
 
 /**
- * Formats a date into Indonesian locale string: "Jumat, 9 Oktober 2026"
+ * Mengambil tanggal standar "YYYY-MM-DD" dalam zona waktu Indonesia (WIB - Asia/Jakarta).
+ * Menghindari bug UTC di mana sebelum jam 07:00 pagi tanggalnya mundur ke hari kemarin.
  */
-export function formatIndonesianDate(date: Date): string {
+export function getWibDateStr(date?: Date | string | number | null): string {
+  const d = date ? (date instanceof Date ? date : new Date(date)) : new Date();
+  if (isNaN(d.getTime())) return '';
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: WIB_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+/**
+ * Formats a date into Indonesian locale string: "Senin, 9 November 2026"
+ * Mengunci zona waktu ke Asia/Jakarta (WIB) sehingga selalu konsisten dengan tanggal Indonesia.
+ */
+export function formatIndonesianDate(date: Date | string | number | null | undefined): string {
+  if (!date) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+
   return new Intl.DateTimeFormat('id-ID', {
+    timeZone: WIB_TIMEZONE,
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(date);
+  }).format(d);
 }
 
 /**
  * Approximate Hijri calendar converter for decorative header
+ * Mengunci zona waktu ke Asia/Jakarta (WIB).
  */
 export function getEstimatedHijriDate(date: Date): string {
-  // Approximate Hijri year calculation
   try {
     const intl = new Intl.DateTimeFormat('id-ID-u-ca-islamic-umalqura', {
+      timeZone: WIB_TIMEZONE,
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -190,6 +280,7 @@ export function isTahfidzActivity(activity?: { code?: string; name?: string } | 
 
 /**
  * Returns activities that are scheduled and active on a specific date (matching ISO day of week 1=Senin..7=Ahad).
+ * Evaluated strictly in Asia/Jakarta (WIB) time.
  * If none match or active_days is not configured, gracefully falls back to all active activities.
  */
 export function getActivitiesForDate(activities: Activity[], date: Date): Activity[] {

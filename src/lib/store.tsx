@@ -24,6 +24,7 @@ import {
   SEED_FINANCIAL_TRANSACTIONS,
 } from './constants';
 import { validateAttendanceLocation } from './geo';
+import { getWibDateStr } from './schedule';
 import {
   setSessionCookie,
   getSessionCookie,
@@ -413,7 +414,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const opDate =
             r.operational_date ||
             dateMatch?.[1] ||
-            (r.submitted_at ? r.submitted_at.split('T')[0] : new Date().toISOString().split('T')[0]);
+            (r.submitted_at ? r.submitted_at.split('T')[0] : getWibDateStr());
 
           return {
             ...r,
@@ -725,7 +726,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Current real time ticker (Live Indonesian WIB Clock, ticks every 1 second)
   const [actualTime, setActualTime] = useState<Date>(
-    () => new Date('2026-10-14T00:00:00Z')
+    () => new Date()
   );
 
   useEffect(() => {
@@ -1130,7 +1131,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const todayStr = effectiveTime.toISOString().split('T')[0];
+    const todayStr = getWibDateStr(effectiveTime);
 
     // Check if an existing record exists for this activity & date
     const existing = attendanceRecords.find(
@@ -1335,7 +1336,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const todayStr = effectiveTime.toISOString().split('T')[0];
+    const todayStr = getWibDateStr(effectiveTime);
     const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     // Upload photo to Supabase storage once
@@ -2538,7 +2539,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       month,
       year,
       amount: amount || expectedAmount,
-      payment_date: paymentDate || new Date().toISOString().split('T')[0],
+      payment_date: paymentDate || getWibDateStr(),
       proof_image_url: storedProofUrl,
       notes: notes || '',
       status: 'pending',
@@ -2615,7 +2616,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           category: 'SPP Santri Bulanan',
           title: `SPP ${monthLabel} ${target.year} — ${target.student_name}`,
           amount: target.amount,
-          transaction_date: target.payment_date || new Date().toISOString().split('T')[0],
+          transaction_date: target.payment_date || getWibDateStr(),
           description: `Pembayaran SPP ${monthLabel} ${target.year} terverifikasi atas nama ${target.student_name} (${target.student_number || 'Santri'})`,
           proof_image_url: target.proof_image_url,
           spp_payment_id: target.id,

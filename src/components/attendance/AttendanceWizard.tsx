@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
-import { isTahfidzActivity, getActivitiesForDate, formatTime24 } from '@/lib/schedule';
+import { isTahfidzActivity, getActivitiesForDate, formatTime24, getWibDateStr } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
 import LocationChecker from './LocationChecker';
 import {
@@ -62,10 +62,10 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
     deleteSantriAttendance,
   } = useStore();
 
-  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const todayStr = getWibDateStr(effectiveTime);
   const tomorrow = new Date(effectiveTime);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowStr = getWibDateStr(tomorrow);
 
   // Activities specifically scheduled for today and tomorrow based on day of week
   const todayActivities = React.useMemo(() => {

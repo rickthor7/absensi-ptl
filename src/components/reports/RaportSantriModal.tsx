@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { StudentMonthlyScore } from '@/lib/scoring';
 import { Activity, Profile, AttendanceRecord } from '@/types';
+import { getWibDateStr } from '@/lib/schedule';
 import {
   X,
   Printer,
@@ -71,8 +72,8 @@ export default function RaportSantriModal({
 
   const allActivities = propActivities || storeActivities;
 
-  // Month Key state (e.g. "2026-10")
-  const defaultMonthKey = propMonthKey || effectiveTime.toISOString().substring(0, 7);
+  // Month Key state (e.g. "2026-11")
+  const defaultMonthKey = propMonthKey || getWibDateStr(effectiveTime).substring(0, 7);
   const [selectedMonthKey, setSelectedMonthKey] = useState(defaultMonthKey);
 
   // Available months
@@ -163,7 +164,7 @@ export default function RaportSantriModal({
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
     const daysInMonth = new Date(year, month, 0).getDate();
-    const todayStr = effectiveTime.toISOString().split('T')[0];
+    const todayStr = getWibDateStr(effectiveTime);
 
     const studentRecords = attendanceRecords.filter(
       (r) => r.student_id === currentStudent.id && r.operational_date.startsWith(selectedMonthKey)

@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { Activity, AttendanceRecord, Profile } from '@/types';
 import { checkDiscrepancy } from '@/lib/store';
-import { getActivitiesForDate, formatTime24 } from '@/lib/schedule';
+import { getActivitiesForDate, formatTime24, getWibDateStr } from '@/lib/schedule';
 import ActivitySelectDropdown from '@/components/schedule/ActivitySelectDropdown';
 import CustomSelect from '@/components/ui/CustomSelect';
 import {
@@ -44,7 +44,7 @@ export default function ManualAttendanceSheet({
     submitManualBatchAttendance,
   } = useStore();
 
-  const todayStr = effectiveTime.toISOString().split('T')[0];
+  const todayStr = getWibDateStr(effectiveTime);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 

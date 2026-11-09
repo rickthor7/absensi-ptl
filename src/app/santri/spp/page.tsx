@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import { getSppAmountForStudent } from '@/lib/constants';
+import { getWibDateStr } from '@/lib/schedule';
 import {
   CreditCard,
   Upload,
@@ -60,7 +61,7 @@ export default function SantriSppPage() {
     setUploadAmount(mySppAmount);
   }, [mySppAmount]);
   const [paymentDate, setPaymentDate] = useState<string>(
-    effectiveTime.toISOString().split('T')[0]
+    getWibDateStr(effectiveTime)
   );
   const [notes, setNotes] = useState<string>('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);

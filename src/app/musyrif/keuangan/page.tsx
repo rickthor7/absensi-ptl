@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import { SppPayment } from '@/types';
 import { getSppAmountForStudent } from '@/lib/constants';
+import { getWibDateStr } from '@/lib/schedule';
 import {
   CheckCircle2,
   Clock,
@@ -170,7 +171,7 @@ export default function MusyrifKeuanganPage() {
       month: cashMonth,
       year: cashYear,
       amount: cashAmount,
-      paymentDate: effectiveTime.toISOString().split('T')[0],
+      paymentDate: getWibDateStr(effectiveTime),
       notes: cashNotes,
     });
 
