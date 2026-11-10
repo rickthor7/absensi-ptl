@@ -4,7 +4,15 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
+import {
+  determineActiveActivity,
+  formatIndonesianDate,
+  formatTime24,
+  getActiveAttendanceSessions,
+  getSessionRemainingSeconds,
+  formatCountdownTimer,
+  getSafeDate,
+} from '@/lib/schedule';
 import {
   CheckCircle2,
   Calendar,
@@ -83,8 +91,9 @@ function DonutRing({
 
 /* ─── Mini Calendar Widget ─── */
 function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
+  const safeTime = getSafeDate(effectiveTime);
   const [viewDate, setViewDate] = useState(
-    () => new Date(effectiveTime.getFullYear(), effectiveTime.getMonth(), 1)
+    () => new Date(safeTime.getFullYear(), safeTime.getMonth(), 1)
   );
 
   const year = viewDate.getFullYear();
@@ -104,9 +113,9 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-  const tYear = effectiveTime.getFullYear();
-  const tMonth = effectiveTime.getMonth();
-  const tDay = effectiveTime.getDate();
+  const tYear = safeTime.getFullYear();
+  const tMonth = safeTime.getMonth();
+  const tDay = safeTime.getDate();
 
   const gridCells = [];
 
@@ -212,18 +221,22 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
 
 export default function SantriDashboardPage() {
   const router = useRouter();
-  const { currentUser, attendanceRecords, activities, effectiveTime } = useStore();
+  const { currentUser, attendanceRecords, activities, attendanceSessions, effectiveTime } = useStore();
   const [isRaportOpen, setIsRaportOpen] = useState(false);
 
   const greeting = useMemo(() => getGreeting(effectiveTime), [effectiveTime]);
   const firstName = currentUser.nickname || currentUser.full_name?.split(' ')[0] || 'Santri';
 
+  const activeSessions = useMemo(() => {
+    return getActiveAttendanceSessions(attendanceSessions, effectiveTime);
+  }, [attendanceSessions, effectiveTime]);
+
   const currentSchedule = useMemo(() => {
-    return determineActiveActivity(activities, effectiveTime);
-  }, [activities, effectiveTime]);
+    return determineActiveActivity(activities, effectiveTime, attendanceSessions);
+  }, [activities, effectiveTime, attendanceSessions]);
 
   const activeActivity = currentSchedule.activeActivity;
-  const isWindowOpen = currentSchedule.status === 'open' && !!activeActivity;
+  const isWindowOpen = activeSessions.length > 0;
 
   const currentMonth = effectiveTime.getMonth();
   const currentYear = effectiveTime.getFullYear();
@@ -273,10 +286,11 @@ export default function SantriDashboardPage() {
         {/* Left Card: Clean Forest Banner (Col 7) */}
         <div className="lg:col-span-7 bg-[#06241B] dark:bg-[#05140F] text-white rounded-2xl border border-[#0D382A] dark:border-[#142921] p-5 sm:p-6 shadow-sm flex flex-col justify-between">
           <div className="space-y-3">
-            {/* Top row: Hijri date + WIB clock */}
+            {/* Top row: Tanggal Indonesia + WIB clock */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-medium text-emerald-200 border border-white/10">
-                <span>{getEstimatedHijriDate(effectiveTime)}</span>
+                <Calendar className="w-3.5 h-3.5 text-[#E0B45C]" />
+                <span>{formatIndonesianDate(effectiveTime)}</span>
               </span>
 
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
@@ -360,22 +374,52 @@ export default function SantriDashboardPage() {
                     : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
                 }`}
               >
-                {isWindowOpen ? 'Sesi Dibuka' : 'Sesi Ditutup'}
+                {isWindowOpen ? `${activeSessions.length} Sesi Dibuka` : 'Sesi Ditutup / Libur'}
               </span>
             </div>
 
             <div>
-              <h3 className="font-extrabold text-lg text-stone-900 dark:text-stone-100">
-                {activeActivity ? activeActivity.name : 'Tidak Ada Kegiatan Aktif'}
-              </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
-                {activeActivity
-                  ? `Jadwal resmi: ${activeActivity.start_time} - ${activeActivity.end_time} WIB`
-                  : 'Saat ini belum ada sesi presensi yang sedang berlangsung. Pantau agenda harian pondok.'}
-              </p>
+              {isWindowOpen ? (
+                <div className="space-y-2">
+                  <h3 className="font-extrabold text-lg text-stone-900 dark:text-stone-100">
+                    {activeSessions.length === 1
+                      ? activeSessions[0].activity_name
+                      : 'Multi-Sesi Presensi Aktif'}
+                  </h3>
+                  <div className="space-y-1.5">
+                    {activeSessions.map((sess) => {
+                      const remSec = getSessionRemainingSeconds(sess, effectiveTime);
+                      const timerText = formatCountdownTimer(remSec);
+                      return (
+                        <div
+                          key={sess.id}
+                          className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 text-xs"
+                        >
+                          <span className="font-bold text-[#0D7B5F] dark:text-emerald-300">
+                            {sess.activity_name}
+                          </span>
+                          <span className="font-mono text-[11px] font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{timerText}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-lg text-stone-900 dark:text-stone-100">
+                    Tidak Ada Sesi Dibuka
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                    Presensi santri dimonitor dan dibuka langsung oleh Musyrif. Jika Musyrif tidak membuka sesi, kegiatan dianggap libur dan tidak dihitung alpa.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {activeActivity && (
+            {activeActivity && isWindowOpen && (
               <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-stone-700/60 text-xs text-stone-600 dark:text-stone-300 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-stone-400">Radius Lokasi:</span>
@@ -396,10 +440,14 @@ export default function SantriDashboardPage() {
           <div className="pt-3 mt-2 grid grid-cols-2 gap-2">
             <Link
               href="/santri/absensi?type=hadir"
-              className="py-2.5 sm:py-3 px-3 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-extrabold text-xs shadow-xs transition flex items-center justify-center gap-1.5 btn-press whitespace-nowrap cursor-pointer"
+              className={`py-2.5 sm:py-3 px-3 rounded-xl text-white font-extrabold text-xs shadow-xs transition flex items-center justify-center gap-1.5 btn-press whitespace-nowrap cursor-pointer ${
+                isWindowOpen
+                  ? 'bg-[#0D7B5F] hover:bg-[#0A664E]'
+                  : 'bg-stone-400 dark:bg-stone-700 hover:bg-stone-500'
+              }`}
             >
               <Camera className="w-4 h-4 text-emerald-200 shrink-0" />
-              <span>Absen Hadir</span>
+              <span>{isWindowOpen ? 'Absen Hadir' : 'Cek Sesi Absen'}</span>
             </Link>
             <Link
               href="/santri/absensi?type=izin"

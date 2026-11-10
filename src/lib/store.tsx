@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import {
   Activity,
   AttendanceRecord,
+  AttendanceSession,
   AttendanceStatus,
   AttendanceType,
   AuditLog,
@@ -24,7 +25,7 @@ import {
   SEED_FINANCIAL_TRANSACTIONS,
 } from './constants';
 import { validateAttendanceLocation } from './geo';
-import { getWibDateStr, isActivityScheduledOnDate } from './schedule';
+import { getWibDateStr, isActivityScheduledOnDate, isTahfidzActivity } from './schedule';
 import {
   setSessionCookie,
   getSessionCookie,
@@ -75,6 +76,12 @@ interface StoreContextType {
   profiles: Profile[];
   activities: Activity[];
   attendanceRecords: AttendanceRecord[];
+  attendanceSessions: AttendanceSession[];
+  openAttendanceSession: (params: {
+    activityId: string;
+    durationMinutes?: number;
+  }) => Promise<{ success: boolean; session?: AttendanceSession; message: string }>;
+  closeAttendanceSession: (sessionId: string) => Promise<{ success: boolean; message: string }>;
   auditLogs: AuditLog[];
   sppSettings: SppSettings;
   sppPayments: SppPayment[];
@@ -349,6 +356,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const [activities, setActivities] = useState<Activity[]>(SEED_ACTIVITIES);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [sppSettings, setSppSettings] = useState<SppSettings>(DEFAULT_SPP_SETTINGS);
   const [sppPayments, setSppPayments] = useState<SppPayment[]>(SEED_SPP_PAYMENTS);
@@ -414,7 +422,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const opDate =
             r.operational_date ||
             dateMatch?.[1] ||
-            (r.submitted_at ? r.submitted_at.split('T')[0] : getWibDateStr());
+            getWibDateStr(r.submitted_at);
 
           return {
             ...r,
@@ -474,6 +482,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!finErr && finData) {
         setFinancialTransactions(finData as FinancialTransaction[]);
       }
+
+      // 8. Fetch Attendance Sessions (Dynamic Musyrif Sessions)
+      const sessPromise = supabase
+        .from('attendance_sessions')
+        .select('*')
+        .order('opens_at', { ascending: false })
+        .limit(100);
+      const { data: sessData, error: sessErr } = (await Promise.race([sessPromise, timeoutPromise])) as any;
+      if (!sessErr && sessData) {
+        setAttendanceSessions(sessData as AttendanceSession[]);
+      }
     } catch (err) {
       console.warn('Error syncing data from Supabase:', err);
     }
@@ -508,8 +527,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (stored) {
         const data = JSON.parse(stored);
         if (data.profiles?.length) setProfiles(data.profiles);
-        if (data.activities?.length) setActivities(data.activities);
+        if (data.activities?.length) {
+          const syncedActs = (data.activities as Activity[]).map((a) => {
+            if (a.id === 'act-8' || a.name.toLowerCase().includes('kitab')) {
+              return { ...a, active_days: [1, 2, 3, 4, 5, 6, 7], is_active: true };
+            }
+            return a;
+          });
+          const hasKitab = syncedActs.some((a) => a.id === 'act-8' || a.name.toLowerCase().includes('kitab'));
+          if (!hasKitab) {
+            const seedKitab = SEED_ACTIVITIES.find((a) => a.id === 'act-8');
+            if (seedKitab) syncedActs.push(seedKitab);
+          }
+          setActivities(syncedActs);
+        }
         if (data.attendanceRecords?.length) setAttendanceRecords(data.attendanceRecords);
+        if (data.attendanceSessions?.length) setAttendanceSessions(data.attendanceSessions);
         if (data.auditLogs?.length) setAuditLogs(data.auditLogs);
         if (data.sppSettings) setSppSettings(data.sppSettings);
         if (data.sppPayments?.length) setSppPayments(data.sppPayments);
@@ -704,6 +737,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           profiles,
           activities,
           attendanceRecords,
+          attendanceSessions,
           auditLogs,
           sppSettings,
           sppPayments,
@@ -717,6 +751,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     profiles,
     activities,
     attendanceRecords,
+    attendanceSessions,
     auditLogs,
     sppSettings,
     sppPayments,
@@ -732,7 +767,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setActualTime(new Date());
     const interval = setInterval(() => {
-      setActualTime(new Date());
+      const now = new Date();
+      setActualTime(now);
+
+      // Auto-expire sessions whose closes_at has passed
+      setAttendanceSessions((prev) => {
+        let changed = false;
+        const next = prev.map((s) => {
+          if (s.status === 'open') {
+            const closesAt = new Date(s.closes_at);
+            if (!isNaN(closesAt.getTime()) && now.getTime() > closesAt.getTime()) {
+              changed = true;
+              return {
+                ...s,
+                status: 'closed' as const,
+                closed_at: now.toISOString(),
+              };
+            }
+          }
+          return s;
+        });
+        return changed ? next : prev;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -1070,12 +1126,151 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(false);
     setActivities(SEED_ACTIVITIES);
     setAttendanceRecords([]);
+    setAttendanceSessions([]);
     setAuditLogs([]);
     setSppSettings(DEFAULT_SPP_SETTINGS);
     setSppPayments(SEED_SPP_PAYMENTS);
     setFinancialTransactions(SEED_FINANCIAL_TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+  };
+
+  // Musyrif Action: Buka Sesi Absensi dengan Timer (Opsi: 30, 60, 90, 120 menit)
+  const openAttendanceSession = async ({
+    activityId,
+    durationMinutes = 60,
+  }: {
+    activityId: string;
+    durationMinutes?: number;
+  }): Promise<{ success: boolean; session?: AttendanceSession; message: string }> => {
+    const activity = activities.find((a) => a.id === activityId);
+    if (!activity) {
+      return { success: false, message: 'Kegiatan tidak ditemukan atau sudah tidak aktif.' };
+    }
+
+    const now = new Date();
+    const todayStr = getWibDateStr(now);
+    const opensAt = now.toISOString();
+    const isSetoran = isTahfidzActivity(activity);
+    const finalDuration = durationMinutes || (isSetoran ? 120 : 60);
+    const closesAtDate = new Date(now.getTime() + finalDuration * 60 * 1000);
+    const closesAt = closesAtDate.toISOString();
+    const sessionId = `sess-${todayStr}-${activity.code.toLowerCase()}-${Date.now().toString(36)}`;
+
+    const newSession: AttendanceSession = {
+      id: sessionId,
+      activity_id: activity.id,
+      activity_name: activity.name,
+      activity_code: activity.code,
+      operational_date: todayStr,
+      opens_at: opensAt,
+      closes_at: closesAt,
+      status: 'open',
+      duration_minutes: finalDuration,
+      opened_by: currentUser.id,
+      opened_by_name: currentUser.full_name || 'Musyrif',
+    };
+
+    // Update state: dukung multi-sesi kegiatan berbeda secara bersamaan
+    setAttendanceSessions((prev) => {
+      // Jika untuk kegiatan yang sama sudah ada sesi open hari ini, ganti dengan yang baru
+      const filtered = prev.filter(
+        (s) => !(s.activity_id === activity.id && s.operational_date === todayStr && s.status === 'open')
+      );
+      return [newSession, ...filtered];
+    });
+
+    // Catat Audit Log
+    const auditEntry: AuditLog = {
+      id: `audit-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name || 'Musyrif',
+      action: 'BUKA_SESI_ABSENSI',
+      entity_type: 'attendance_session',
+      entity_id: sessionId,
+      reason: `Musyrif membuka sesi absensi "${activity.name}" durasi ${durationMinutes} menit (berakhir ${closesAtDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB).`,
+      created_at: now.toISOString(),
+    };
+    setAuditLogs((prev) => [auditEntry, ...prev]);
+
+    // Sinkronkan ke Supabase jika terhubung
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('attendance_sessions').upsert({
+          id: newSession.id,
+          activity_id: newSession.activity_id,
+          operational_date: newSession.operational_date,
+          opens_at: newSession.opens_at,
+          closes_at: newSession.closes_at,
+          status: newSession.status,
+        });
+      } catch (err) {
+        console.warn('Gagal sync session ke Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      session: newSession,
+      message: `Sesi absensi "${activity.name}" berhasil dibuka (${finalDuration} menit). Santri kini dapat melakukan presensi.`,
+    };
+  };
+
+  // Musyrif Action: Tutup Sesi Absensi Lebih Cepat
+  const closeAttendanceSession = async (
+    sessionId: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const now = new Date();
+    const closedAt = now.toISOString();
+
+    let closedSessionName = 'kegiatan';
+    setAttendanceSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === sessionId) {
+          closedSessionName = s.activity_name;
+          return {
+            ...s,
+            status: 'closed' as const,
+            closed_at: closedAt,
+            closed_by: currentUser.id,
+            closed_by_name: currentUser.full_name || 'Musyrif',
+          };
+        }
+        return s;
+      })
+    );
+
+    // Catat Audit Log
+    const auditEntry: AuditLog = {
+      id: `audit-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name || 'Musyrif',
+      action: 'TUTUP_SESI_ABSENSI',
+      entity_type: 'attendance_session',
+      entity_id: sessionId,
+      reason: `Musyrif menutup sesi absensi "${closedSessionName}" lebih cepat pada ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB.`,
+      created_at: now.toISOString(),
+    };
+    setAuditLogs((prev) => [auditEntry, ...prev]);
+
+    // Sinkronkan ke Supabase jika terhubung
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        await supabase.from('attendance_sessions').update({
+          status: 'closed',
+          closes_at: closedAt,
+        }).eq('id', sessionId);
+      } catch (err) {
+        console.warn('Gagal update session closed ke Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Sesi absensi "${closedSessionName}" telah resmi ditutup. Santri tidak dapat lagi menginput presensi.`,
+    };
   };
 
   // Helper: Ambil riwayat setoran tahfidz terakhir santri (bisa difilter per santri atau mode ziyadah/murojaah)
@@ -1133,6 +1328,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const todayStr = getWibDateStr(effectiveTime);
 
+    // Cek apakah ada sesi presensi aktif yang sedang DIBUKA oleh Musyrif
+    const currentActiveSession = attendanceSessions.find(
+      (s) =>
+        s.activity_id === activityId &&
+        s.operational_date === todayStr &&
+        s.status === 'open' &&
+        new Date(s.closes_at).getTime() >= effectiveTime.getTime()
+    );
+
+    // Jika absen Hadir tetapi musyrif belum membuka sesi, tolak dengan sopan
+    if (type === 'hadir' && !currentActiveSession) {
+      return {
+        success: false,
+        record: {} as AttendanceRecord,
+        message: `Sesi presensi untuk "${activity.name}" sedang tidak dibuka oleh Musyrif. Kegiatan dianggap libur atau belum dimulai.`,
+      };
+    }
+
     // Check if an existing record exists for this activity & date
     const existing = attendanceRecords.find(
       (r) =>
@@ -1181,7 +1394,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const publicPhotoUrl = await uploadSelfieToStorage(photoDataUrl, currentUser.id);
 
     const targetRecordId = existing ? existing.id : `att-${Date.now()}`;
-    const sessionId = existing ? existing.session_id : `sess-${todayStr}-${activity.code.toLowerCase()}`;
+    const sessionId = currentActiveSession
+      ? currentActiveSession.id
+      : (existing ? existing.session_id : `sess-${todayStr}-${activity.code.toLowerCase()}`);
 
     // Presensi murni berbasis sistem mandiri santri (foto selfie & geotag GPS)
     const isTahfidzActivity = activity.code === 'SETORAN_PAGI' || activity.code === 'SETORAN_MALAM';
@@ -2872,6 +3087,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         profiles,
         activities,
         attendanceRecords,
+        attendanceSessions,
+        openAttendanceSession,
+        closeAttendanceSession,
         auditLogs,
         sppSettings,
         sppPayments,

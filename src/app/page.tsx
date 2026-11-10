@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
+import { determineActiveActivity, formatIndonesianDate, formatTime24 } from '@/lib/schedule';
 import {
   Camera,
   Shield,
@@ -38,10 +38,10 @@ export default function HomePage() {
           {/* HERO CARD (Col 7 on Desktop) */}
           <div className="lg:col-span-7 bg-[#06241B] dark:bg-[#05140F] text-white rounded-2xl border border-[#0D382A] dark:border-[#142921] p-6 sm:p-8 flex flex-col justify-between shadow-sm">
             <div>
-              {/* Top row */}
+              {/* Top row: Tanggal Indonesia & WIB clock */}
               <div className="flex items-center justify-between gap-2 mb-6">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-medium text-emerald-200 border border-white/10">
-                  <span>{getEstimatedHijriDate(effectiveTime)}</span>
+                  <span>{formatIndonesianDate(effectiveTime)}</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
                   <Clock className="w-3.5 h-3.5 text-[#E0B45C]" />

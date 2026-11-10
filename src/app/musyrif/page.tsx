@@ -3,7 +3,18 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { determineActiveActivity, formatIndonesianDate, getEstimatedHijriDate, formatTime24, getWibDateStr } from '@/lib/schedule';
+import {
+  determineActiveActivity,
+  formatIndonesianDate,
+  formatTime24,
+  getWibDateStr,
+  getActivitiesForDate,
+  getActiveAttendanceSessions,
+  getSessionRemainingSeconds,
+  formatCountdownTimer,
+  getSafeDate,
+  isTahfidzActivity,
+} from '@/lib/schedule';
 import { STATUS_META } from '@/lib/constants';
 import AttendanceDetailModal from '@/components/attendance/AttendanceDetailModal';
 import PermissionReviewModal from '@/components/attendance/PermissionReviewModal';
@@ -77,8 +88,9 @@ function DonutRing({
 
 /* ─── Mini Calendar Widget ─── */
 function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
+  const safeTime = getSafeDate(effectiveTime);
   const [viewDate, setViewDate] = useState(
-    () => new Date(effectiveTime.getFullYear(), effectiveTime.getMonth(), 1)
+    () => new Date(safeTime.getFullYear(), safeTime.getMonth(), 1)
   );
 
   const year = viewDate.getFullYear();
@@ -98,9 +110,9 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-  const tYear = effectiveTime.getFullYear();
-  const tMonth = effectiveTime.getMonth();
-  const tDay = effectiveTime.getDate();
+  const tYear = safeTime.getFullYear();
+  const tMonth = safeTime.getMonth();
+  const tDay = safeTime.getDate();
 
   const gridCells = [];
 
@@ -209,6 +221,9 @@ export default function MusyrifDashboardPage() {
     currentUser,
     attendanceRecords,
     activities,
+    attendanceSessions,
+    openAttendanceSession,
+    closeAttendanceSession,
     profiles,
     effectiveTime,
     reviewPermission,
@@ -224,13 +239,56 @@ export default function MusyrifDashboardPage() {
     undefined
   );
 
+  // State durasi sesi yang dipilih musyrif per kegiatan (30, 60, 90, 120 menit)
+  const [selectedDurations, setSelectedDurations] = useState<Record<string, number>>({});
+  const [sessionActionNotice, setSessionActionNotice] = useState<string | null>(null);
+
   const todayStr = getWibDateStr(effectiveTime);
   const santriList = profiles.filter((p) => p.role === 'santri' && p.is_active);
 
-  // Active activity evaluation
-  const activeResult = determineActiveActivity(activities, effectiveTime);
+  // Jadwal kegiatan yang aktif hari ini + pastikan Ngaji Kitab Kuning selalu ada di daftar kontrol Musyrif
+  const activitiesForMusyrifControl = React.useMemo(() => {
+    const todayList = getActivitiesForDate(activities, effectiveTime);
+    const kitabAct = activities.find(
+      (a) => a.id === 'act-8' || a.code.toUpperCase().includes('KITAB') || a.name.toLowerCase().includes('kitab')
+    );
+    if (kitabAct && !todayList.some((a) => a.id === kitabAct.id)) {
+      return [...todayList, kitabAct];
+    }
+    return todayList.length > 0 ? todayList : activities.filter((a) => a.is_active);
+  }, [activities, effectiveTime]);
+
+  // Durasi default: Setoran (Tahfidz) default 120 menit, kegiatan lainnya 60 menit
+  const getDefaultDurationForActivity = (act: import('@/types').Activity): number => {
+    if (isTahfidzActivity(act)) {
+      return 120;
+    }
+    return 60;
+  };
+
+  // Sesi yang sedang dibuka Musyrif (mendukung multi-sesi aktif)
+  const activeSessions = React.useMemo(() => {
+    return getActiveAttendanceSessions(attendanceSessions, effectiveTime);
+  }, [attendanceSessions, effectiveTime]);
+
+  const activeResult = determineActiveActivity(activities, effectiveTime, attendanceSessions);
   const activeActivity = activeResult.activeActivity;
-  const isWindowOpen = activeResult.status === 'open' && !!activeActivity;
+  const isWindowOpen = activeSessions.length > 0;
+
+  const handleOpenSession = async (activityId: string) => {
+    const act = activities.find((a) => a.id === activityId);
+    const defaultDur = act ? getDefaultDurationForActivity(act) : 60;
+    const duration = selectedDurations[activityId] || defaultDur;
+    const res = await openAttendanceSession({ activityId, durationMinutes: duration });
+    setSessionActionNotice(res.message);
+    setTimeout(() => setSessionActionNotice(null), 5000);
+  };
+
+  const handleCloseSession = async (sessionId: string) => {
+    const res = await closeAttendanceSession(sessionId);
+    setSessionActionNotice(res.message);
+    setTimeout(() => setSessionActionNotice(null), 5000);
+  };
 
   // Today's attendance stats
   const todayRecords = attendanceRecords.filter((r) => r.operational_date === todayStr);
@@ -282,10 +340,11 @@ export default function MusyrifDashboardPage() {
         {/* LEFT HERO CARD (Col 7) */}
         <div className="lg:col-span-7 bg-[#06241B] dark:bg-[#05140F] text-white rounded-2xl border border-[#0D382A] dark:border-[#142921] p-5 sm:p-6 shadow-sm flex flex-col justify-between">
           <div className="space-y-3">
-            {/* Top row: Hijri date & WIB clock */}
+            {/* Top row: Tanggal Indonesia & WIB clock */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-medium text-emerald-200 border border-white/10">
-                <span>{getEstimatedHijriDate(effectiveTime)}</span>
+                <Calendar className="w-3.5 h-3.5 text-[#E0B45C]" />
+                <span>{formatIndonesianDate(effectiveTime)}</span>
               </span>
 
               <div className="flex items-center gap-2">
@@ -355,14 +414,14 @@ export default function MusyrifDashboardPage() {
           </div>
         </div>
 
-        {/* RIGHT CARD: MONITORING SESI AKTIF (Col 5) */}
+        {/* RIGHT CARD: KONTROL & MONITORING SESI ABSENSI (Col 5) */}
         <div className="lg:col-span-5 bg-white dark:bg-[#0E1713] rounded-2xl border border-stone-200/80 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#0D7B5F]" />
                 <h2 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
-                  Monitoring Sesi Aktif
+                  Kontrol Sesi Presensi
                 </h2>
               </div>
               <span
@@ -372,33 +431,142 @@ export default function MusyrifDashboardPage() {
                     : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
                 }`}
               >
-                {isWindowOpen ? 'Sedang Berlangsung' : 'Sesi Ditutup'}
+                {isWindowOpen ? `${activeSessions.length} Sesi Terbuka` : 'Semua Sesi Ditutup'}
               </span>
             </div>
+
+            {/* Notice banner alert */}
+            {sessionActionNotice && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{sessionActionNotice}</span>
+              </div>
+            )}
 
             <div>
-              <h3 className="font-extrabold text-lg text-stone-900 dark:text-stone-100">
-                {activeActivity ? activeActivity.name : 'Tidak Ada Sesi Terbuka'}
-              </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
-                {isWindowOpen
-                  ? `${attendedActiveActivityCount} santri sudah hadir • ${belumAbsenCount} santri belum presensi.`
-                  : 'Di luar rentang waktu kegiatan pondok. Anda dapat meninjau perizinan atau rekap kehadiran.'}
+              <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-3">
+                Musyrif memegang kendali penuh sesi presensi. Jika sesi tidak dibuka, kegiatan dianggap <strong>libur</strong> dan santri tidak dihitung alpa.
               </p>
-            </div>
 
-            <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
-              <div className="flex items-center gap-2 min-w-0">
-                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="truncate font-medium">
-                  {activeResult.nextActivity
-                    ? `Berikutnya: ${activeResult.nextActivity.name} (${activeResult.nextActivity.start_time} WIB)`
-                    : 'Jadwal sesi hari ini telah tuntas.'}
-                </span>
+              {/* List Kegiatan dengan Kontrol Buka/Tutup Sesi (Termasuk Kitab Kuning) */}
+              <div className="space-y-2.5 max-h-[290px] overflow-y-auto pr-1">
+                {activitiesForMusyrifControl.length > 0 ? (
+                  activitiesForMusyrifControl.map((act) => {
+                    // Cari sesi aktif hari ini untuk kegiatan ini
+                    const liveSession = activeSessions.find((s) => s.activity_id === act.id);
+                    const closedSession = attendanceSessions.find(
+                      (s) => s.activity_id === act.id && s.operational_date === todayStr && s.status === 'closed'
+                    );
+
+                    const remSeconds = liveSession ? getSessionRemainingSeconds(liveSession, effectiveTime) : 0;
+                    const timerText = formatCountdownTimer(remSeconds);
+
+                    const attendedCount = todayRecords.filter(
+                      (r) => r.activity_id === act.id && r.status === 'hadir_valid'
+                    ).length;
+
+                    const defaultDur = getDefaultDurationForActivity(act);
+                    const curDuration = selectedDurations[act.id] ?? defaultDur;
+
+                    return (
+                      <div
+                        key={act.id}
+                        className={`p-3 rounded-xl border transition-all ${
+                          liveSession
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700/70'
+                            : 'bg-stone-50/80 dark:bg-stone-800/40 border-stone-200/80 dark:border-stone-700/60'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-xs text-stone-900 dark:text-stone-100">
+                                {act.name}
+                              </h4>
+                              {liveSession && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse">
+                                  LIVE
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-stone-500 font-mono">
+                              Jadwal: {act.start_time} - {act.end_time} WIB
+                            </span>
+                          </div>
+
+                          {liveSession ? (
+                            <div className="text-right">
+                              <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-end gap-1">
+                                <Clock className="w-3 h-3 text-emerald-600" />
+                                <span>{timerText}</span>
+                              </span>
+                              <span className="text-[10px] text-stone-500">
+                                {attendedCount} santri hadir
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-stone-400">
+                              {closedSession ? 'Selesai' : 'Libur'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Action Buttons & Duration Selector */}
+                        <div className="mt-2.5 pt-2 border-t border-stone-200/60 dark:border-stone-700/50 flex flex-wrap items-center justify-between gap-2">
+                          {liveSession ? (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
+                                Sesi sedang aktif ({liveSession.duration_minutes} mnt)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCloseSession(liveSession.id)}
+                                className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
+                              >
+                                <span>Tutup Sesi Sekarang</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between w-full gap-2">
+                              {/* Duration Selector Dropdown (30, 60, 90, 120 menit) */}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-stone-500">Durasi:</span>
+                                <select
+                                  value={curDuration}
+                                  onChange={(e) =>
+                                    setSelectedDurations((prev) => ({
+                                      ...prev,
+                                      [act.id]: Number(e.target.value),
+                                    }))
+                                  }
+                                  className="text-[11px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 focus:outline-none"
+                                >
+                                  <option value={30}>30 Menit</option>
+                                  <option value={60}>60 Menit</option>
+                                  <option value={90}>90 Menit</option>
+                                  <option value={120}>120 Menit</option>
+                                </select>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSession(act.id)}
+                                className="px-3 py-1.5 rounded-lg bg-[#0D7B5F] hover:bg-[#0A664E] text-white text-[11px] font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                              >
+                                <span>Buka Sesi ({curDuration} mnt)</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-3 text-center text-xs text-stone-500">
+                    Tidak ada kegiatan yang terjadwal hari ini.
+                  </div>
+                )}
               </div>
-              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 shrink-0">
-                {isWindowOpen ? 'Live' : 'Jadwal'}
-              </span>
             </div>
           </div>
 
@@ -408,7 +576,7 @@ export default function MusyrifDashboardPage() {
               className="flex-1 py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>Edit Absensi Sesi Ini {activeActivity ? `(${activeActivity.name})` : ''}</span>
+              <span>Edit Absensi Manual Santri</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 

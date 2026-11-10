@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
-import { isTahfidzActivity, getActivitiesForDate, formatTime24, getWibDateStr, isActivityScheduledOnDate } from '@/lib/schedule';
+import { isTahfidzActivity, getActivitiesForDate, formatTime24, getWibDateStr, isActivityScheduledOnDate, getSafeDate, formatIndonesianDate } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
 import LocationChecker from './LocationChecker';
 import {
@@ -62,15 +62,16 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
     deleteSantriAttendance,
   } = useStore();
 
-  const todayStr = getWibDateStr(effectiveTime);
-  const tomorrow = new Date(effectiveTime);
+  const safeEffectiveTime = getSafeDate(effectiveTime);
+  const todayStr = getWibDateStr(safeEffectiveTime);
+  const tomorrow = new Date(safeEffectiveTime);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = getWibDateStr(tomorrow);
 
   // Activities specifically scheduled for today and tomorrow based on day of week
   const todayActivities = React.useMemo(() => {
-    return getActivitiesForDate(activities, effectiveTime);
-  }, [activities, effectiveTime]);
+    return getActivitiesForDate(activities, safeEffectiveTime);
+  }, [activities, safeEffectiveTime]);
 
   const tomorrowActivities = React.useMemo(() => {
     return getActivitiesForDate(activities, tomorrow);
@@ -108,6 +109,16 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [attendanceType, setAttendanceType] = useState<AttendanceType>(initialType || 'hadir');
+
+  // Bersihkan dan reset state jika kegiatan yang dipilih berganti (mencegah bug tampilan stuck)
+  React.useEffect(() => {
+    setCurrentStep(1);
+    setSubmissionResult(null);
+    setPhotoUrl(null);
+    setLocationData(null);
+    setRetakeNotification(null);
+    setPermissionReason('');
+  }, [activity.id]);
 
   React.useEffect(() => {
     if (initialType) {
@@ -382,9 +393,18 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
         <div className="flex items-center justify-between gap-2">
           <div>
             <h2 className="text-base sm:text-lg font-extrabold tracking-tight text-white">{activity.name}</h2>
-            <p className="text-[11px] text-emerald-200/80 font-mono">
-              {activity.start_time} - {activity.end_time} WIB • Radius: {activity.radius_m}m
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-emerald-200/90 font-medium">
+              <span className="inline-flex items-center gap-1 font-sans font-bold text-white bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                <Calendar className="w-3 h-3 text-[#D6A84F]" />
+                <span>{formatIndonesianDate(safeEffectiveTime)}</span>
+              </span>
+              <span>•</span>
+              <span className="font-mono">
+                {activity.start_time} - {activity.end_time} WIB
+              </span>
+              <span>•</span>
+              <span>Radius: {activity.radius_m}m</span>
+            </div>
           </div>
         </div>
 
@@ -424,16 +444,16 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
           <div className="space-y-4">
             {/* Banner jika santri sudah presensi di kegiatan ini hari ini */}
             {existingAttendance && !submissionResult && (
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 space-y-2 animate-in fade-in">
+              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/80 space-y-2 animate-in fade-in">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="flex-1 space-y-0.5">
-                    <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                    <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
                       Anda Sudah Melakukan Presensi Hari Ini
                     </h4>
-                    <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
                       Status: <strong className="uppercase">{existingAttendance.status.replace(/_/g, ' ')}</strong> ({formatTime24(existingAttendance.submitted_at)} WIB).
                     </p>
                   </div>
@@ -494,11 +514,25 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
             {attendanceType === 'hadir' && (
               <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Hari &amp; Tanggal:</span>
+                  <span className="font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#146B50] dark:text-[#D6A84F]" />
+                    <span>{formatIndonesianDate(safeEffectiveTime)}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Waktu Sekarang:</span>
+                  <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{formatTime24(safeEffectiveTime)} WIB</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-stone-500 dark:text-stone-400 font-medium">Kegiatan Sesi:</span>
                   <span className="font-extrabold text-[#146B50] dark:text-emerald-300">{activity.name}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-stone-500 dark:text-stone-400 font-medium">Jam Pelaksanaan:</span>
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Jam Jadwal:</span>
                   <span className="font-semibold text-stone-800 dark:text-stone-200 font-mono">
                     {activity.start_time} - {activity.end_time} WIB
                   </span>

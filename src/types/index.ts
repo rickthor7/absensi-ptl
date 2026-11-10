@@ -49,6 +49,25 @@ export interface Activity {
   description?: string;
 }
 
+export type SessionStatus = 'open' | 'closed';
+
+export interface AttendanceSession {
+  id: string; // e.g. `sess-${operational_date}-${activity_id}`
+  activity_id: string;
+  activity_name: string;
+  activity_code: string;
+  operational_date: string; // YYYY-MM-DD in WIB
+  opens_at: string; // ISO string
+  closes_at: string; // ISO string
+  status: SessionStatus;
+  duration_minutes: number; // 30, 60, 90, 120
+  opened_by?: string;
+  opened_by_name?: string;
+  closed_at?: string;
+  closed_by?: string;
+  closed_by_name?: string;
+}
+
 export interface AttendanceRecord {
   id: string;
   session_id: string;

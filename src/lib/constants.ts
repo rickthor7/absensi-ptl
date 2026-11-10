@@ -205,9 +205,9 @@ export const SEED_ACTIVITIES: Activity[] = [
   {
     id: 'act-8',
     name: 'Ngaji Kitab Kuning',
-    code: 'NGAJI_SABTU',
+    code: 'KITAB_KUNING',
     is_active: true,
-    active_days: [6], // Sabtu
+    active_days: [1, 2, 3, 4, 5, 6, 7], // Aktif setiap hari (bisa dibuka kapan saja oleh Musyrif)
     start_time: '08:00',
     end_time: '10:30',
     crosses_midnight: false,
@@ -216,7 +216,7 @@ export const SEED_ACTIVITIES: Activity[] = [
     radius_m: 75,
     max_gps_accuracy_m: 100,
     late_after_minutes: 15,
-    description: 'Bandongan Kitab Ta’limul Muta’allim bersama Kyai',
+    description: 'Bandongan Kitab Ta’limul Muta’allim & kajian kitab bersama Kyai',
   },
 ];
 

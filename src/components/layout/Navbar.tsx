@@ -31,7 +31,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
-import { formatIndonesianDate, getEstimatedHijriDate, formatTime24 } from '@/lib/schedule';
+import { formatIndonesianDate, formatTime24 } from '@/lib/schedule';
 
 interface NavItem {
   href: string;

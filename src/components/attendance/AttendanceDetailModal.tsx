@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AttendanceRecord } from '@/types';
 import { useStore } from '@/lib/store';
 import { STATUS_META } from '@/lib/constants';
-import { formatTime24 } from '@/lib/schedule';
+import { formatTime24, formatIndonesianDate } from '@/lib/schedule';
 import { X, MapPin, Clock, Calendar, ShieldCheck, User, BookOpen, CheckCircle2, AlertCircle, Trash2, RotateCcw, Layers, FileText, ExternalLink } from 'lucide-react';
 
 interface AttendanceDetailModalProps {
@@ -197,7 +197,7 @@ export default function AttendanceDetailModal({ record, onClose }: AttendanceDet
                     Divalidasi oleh: <strong className="text-stone-700 dark:text-stone-300">{record.tahfidz_validated_by_name || 'Musyrif'}</strong>
                   </span>
                   <span>
-                    {new Date(record.tahfidz_validated_at).toLocaleDateString('id-ID')}
+                    {formatIndonesianDate(record.tahfidz_validated_at)}
                   </span>
                 </div>
               )}

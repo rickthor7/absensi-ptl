@@ -88,7 +88,7 @@ export default function MusyrifTahfidzPage() {
         const matchesAct =
           (currentActivity && r.activity_id === currentActivity.id) ||
           (r.session_id && r.session_id.toLowerCase().includes(actCode));
-        const rDate = r.operational_date || (r.submitted_at ? r.submitted_at.split('T')[0] : '');
+        const rDate = r.operational_date || getWibDateStr(r.submitted_at);
         return (matchesClass || matchesAct) && rDate === selectedDate;
       })
       .map((r) => r.student_id);
@@ -133,7 +133,7 @@ export default function MusyrifTahfidzPage() {
             r.session_id?.toLowerCase().includes('setoran_malam') ||
             r.activity_id === 'act-7'));
 
-      const rDate = r.operational_date || (r.submitted_at ? r.submitted_at.split('T')[0] : '');
+      const rDate = r.operational_date || getWibDateStr(r.submitted_at);
       const matchesDate = rDate === selectedDate;
       if (!matchesActivity || !matchesDate) return false;
 
