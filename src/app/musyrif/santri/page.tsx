@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Profile } from '@/types';
 import StudentModal from '@/components/students/StudentModal';
+import MonthlyAttendanceEditorModal from '@/components/attendance/MonthlyAttendanceEditorModal';
 import {
   Users,
   UserPlus,
@@ -18,6 +19,7 @@ import {
   Bed,
   Key,
   Mail,
+  CalendarCheck,
 } from 'lucide-react';
 
 export default function MusyrifSantriPage() {
@@ -29,6 +31,8 @@ export default function MusyrifSantriPage() {
   const [filterGeneration, setFilterGeneration] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Profile | null>(null);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+  const [attendanceStudent, setAttendanceStudent] = useState<Profile | null>(null);
 
   const santriList = profiles.filter((p) => p.role === 'santri');
 
@@ -220,13 +224,26 @@ export default function MusyrifSantriPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      setAttendanceStudent(s);
+                      setIsAttendanceModalOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold transition active:scale-95 cursor-pointer"
+                    title="Edit Absensi Santri 1 Bulan Penuh"
+                  >
+                    <CalendarCheck className="w-3.5 h-3.5 text-[#146B50]" />
+                    <span>Absensi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
                       setEditingStudent(s);
                       setIsModalOpen(true);
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold hover:bg-stone-200 transition active:scale-95 cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-[#146B50]" />
-                    <span>Edit Biodata</span>
+                    <span>Biodata</span>
                   </button>
 
                   <button
@@ -366,6 +383,17 @@ export default function MusyrifSantriPage() {
                         <button
                           type="button"
                           onClick={() => {
+                            setAttendanceStudent(s);
+                            setIsAttendanceModalOpen(true);
+                          }}
+                          className="p-2 rounded-xl border border-emerald-200 dark:border-emerald-800 text-[#146B50] dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+                          title="Edit Absensi 1 Bulan Santri"
+                        >
+                          <CalendarCheck className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
                             setEditingStudent(s);
                             setIsModalOpen(true);
                           }}
@@ -426,6 +454,17 @@ export default function MusyrifSantriPage() {
             }
             setIsModalOpen(false);
             setEditingStudent(null);
+          }}
+        />
+      )}
+
+      {/* Modal Edit Absensi Bulanan Santri */}
+      {isAttendanceModalOpen && attendanceStudent && (
+        <MonthlyAttendanceEditorModal
+          student={attendanceStudent}
+          onClose={() => {
+            setIsAttendanceModalOpen(false);
+            setAttendanceStudent(null);
           }}
         />
       )}

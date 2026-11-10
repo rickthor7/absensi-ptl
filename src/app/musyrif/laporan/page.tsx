@@ -22,10 +22,13 @@ import {
   Info,
   TrendingUp,
   GraduationCap,
+  Edit3,
 } from 'lucide-react';
 import { formatIndonesianDate, getWibDateStr } from '@/lib/schedule';
 import { PONDOK_DEFAULT_COORDINATES } from '@/lib/constants';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
+import MonthlyAttendanceEditorModal from '@/components/attendance/MonthlyAttendanceEditorModal';
+import { Profile } from '@/types';
 
 export default function MusyrifLaporanPage() {
   const { attendanceRecords, activities, profiles, effectiveTime, currentUser } = useStore();
@@ -37,10 +40,13 @@ export default function MusyrifLaporanPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [isRaportModalOpen, setIsRaportModalOpen] = useState(false);
   const [selectedRaportStudentId, setSelectedRaportStudentId] = useState<string | undefined>(undefined);
+  const [isEditMonthlyModalOpen, setIsEditMonthlyModalOpen] = useState(false);
+  const [editingStudentForMonth, setEditingStudentForMonth] = useState<Profile | null>(null);
 
   // Month options for selector
   const availableMonths = [
-    { value: '2026-10', label: 'Oktober 2026 (Bulan Berjalan)' },
+    { value: '2026-11', label: 'November 2026 (Bulan Berjalan)' },
+    { value: '2026-10', label: 'Oktober 2026' },
     { value: '2026-09', label: 'September 2026' },
     { value: '2026-08', label: 'Agustus 2026' },
   ];
@@ -484,6 +490,31 @@ export default function MusyrifLaporanPage() {
                   <p className="text-xs text-stone-500">
                     {currentSelectedStudent.student.group_name} • Kontak: {currentSelectedStudent.student.phone || '-'}
                   </p>
+                  <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingStudentForMonth(currentSelectedStudent.student);
+                        setIsEditMonthlyModalOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                      title="Edit absensi santri ini dalam 1 bulan penuh"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-[#D4A24C]" />
+                      <span>Edit Absensi Bulan Ini</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRaportStudentId(currentSelectedStudent.student.id);
+                        setIsRaportModalOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D4A24C]/40 bg-[#D4A24C]/10 text-[#D4A24C] hover:bg-[#D4A24C] hover:text-[#082F23] text-xs font-bold transition active:scale-95 cursor-pointer"
+                    >
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      <span>Buka Raport</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -712,6 +743,17 @@ export default function MusyrifLaporanPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => {
+                            setEditingStudentForMonth(st.student);
+                            setIsEditMonthlyModalOpen(true);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#146B50]/15 text-[#146B50] dark:text-emerald-300 hover:bg-[#146B50] hover:text-white border border-[#146B50]/30 transition cursor-pointer"
+                          title={`Edit absensi ${st.student.full_name} untuk bulan ${selectedMonth}`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
                             setSelectedRaportStudentId(st.student.id);
                             setIsRaportModalOpen(true);
                           }}
@@ -751,6 +793,18 @@ export default function MusyrifLaporanPage() {
           monthKey={selectedMonth}
           musyrifUser={currentUser}
           onClose={() => setIsRaportModalOpen(false)}
+        />
+      )}
+
+      {/* Modal Edit Absensi Santri 1 Bulan Penuh */}
+      {isEditMonthlyModalOpen && editingStudentForMonth && (
+        <MonthlyAttendanceEditorModal
+          student={editingStudentForMonth}
+          initialMonthKey={selectedMonth}
+          onClose={() => {
+            setIsEditMonthlyModalOpen(false);
+            setEditingStudentForMonth(null);
+          }}
         />
       )}
     </div>

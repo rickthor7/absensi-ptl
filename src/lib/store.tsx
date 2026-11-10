@@ -131,6 +131,21 @@ interface StoreContextType {
     totalUpdated: number;
     message: string;
   }>;
+  updateStudentMonthlyAttendance: (params: {
+    studentId: string;
+    monthKey: string;
+    updates: {
+      dateStr: string;
+      activityId: string;
+      status: 'hadir' | 'izin' | 'alpa';
+      note?: string;
+    }[];
+    reason?: string;
+  }) => Promise<{
+    success: boolean;
+    count: number;
+    message: string;
+  }>;
   verifyDiscrepancy: (
     recordId: string,
     finalStatus: AttendanceStatus,
@@ -2038,6 +2053,206 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // Edit absensi santri dalam 1 bulan penuh oleh musyrif
+  const updateStudentMonthlyAttendance = async ({
+    studentId,
+    monthKey,
+    updates,
+    reason,
+  }: {
+    studentId: string;
+    monthKey: string;
+    updates: {
+      dateStr: string;
+      activityId: string;
+      status: 'hadir' | 'izin' | 'alpa';
+      note?: string;
+    }[];
+    reason?: string;
+  }) => {
+    const student = profiles.find((p) => p.id === studentId);
+    if (!student) {
+      return { success: false, count: 0, message: 'Data santri tidak ditemukan.' };
+    }
+    if (!updates || updates.length === 0) {
+      return { success: true, count: 0, message: 'Tidak ada perubahan absensi yang dipilih.' };
+    }
+
+    const nowIso = effectiveTime.toISOString();
+    const updatedRecordsMap = new Map<string, AttendanceRecord>();
+    attendanceRecords.forEach((r) => updatedRecordsMap.set(r.id, r));
+
+    const recordsToUpsertInDb: any[] = [];
+    const sessionsToUpsertInDb = new Map<string, any>();
+    let countModified = 0;
+
+    for (const update of updates) {
+      const activity = activities.find((a) => a.id === update.activityId);
+      if (!activity) continue;
+
+      const sessionId = `sess-${update.dateStr}-${activity.code.toLowerCase()}`;
+      sessionsToUpsertInDb.set(sessionId, {
+        id: sessionId,
+        activity_id: activity.id,
+        operational_date: update.dateStr,
+        opens_at: `${update.dateStr}T${activity.start_time}:00Z`,
+        closes_at: `${update.dateStr}T${activity.end_time}:00Z`,
+        status: 'open',
+      });
+
+      let finalStatus: AttendanceStatus;
+      if (update.status === 'hadir') {
+        finalStatus = 'hadir_valid';
+      } else if (update.status === 'izin') {
+        finalStatus = 'izin_disetujui';
+      } else {
+        finalStatus = 'alpa';
+      }
+
+      // Cari record yang sudah ada
+      const existing = attendanceRecords.find(
+        (r) =>
+          r.student_id === studentId &&
+          r.activity_id === update.activityId &&
+          r.operational_date === update.dateStr
+      );
+
+      const correctionEntry = {
+        original_status: existing?.status || 'belum_absen',
+        corrected_status: finalStatus,
+        reason: reason || update.note || 'Penyesuaian rekap absensi bulanan oleh musyrif',
+        corrected_by: currentUser.full_name,
+        corrected_at: nowIso,
+      };
+
+      if (existing) {
+        const updatedRec: AttendanceRecord = {
+          ...existing,
+          attendance_type: update.status,
+          status: finalStatus,
+          musyrif_status: update.status,
+          is_verified: true,
+          has_discrepancy: false,
+          discrepancy_reason: undefined,
+          reviewed_by: currentUser.id,
+          reviewed_by_name: currentUser.full_name,
+          reviewed_at: nowIso,
+          review_note: update.note || existing.review_note || reason,
+          audit_corrections: [...(existing.audit_corrections || []), correctionEntry],
+        };
+        updatedRecordsMap.set(existing.id, updatedRec);
+        recordsToUpsertInDb.push({
+          id: existing.id,
+          session_id: existing.session_id,
+          student_id: studentId,
+          attendance_type: update.status,
+          status: finalStatus,
+          musyrif_status: update.status,
+          is_verified: true,
+          has_discrepancy: false,
+          reviewed_by: currentUser.id,
+          reviewed_at: nowIso,
+          review_note: update.note || existing.review_note || reason || null,
+        });
+        countModified++;
+      } else {
+        const newId = `att-m-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const fallbackSelfie =
+          student.avatar_url ||
+          'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
+        const newRecord: AttendanceRecord = {
+          id: newId,
+          session_id: sessionId,
+          student_id: studentId,
+          student_name: student.full_name,
+          student_number: student.student_number,
+          group_name: student.group_name,
+          activity_id: activity.id,
+          activity_name: activity.name,
+          operational_date: update.dateStr,
+          attendance_type: update.status,
+          status: finalStatus,
+          santri_status: 'belum_absen',
+          musyrif_status: update.status,
+          has_discrepancy: false,
+          is_verified: true,
+          photo_path: fallbackSelfie,
+          latitude: activity.location_lat,
+          longitude: activity.location_lng,
+          distance_from_site_m: 0,
+          gps_accuracy_m: 10,
+          location_captured_at: nowIso,
+          submitted_at: nowIso,
+          reviewed_by: currentUser.id,
+          reviewed_by_name: currentUser.full_name,
+          reviewed_at: nowIso,
+          review_note: update.note || reason,
+          audit_corrections: [correctionEntry],
+        };
+        updatedRecordsMap.set(newId, newRecord);
+        recordsToUpsertInDb.push({
+          id: newId,
+          session_id: sessionId,
+          student_id: studentId,
+          attendance_type: update.status,
+          status: finalStatus,
+          musyrif_status: update.status,
+          santri_status: 'belum_absen',
+          has_discrepancy: false,
+          is_verified: true,
+          photo_path: newRecord.photo_path,
+          latitude: activity.location_lat,
+          longitude: activity.location_lng,
+          submitted_at: nowIso,
+          reviewed_by: currentUser.id,
+          reviewed_at: nowIso,
+          review_note: update.note || reason || null,
+        });
+        countModified++;
+      }
+    }
+
+    const newRecordsList = Array.from(updatedRecordsMap.values()).sort(
+      (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+    );
+    setAttendanceRecords(newRecordsList);
+
+    const audit: AuditLog = {
+      id: `aud-${Date.now()}`,
+      actor_id: currentUser.id,
+      actor_name: currentUser.full_name,
+      action: 'CORRECT_ATTENDANCE',
+      entity_type: 'monthly_student_attendance',
+      entity_id: `${studentId}-${monthKey}`,
+      before_data: null,
+      after_data: { studentId, monthKey, updatedEntriesCount: countModified },
+      reason: reason || `Musyrif memperbarui ${countModified} absensi bulan ${monthKey} santri ${student.full_name}`,
+      created_at: nowIso,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+
+    const supabase = getSupabase();
+    if (supabase && isSupabaseConnected) {
+      try {
+        for (const sess of Array.from(sessionsToUpsertInDb.values())) {
+          await supabase.from('attendance_sessions').upsert(sess);
+        }
+        for (const rec of recordsToUpsertInDb) {
+          await supabase.from('attendance_records').upsert(rec);
+        }
+        await supabase.from('audit_logs').insert(audit);
+      } catch (err) {
+        console.warn('Failed to sync monthly student attendance to Supabase:', err);
+      }
+    }
+
+    return {
+      success: true,
+      count: countModified,
+      message: `Berhasil memperbarui ${countModified} data absensi untuk ${student.full_name}.`,
+    };
+  };
+
   // Verifikasi hasil ketidaksamaan data santri vs musyrif
   const verifyDiscrepancy = async (
     recordId: string,
@@ -3102,6 +3317,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reviewPermission,
         correctAttendance,
         submitManualBatchAttendance,
+        updateStudentMonthlyAttendance,
         verifyDiscrepancy,
         validateTahfidzSetoran,
         deleteSantriAttendance,
