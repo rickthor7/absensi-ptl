@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { StudentMonthlyScore } from '@/lib/scoring';
 import { Activity, Profile, AttendanceRecord } from '@/types';
-import { getWibDateStr } from '@/lib/schedule';
+import { getWibDateStr, getWibTimeParts, timeStringToMinutes } from '@/lib/schedule';
 import {
   X,
   Printer,
@@ -76,16 +76,20 @@ export default function RaportSantriModal({
   const defaultMonthKey = propMonthKey || getWibDateStr(effectiveTime).substring(0, 7);
   const [selectedMonthKey, setSelectedMonthKey] = useState(defaultMonthKey);
 
-  // Available months
+  // Available months (dinamis dari bulan efektif - 5 bulan ke belakang sampai 1 bulan ke depan)
   const availableMonths = useMemo(() => {
     const list: { key: string; label: string }[] = [];
-    const currentYear = effectiveTime.getFullYear();
-    for (let m = 10; m >= 7; m--) {
-      const k = `${currentYear}-${String(m).padStart(2, '0')}`;
-      list.push({
-        key: k,
-        label: `${MONTH_NAMES[m - 1]} ${currentYear}`,
-      });
+    const baseDate = effectiveTime instanceof Date ? effectiveTime : new Date();
+    const currYear = baseDate.getFullYear();
+    const currMonth = baseDate.getMonth(); // 0-indexed
+
+    for (let offset = 1; offset >= -5; offset--) {
+      const d = new Date(currYear, currMonth + offset, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      const label = `${MONTH_NAMES[m - 1]} ${y}`;
+      list.push({ key, label });
     }
     return list;
   }, [effectiveTime]);
@@ -116,7 +120,7 @@ export default function RaportSantriModal({
       { key: 'lail', header: 'LAIL', activityCodes: ['QIYAM'] },
       { key: 'subuh', header: 'SUBUH', activityCodes: ['SHUBUH'] },
       { key: 'tahfidz_pagi', header: 'TAHFIDZ_PAGI', activityCodes: ['SETORAN_PAGI'] },
-      { key: 'ngaji_kitab', header: 'NGAJI_KITAB', activityCodes: ['MADIN', 'NGAJI_SABTU'] },
+      { key: 'ngaji_kitab', header: 'NGAJI_KITAB', activityCodes: ['MADIN', 'KITAB_KUNING', 'NGAJI_SABTU', 'KITAB'] },
       { key: 'maghrib', header: 'MAGHRIB', activityCodes: ['MAGHRIB'] },
       { key: 'isya', header: 'ISYA', activityCodes: ['ISYA'] },
       { key: 'tahfidz_malam', header: 'TAHFIDZ_MALAM', activityCodes: ['SETORAN_MALAM'] },
@@ -166,6 +170,14 @@ export default function RaportSantriModal({
     const daysInMonth = new Date(year, month, 0).getDate();
     const todayStr = getWibDateStr(effectiveTime);
 
+    // Activity lookup map by ID
+    const activityById = new Map<string, Activity>();
+    allActivities.forEach((a) => activityById.set(a.id, a));
+
+    // Waktu sekarang dalam WIB untuk evaluasi kegiatan hari ini
+    const wibParts = getWibTimeParts(effectiveTime);
+    const currentWibMinutes = wibParts.hours * 60 + wibParts.minutes;
+
     const studentRecords = attendanceRecords.filter(
       (r) => r.student_id === currentStudent.id && r.operational_date.startsWith(selectedMonthKey)
     );
@@ -188,7 +200,7 @@ export default function RaportSantriModal({
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const dateObj = new Date(year, month - 1, d);
+      const dateObj = new Date(`${dateStr}T12:00:00+07:00`);
       const dayOfWeek = dateObj.getDay(); // 0 = Minggu .. 6 = Sabtu
       const dayName = INDO_DAYS[dayOfWeek];
       const isoDay = dayOfWeek === 0 ? 7 : dayOfWeek; // 1 = Senin .. 7 = Minggu
@@ -202,24 +214,41 @@ export default function RaportSantriModal({
             a.is_active &&
             col.activityCodes.includes(a.code) &&
             a.active_days &&
-            a.active_days.includes(isoDay)
+            a.active_days.map(Number).includes(Number(isoDay))
         );
 
-        if (!act) {
-          cells[col.key] = '';
-          return;
-        }
-
-        // Look for attendance record
-        const rec = studentRecords.find(
-          (r) => r.operational_date === dateStr && r.activity_id === act.id
-        );
+        // Cari catatan presensi santri yang cocok untuk kolom ini pada tanggal ini:
+        // 1. Berdasarkan operational_date yang sama
+        // 2. Cocok activity_id langsung ATAU activity_id terdaftar dalam activityCodes kolom ini
+        const rec = studentRecords.find((r) => {
+          if (r.operational_date !== dateStr) return false;
+          if (act && r.activity_id === act.id) return true;
+          const rAct = activityById.get(r.activity_id);
+          if (rAct && col.activityCodes.includes(rAct.code)) return true;
+          if (col.activityCodes.some((c) => r.session_id?.toLowerCase().includes(c.toLowerCase()))) return true;
+          return false;
+        });
 
         if (rec) {
-          if (rec.status === 'hadir_valid') {
+          const isHadir =
+            rec.musyrif_status === 'hadir' ||
+            rec.status === 'hadir_valid' ||
+            (rec.attendance_type === 'hadir' &&
+              rec.status !== 'ditolak_lokasi' &&
+              rec.status !== 'alpa' &&
+              rec.status !== 'izin_ditolak');
+
+          const isIzin =
+            rec.musyrif_status === 'izin' ||
+            rec.status === 'izin_disetujui' ||
+            rec.status === 'izin_diajukan' ||
+            rec.status === 'perlu_tinjauan' ||
+            rec.attendance_type === 'izin';
+
+          if (isHadir) {
             cells[col.key] = 'H';
             colHadir[col.key]++;
-          } else if (rec.status === 'izin_disetujui' || rec.status === 'izin_diajukan' || rec.status === 'perlu_tinjauan') {
+          } else if (isIzin) {
             cells[col.key] = 'I';
             colIzin[col.key]++;
           } else {
@@ -227,13 +256,28 @@ export default function RaportSantriModal({
             colAlpa[col.key]++;
           }
         } else {
-          // If no record submitted:
-          // Past date (or today after activity window) -> Alpa
-          if (dateStr <= todayStr) {
+          // Jika tidak ada kegiatan yang terjadwal dan tidak ada presensi
+          if (!act) {
+            cells[col.key] = '';
+            return;
+          }
+
+          // Jika tanggal lampau: Alpa
+          if (dateStr < todayStr) {
             cells[col.key] = 'A';
             colAlpa[col.key]++;
+          } else if (dateStr === todayStr) {
+            // Jika tanggal hari ini: Hanya tandai Alpa jika jendela kegiatan sudah berakhir
+            const endMinutes = act.end_time ? timeStringToMinutes(act.end_time) : 1440;
+            if (currentWibMinutes >= endMinutes) {
+              cells[col.key] = 'A';
+              colAlpa[col.key]++;
+            } else {
+              // Kegiatan hari ini belum selesai/sedang berlangsung, belum Alpa
+              cells[col.key] = '';
+            }
           } else {
-            // Future date
+            // Tanggal yang akan datang di masa depan
             cells[col.key] = '';
           }
         }

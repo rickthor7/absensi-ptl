@@ -126,14 +126,27 @@ export function calculateMonthlyScores(
         };
       }
 
-      if (rec.status === 'hadir_valid') {
+      const isHadir =
+        rec.musyrif_status === 'hadir' ||
+        rec.status === 'hadir_valid' ||
+        (rec.attendance_type === 'hadir' &&
+          rec.status !== 'ditolak_lokasi' &&
+          rec.status !== 'alpa' &&
+          rec.status !== 'izin_ditolak');
+
+      const isIzin =
+        rec.musyrif_status === 'izin' ||
+        rec.status === 'izin_disetujui' ||
+        rec.status === 'izin_diajukan' ||
+        rec.attendance_type === 'izin';
+
+      if (isHadir) {
         hadirCount += 1;
         activityScores[actId].hadir += 1;
-      } else if (rec.status === 'izin_diajukan' || rec.status === 'izin_disetujui') {
+      } else if (isIzin) {
         izinCount += 1;
         activityScores[actId].izin += 1;
       } else {
-        // ditolak_lokasi, izin_ditolak, perlu_tinjauan
         alpaCount += 1;
         activityScores[actId].alpa += 1;
       }
@@ -179,15 +192,25 @@ export function calculateMonthlyScores(
   // Hitung statistik global per kegiatan
   const activityStats = activities.map((act) => {
     const actRecords = monthRecords.filter((r) => r.activity_id === act.id);
-    const hadir = actRecords.filter((r) => r.status === 'hadir_valid').length;
-    const izin = actRecords.filter(
-      (r) => r.status === 'izin_diajukan' || r.status === 'izin_disetujui'
+    const hadir = actRecords.filter((r) =>
+      r.musyrif_status === 'hadir' ||
+      r.status === 'hadir_valid' ||
+      (r.attendance_type === 'hadir' &&
+        r.status !== 'ditolak_lokasi' &&
+        r.status !== 'alpa' &&
+        r.status !== 'izin_ditolak')
     ).length;
-    const alpa = actRecords.filter(
-      (r) =>
-        r.status === 'ditolak_lokasi' ||
-        r.status === 'izin_ditolak' ||
-        r.status === 'perlu_tinjauan'
+    const izin = actRecords.filter((r) =>
+      r.musyrif_status === 'izin' ||
+      r.status === 'izin_diajukan' ||
+      r.status === 'izin_disetujui' ||
+      r.attendance_type === 'izin'
+    ).length;
+    const alpa = actRecords.filter((r) =>
+      r.musyrif_status === 'alpa' ||
+      r.status === 'ditolak_lokasi' ||
+      r.status === 'izin_ditolak' ||
+      r.status === 'alpa'
     ).length;
     const total = actRecords.length;
     const avgScore = total > 0 ? hadir * 1.0 + izin * 0.5 : 0;

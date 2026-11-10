@@ -53,8 +53,21 @@ export default function SantriRiwayatPage() {
     return true;
   });
 
-  const totalHadir = studentRecords.filter((r) => r.status === 'hadir_valid').length;
-  const totalIzin = studentRecords.filter((r) => r.status.startsWith('izin')).length;
+  const totalHadir = studentRecords.filter(
+    (r) =>
+      r.musyrif_status === 'hadir' ||
+      r.status === 'hadir_valid' ||
+      (r.attendance_type === 'hadir' &&
+        r.status !== 'ditolak_lokasi' &&
+        r.status !== 'alpa' &&
+        r.status !== 'izin_ditolak')
+  ).length;
+  const totalIzin = studentRecords.filter(
+    (r) =>
+      r.musyrif_status === 'izin' ||
+      r.status.startsWith('izin') ||
+      r.attendance_type === 'izin'
+  ).length;
   const totalTinjau = studentRecords.filter((r) => r.status === 'perlu_tinjauan' || r.status === 'ditolak_lokasi').length;
 
   return (
@@ -256,6 +269,7 @@ export default function SantriRiwayatPage() {
       {isRaportOpen && (
         <RaportSantriModal
           initialStudentId={currentUser.id}
+          monthKey={todayStr.substring(0, 7)}
           onClose={() => setIsRaportOpen(false)}
         />
       )}

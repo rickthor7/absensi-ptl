@@ -74,9 +74,21 @@ export default function AttendanceCalendar() {
   const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
   const monthRecords = studentRecords.filter((r) => r.operational_date.startsWith(monthPrefix));
 
-  const validCount = monthRecords.filter((r) => r.status === 'hadir_valid').length;
+  const validCount = monthRecords.filter(
+    (r) =>
+      r.musyrif_status === 'hadir' ||
+      r.status === 'hadir_valid' ||
+      (r.attendance_type === 'hadir' &&
+        r.status !== 'ditolak_lokasi' &&
+        r.status !== 'alpa' &&
+        r.status !== 'izin_ditolak')
+  ).length;
   const izinCount = monthRecords.filter(
-    (r) => r.status === 'izin_diajukan' || r.status === 'izin_disetujui'
+    (r) =>
+      r.musyrif_status === 'izin' ||
+      r.status === 'izin_diajukan' ||
+      r.status === 'izin_disetujui' ||
+      r.attendance_type === 'izin'
   ).length;
   const reviewCount = monthRecords.filter((r) => r.status === 'perlu_tinjauan').length;
   const rejectCount = monthRecords.filter(
