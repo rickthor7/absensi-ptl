@@ -43,7 +43,7 @@ export const GUEST_USER: Profile = {
   full_name: 'Pengunjung',
   role: 'santri',
   is_active: false,
-  created_at: new Date().toISOString(),
+  created_at: '2026-01-01T00:00:00.000Z',
 };
 
 interface StoreContextType {
@@ -759,12 +759,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     isLoaded,
   ]);
 
-  // Current real time ticker (Live Indonesian WIB Clock, ticks every 1 second)
+  // Prerender-safe initial time (Next.js 16 requires deterministic values during SSR/prerender)
   const [actualTime, setActualTime] = useState<Date>(
-    () => new Date()
+    () => new Date('2026-11-10T00:00:00+07:00')
   );
 
   useEffect(() => {
+    // Dynamic time read is deferred to client-side mount (via useEffect) per Next.js rules
     setActualTime(new Date());
     const interval = setInterval(() => {
       const now = new Date();
