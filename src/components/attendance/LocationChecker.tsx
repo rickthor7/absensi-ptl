@@ -134,8 +134,12 @@ export default function LocationChecker({
           </div>
 
           <div className="text-right shrink-0">
-            <span className="text-[10px] text-emerald-200 block font-medium">Batas Maksimal</span>
-            <span className="text-base font-extrabold text-[#D6A84F]">{activity.radius_m} Meter</span>
+            <span className="text-[10px] text-emerald-200 block font-medium">
+              {attendanceType === 'izin' ? 'Ketentuan Jarak' : 'Batas Maksimal'}
+            </span>
+            <span className="text-sm sm:text-base font-extrabold text-[#D6A84F]">
+              {attendanceType === 'izin' ? 'Bebas Radius' : `${activity.radius_m} Meter`}
+            </span>
           </div>
         </div>
 
@@ -228,15 +232,17 @@ export default function LocationChecker({
                 </div>
               </div>
             ) : (
-              // For Izin
+              // For Izin: Bebas Radius (tidak ada batas jarak, yang penting koordinat tercatat)
               <div className="p-3.5 rounded-2xl border border-sky-200 dark:border-sky-800/80 bg-sky-50/80 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200 text-xs flex items-start gap-3">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/60 flex items-center justify-center shrink-0 text-sky-700">
-                  <Info className="w-5 h-5" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="font-bold text-xs">Geotag Lokasi Izin Tercatat</p>
+                  <p className="font-bold text-xs text-emerald-800 dark:text-emerald-300">
+                    Bebas Radius: Koordinat GPS Tercatat
+                  </p>
                   <p className="text-[11px] opacity-90 leading-relaxed">
-                    Lokasi ini ({Math.round(validation?.distanceMeters || 0)}m dari pondok) akan dilampirkan sebagai verifikasi data pendukung untuk musyrif.
+                    Pengajuan izin tidak dibatasi radius pondok. Posisi Anda ({Math.round(validation?.distanceMeters || 0)}m dari pondok) berhasil dicatat sebagai bukti geotag autentik untuk Musyrif.
                   </p>
                 </div>
               </div>

@@ -930,10 +930,12 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
           <div className="space-y-6">
             <div className="text-center space-y-1">
               <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
-                Verifikasi Geotag GPS
+                {attendanceType === 'izin' ? 'Pencatatan Geotag Lokasi Izin' : 'Verifikasi Geotag GPS'}
               </h3>
               <p className="text-xs text-stone-500">
-                Sistem menghitung jarak posisi Anda terhadap titik pusat pondok
+                {attendanceType === 'izin'
+                  ? 'Bebas radius — koordinat GPS saat ini dicatat sebagai data pendukung perizinan'
+                  : 'Sistem memvalidasi posisi Anda berada di dalam radius resmi pondok'}
               </p>
             </div>
 
