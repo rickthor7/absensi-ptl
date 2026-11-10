@@ -279,15 +279,42 @@ export function isTahfidzActivity(activity?: { code?: string; name?: string } | 
 }
 
 /**
+ * Memeriksa apakah suatu kegiatan aktif dan terjadwal pada tanggal tertentu di zona WIB.
+ * Mengonversi active_days ke angka dan mencocokkan dengan ISO day (1=Senin..7=Ahad).
+ */
+export function isActivityScheduledOnDate(
+  activity: Activity | null | undefined,
+  date: Date | string | number
+): boolean {
+  if (!activity || !activity.is_active) return false;
+  if (!Array.isArray(activity.active_days) || activity.active_days.length === 0) return false;
+
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return false;
+
+  const isoDay = getIsoDayOfWeek(d);
+  return activity.active_days.map(Number).includes(Number(isoDay));
+}
+
+/**
  * Returns activities that are scheduled and active on a specific date (matching ISO day of week 1=Senin..7=Ahad).
  * Evaluated strictly in Asia/Jakarta (WIB) time.
- * If none match or active_days is not configured, gracefully falls back to all active activities.
+ * Pastikan HANYA mengembalikan kegiatan yang aktif di hari tersebut.
+ * Tidak ada fallback ke semua kegiatan agar kegiatan hari khusus (misal: Ngaji Kitab Kuning hari Sabtu)
+ * tidak bocor ke hari lain.
  */
-export function getActivitiesForDate(activities: Activity[], date: Date): Activity[] {
-  if (!activities || activities.length === 0) return [];
-  const isoDay = getIsoDayOfWeek(date);
-  const matching = activities.filter(
-    (act) => act.is_active && Array.isArray(act.active_days) && act.active_days.includes(isoDay)
-  );
-  return matching.length > 0 ? matching : activities.filter((act) => act.is_active);
+export function getActivitiesForDate(
+  activities: Activity[],
+  date: Date | string | number
+): Activity[] {
+  if (!Array.isArray(activities) || activities.length === 0) return [];
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return [];
+
+  const isoDay = getIsoDayOfWeek(d);
+  return activities.filter((act) => {
+    if (!act.is_active) return false;
+    if (!Array.isArray(act.active_days) || act.active_days.length === 0) return false;
+    return act.active_days.map(Number).includes(Number(isoDay));
+  });
 }

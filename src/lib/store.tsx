@@ -24,7 +24,7 @@ import {
   SEED_FINANCIAL_TRANSACTIONS,
 } from './constants';
 import { validateAttendanceLocation } from './geo';
-import { getWibDateStr } from './schedule';
+import { getWibDateStr, isActivityScheduledOnDate } from './schedule';
 import {
   setSessionCookie,
   getSessionCookie,
@@ -1350,6 +1350,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!activity) continue;
 
       const targetDate = target.operationalDate || todayStr;
+
+      // Strict check: Jangan izinkan pembuatan izin untuk kegiatan yang tidak terjadwal di hari tersebut
+      if (!isActivityScheduledOnDate(activity, targetDate)) {
+        continue;
+      }
 
       const existing = attendanceRecords.find(
         (r) =>

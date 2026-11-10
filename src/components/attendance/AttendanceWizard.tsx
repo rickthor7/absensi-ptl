@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Activity, AttendanceType, AttendanceRecord, TahfidzMode } from '@/types';
 import { useStore } from '@/lib/store';
-import { isTahfidzActivity, getActivitiesForDate, formatTime24, getWibDateStr } from '@/lib/schedule';
+import { isTahfidzActivity, getActivitiesForDate, formatTime24, getWibDateStr, isActivityScheduledOnDate } from '@/lib/schedule';
 import SelfieCapture from './SelfieCapture';
 import LocationChecker from './LocationChecker';
 import {
@@ -77,17 +77,25 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
   }, [activities, tomorrow]);
 
   // Multi-activity selection state for Izin: array of `${activityId}_${dateStr}`
-  const [selectedIzinKeys, setSelectedIzinKeys] = useState<string[]>([`${activity.id}_${todayStr}`]);
+  const [selectedIzinKeys, setSelectedIzinKeys] = useState<string[]>(() => {
+    if (isActivityScheduledOnDate(activity, effectiveTime)) {
+      return [`${activity.id}_${todayStr}`];
+    }
+    const firstToday = todayActivities[0];
+    return firstToday ? [`${firstToday.id}_${todayStr}`] : [];
+  });
   const [izinDateTab, setIzinDateTab] = useState<'today' | 'tomorrow'>('today');
 
   const activeActivitiesForTab = izinDateTab === 'today' ? todayActivities : tomorrowActivities;
   const activeDateStrForTab = izinDateTab === 'today' ? todayStr : tomorrowStr;
 
-  // Synchronize when parent changes the selected activity
+  // Synchronize when parent changes the selected activity (only if valid today)
   React.useEffect(() => {
-    const key = `${activity.id}_${todayStr}`;
-    setSelectedIzinKeys((prev) => (prev.includes(key) ? prev : [key, ...prev]));
-  }, [activity.id, todayStr]);
+    if (isActivityScheduledOnDate(activity, effectiveTime)) {
+      const key = `${activity.id}_${todayStr}`;
+      setSelectedIzinKeys((prev) => (prev.includes(key) ? prev : [key, ...prev]));
+    }
+  }, [activity.id, todayStr, effectiveTime]);
   const existingAttendance = attendanceRecords.find(
     (r) =>
       r.student_id === currentUser.id &&
@@ -276,10 +284,15 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
     setIsSubmitting(true);
 
     if (attendanceType === 'izin') {
-      const targets = selectedIzinKeys.map((key) => {
-        const [actId, dateStr] = key.split('_');
-        return { activityId: actId, operationalDate: dateStr };
-      });
+      const targets = selectedIzinKeys
+        .map((key) => {
+          const [actId, dateStr] = key.split('_');
+          return { activityId: actId, operationalDate: dateStr };
+        })
+        .filter((t) => {
+          const act = activities.find((a) => a.id === t.activityId);
+          return isActivityScheduledOnDate(act, t.operationalDate || todayStr);
+        });
 
       const result = await submitMultiPermission({
         targets,
@@ -596,7 +609,7 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1">
                     {activeActivitiesForTab.length === 0 ? (
                       <div className="col-span-full py-8 text-center text-xs text-stone-400">
-                        Tidak ada kegiatan pondok yang terjadwal untuk hari ini.
+                        Tidak ada kegiatan pondok yang terjadwal untuk {izinDateTab === 'today' ? 'hari ini' : 'besok'}.
                       </div>
                     ) : (
                       activeActivitiesForTab.map((act) => {
