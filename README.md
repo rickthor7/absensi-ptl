@@ -162,7 +162,7 @@ npm install
 ### 4. Konfigurasi Environment Variables
 Buat file `.env.local` pada direktori root:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://tzwtncikrblqynupkjng.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 *(Catatan: Aplikasi telah dilengkapi offline fallback store sehingga tetap dapat dijalankan dan diuji secara penuh tanpa ketergantungan koneksi Supabase).*
@@ -181,17 +181,14 @@ npm run start
 
 ---
 
-## 👥 Akun Demo Siap Pakai
+## 🔐 Manajemen Akses & Autentikasi
 
-Aplikasi telah dilengkapi data seed siap uji untuk berbagai skenario:
+Sistem mengimplementasikan otentikasi berbasis peran (*Role-Based Access Control* / RBAC):
+- **Musyrif / Pengurus**: Memiliki wewenang manajemen presensi harian, audit perizinan, evaluasi setoran tahfidz, serta pelaporan Raport Mutaba'ah santri.
+- **Santri**: Akses presensi mandiri (swafoto & geotag GPS), pengajuan permohonan izin terprogram, pemantauan kalender kehadiran pribadi, dan kartu santri digital.
 
-| Role | Username / NIS / Email | Kata Sandi | Keterangan |
-| :--- | :--- | :--- | :--- |
-| **Musyrif (Admin)** | `mansur@nurulfalah.ac.id` | `password123` | Ustadz Mansur (Kepala Musyrif) |
-| **Musyrif (Ustadz)** | `ustadz.faqih@nurulfalah.ac.id` | `password123` | Ustadz Faqih (Penguji Tahfidz) |
-| **Santri** | `STR-2023-001` / `dliya` | `password123` | M. Dliyaaul Haq Shidqey |
-| **Santri** | `STR-2023-002` / `akbar` | `password123` | M. Akbar Galeh Maulana |
-| **Santri** | `STR-2023-003` / `sakhowi` | `password123` | M. Sakhowi Al Wahidi |
+> [!NOTE]
+> Kredensial akun santri dan musyrif dikelola secara terpusat dan aman oleh Administrator Pondok Pesantren Nurul Falah demi menjaga privasi dan keamanan data kepesantrenan.
 
 ---
 

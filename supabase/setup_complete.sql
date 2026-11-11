@@ -3,7 +3,7 @@
 -- Pondok Pesantren Nurul Falah, Ketintang Surabaya
 -- ==============================================================================
 -- Petunjuk Eksekusi:
--- 1. Buka Supabase SQL Editor: https://supabase.com/dashboard/project/tzwtncikrblqynupkjng/sql/new
+-- 1. Buka Supabase SQL Editor: https://supabase.com/dashboard/project/<your-project-id>/sql/new
 -- 2. Paste seluruh isi script ini ke dalam SQL Editor
 -- 3. Klik tombol "RUN" (atau tekan Ctrl + Enter)
 -- ==============================================================================
