@@ -34,6 +34,7 @@ import {
   ExternalLink,
   Lock,
   BookOpen,
+  CheckSquare,
 } from 'lucide-react';
 
 interface ShellNavItem {
@@ -140,11 +141,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Musyrif navigation items
   const musyrifNavItems: ShellNavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
+    { href: '/musyrif/absensi', label: 'Edit Presensi', icon: CheckSquare },
     { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
-    { href: '/musyrif/kegiatan', label: 'Kegiatan & Absensi', icon: Settings },
+    { href: '/musyrif/kegiatan', label: 'Jadwal Kegiatan', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
     { href: '/santri/profil', label: 'Profil', icon: User },
@@ -161,6 +163,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Quick search filtered list
   const searchItems = [
     ...navItems.map((item) => ({ title: item.label, href: item.href, category: 'Menu' })),
+    { title: 'Edit Presensi per Kegiatan & Santri', href: '/musyrif/absensi', category: 'Presensi' },
     { title: 'Setoran Tahfidz & Rekap WA', href: '/musyrif/tahfidz', category: 'Tahfidz' },
     { title: 'Presensi Kamera & GPS (Santri)', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Ajukan Izin Presensi', href: '/santri/absensi', category: 'Aksi' },

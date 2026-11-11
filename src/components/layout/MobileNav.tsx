@@ -14,6 +14,7 @@ import {
   FileText,
   CreditCard,
   BookOpen,
+  CheckSquare,
 } from 'lucide-react';
 
 interface NavItem {
@@ -52,7 +53,7 @@ export default function MobileNav() {
 
   const musyrifItems: NavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
-    { href: '/musyrif/keuangan', label: 'SPP', icon: CreditCard, badge: pendingSppCount },
+    { href: '/musyrif/absensi', label: 'Presensi', icon: CheckSquare },
     { href: '/musyrif/tahfidz', label: 'Tahfidz', icon: BookOpen, center: true },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
     { href: '/musyrif/santri', label: 'Santri', icon: Users },

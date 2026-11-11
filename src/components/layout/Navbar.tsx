@@ -29,6 +29,7 @@ import {
   Wallet,
   CreditCard,
   BookOpen,
+  CheckSquare,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, formatTime24 } from '@/lib/schedule';
@@ -118,6 +119,7 @@ export default function Navbar() {
 
   const musyrifNav: NavItem[] = [
     { href: '/musyrif', label: 'Ringkasan', icon: Compass },
+    { href: '/musyrif/absensi', label: 'Edit Presensi', icon: CheckSquare },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },

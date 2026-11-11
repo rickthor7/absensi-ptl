@@ -572,11 +572,11 @@ export default function MusyrifDashboardPage() {
 
           <div className="pt-4 mt-2 flex flex-col sm:flex-row gap-2">
             <Link
-              href={`/musyrif/kegiatan?tab=absensi${activeActivity ? `&activityId=${activeActivity.id}` : ''}`}
+              href="/musyrif/absensi"
               className="flex-1 py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>Edit Absensi Manual Santri</span>
+              <span>Edit Presensi Santri (Per Sesi / Santri)</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -665,9 +665,9 @@ export default function MusyrifDashboardPage() {
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 transition shrink-0 hidden sm:block" />
         </Link>
 
-        {/* Card 4: Edit Presensi Sesi */}
+        {/* Card 4: Edit Presensi */}
         <Link
-          href="/musyrif/kegiatan?tab=absensi"
+          href="/musyrif/absensi"
           className="clean-card clean-card-hover p-4 flex items-center justify-between group"
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -676,10 +676,10 @@ export default function MusyrifDashboardPage() {
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
-                Presensi Sesi
+                Edit Presensi
               </h4>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                Edit per Kegiatan
+                Per Kegiatan & Santri
               </p>
             </div>
           </div>
