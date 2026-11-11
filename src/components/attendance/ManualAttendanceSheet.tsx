@@ -103,7 +103,7 @@ export default function ManualAttendanceSheet({
 
   // Helper to extract effective status from existing attendance record
   const getStatusFromRecord = (rec?: AttendanceRecord): 'hadir' | 'izin' | 'alpa' => {
-    if (!rec) return 'hadir';
+    if (!rec) return 'alpa';
     if (rec.musyrif_status === 'hadir' || rec.musyrif_status === 'izin' || rec.musyrif_status === 'alpa') {
       return rec.musyrif_status;
     }

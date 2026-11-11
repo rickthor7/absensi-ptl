@@ -1251,11 +1251,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const now = new Date();
     const closedAt = now.toISOString();
 
-    let closedSessionName = 'kegiatan';
+    const targetSession = attendanceSessions.find((s) => s.id === sessionId);
+    const closedSessionName = targetSession?.activity_name || 'kegiatan';
+
     setAttendanceSessions((prev) =>
       prev.map((s) => {
         if (s.id === sessionId) {
-          closedSessionName = s.activity_name;
           return {
             ...s,
             status: 'closed' as const,
@@ -1268,6 +1269,63 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
     );
 
+    // Otomatis tandai santri aktif yang belum absen sebagai ALPA
+    const autoAlpaRecords: AttendanceRecord[] = [];
+    if (targetSession) {
+      const activeSantri = profiles.filter((p) => p.role === 'santri' && p.is_active);
+      const sessionDate = targetSession.operational_date?.substring(0, 10);
+
+      activeSantri.forEach((santri) => {
+        const hasRecord = attendanceRecords.some(
+          (r) =>
+            r.student_id === santri.id &&
+            (r.session_id === sessionId ||
+              (r.activity_id === targetSession.activity_id &&
+                r.operational_date?.substring(0, 10) === sessionDate))
+        );
+
+        if (!hasRecord) {
+          const autoAlpaRecord: AttendanceRecord = {
+            id: `att-alpa-${sessionId}-${santri.id}`,
+            session_id: sessionId,
+            student_id: santri.id,
+            student_name: santri.full_name,
+            student_number: santri.student_number,
+            group_name: santri.group_name,
+            activity_id: targetSession.activity_id,
+            activity_name: targetSession.activity_name,
+            operational_date: sessionDate || now.toISOString().split('T')[0],
+            attendance_type: 'alpa',
+            status: 'alpa',
+            santri_status: 'belum_absen',
+            musyrif_status: 'alpa',
+            has_discrepancy: false,
+            is_verified: true,
+            photo_path: santri.avatar_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80',
+            latitude: -6.9175,
+            longitude: 107.6191,
+            gps_accuracy_m: 0,
+            location_captured_at: closedAt,
+            distance_from_site_m: 0,
+            review_note: 'Otomatis Alpa: Santri tidak melakukan presensi hingga sesi ditutup.',
+            submitted_at: closedAt,
+            reviewed_by: currentUser.id,
+            reviewed_by_name: currentUser.full_name || 'Musyrif',
+            reviewed_at: closedAt,
+          };
+          autoAlpaRecords.push(autoAlpaRecord);
+        }
+      });
+    }
+
+    if (autoAlpaRecords.length > 0) {
+      setAttendanceRecords((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        const toAdd = autoAlpaRecords.filter((r) => !existingIds.has(r.id));
+        return [...toAdd, ...prev];
+      });
+    }
+
     // Catat Audit Log
     const auditEntry: AuditLog = {
       id: `audit-${Date.now()}`,
@@ -1276,7 +1334,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       action: 'TUTUP_SESI_ABSENSI',
       entity_type: 'attendance_session',
       entity_id: sessionId,
-      reason: `Musyrif menutup sesi absensi "${closedSessionName}" lebih cepat pada ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB.`,
+      reason: `Musyrif menutup sesi absensi "${closedSessionName}" pada ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB. ${autoAlpaRecords.length > 0 ? `${autoAlpaRecords.length} santri tidak absen otomatis ditandai Alpa.` : ''}`,
       created_at: now.toISOString(),
     };
     setAuditLogs((prev) => [auditEntry, ...prev]);
@@ -1289,14 +1347,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           status: 'closed',
           closes_at: closedAt,
         }).eq('id', sessionId);
+
+        if (autoAlpaRecords.length > 0) {
+          const rowsToUpsert = autoAlpaRecords.map((r) => ({
+            id: r.id,
+            session_id: r.session_id,
+            student_id: r.student_id,
+            activity_id: r.activity_id,
+            operational_date: r.operational_date,
+            attendance_type: 'alpa',
+            status: 'alpa',
+            santri_status: 'belum_absen',
+            musyrif_status: 'alpa',
+            has_discrepancy: false,
+            is_verified: true,
+            review_note: r.review_note,
+            submitted_at: closedAt,
+            reviewed_by: currentUser.id,
+            reviewed_at: closedAt,
+          }));
+          await supabase.from('attendance_records').upsert(rowsToUpsert);
+        }
       } catch (err) {
-        console.warn('Gagal update session closed ke Supabase:', err);
+        console.warn('Gagal update session closed / auto alpa ke Supabase:', err);
       }
     }
 
     return {
       success: true,
-      message: `Sesi absensi "${closedSessionName}" telah resmi ditutup. Santri tidak dapat lagi menginput presensi.`,
+      message: `Sesi absensi "${closedSessionName}" telah resmi ditutup. ${autoAlpaRecords.length > 0 ? `${autoAlpaRecords.length} santri otomatis ditandai Alpa.` : ''}`,
     };
   };
 

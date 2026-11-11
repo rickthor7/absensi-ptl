@@ -189,7 +189,7 @@ export default function MusyrifEditPresensiPage() {
             r.student_id === selectedStudent.id &&
             r.activity_id === act.id &&
             (r.operational_date?.substring(0, 10) === dateStr.substring(0, 10) ||
-             r.session_id?.includes(dateStr.substring(0, 10)))
+              r.session_id?.includes(dateStr.substring(0, 10)))
         );
 
         let initialStatus: TargetStatus = 'alpa';
@@ -417,7 +417,7 @@ export default function MusyrifEditPresensiPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
+
       {/* ── HEADER HALAMAN ── */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#082F23] to-[#146B50] p-6 text-white shadow-md border border-[#D4A24C]/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -450,18 +450,16 @@ export default function MusyrifEditPresensiPage() {
         <button
           type="button"
           onClick={() => setActiveTab('kegiatan')}
-          className={`flex items-start gap-3.5 p-4 rounded-3xl border transition cursor-pointer text-left ${
-            activeTab === 'kegiatan'
+          className={`flex items-start gap-3.5 p-4 rounded-3xl border transition cursor-pointer text-left ${activeTab === 'kegiatan'
               ? 'bg-white dark:bg-stone-900 border-[#146B50] shadow-md ring-2 ring-[#146B50]/20'
               : 'bg-stone-50 dark:bg-stone-800/40 border-stone-200 dark:border-stone-800 hover:bg-stone-100 opacity-75'
-          }`}
+            }`}
         >
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-              activeTab === 'kegiatan'
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${activeTab === 'kegiatan'
                 ? 'bg-[#146B50] text-white shadow-xs'
                 : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
-            }`}
+              }`}
           >
             <CalendarDays className="w-5 h-5" />
           </div>
@@ -485,18 +483,16 @@ export default function MusyrifEditPresensiPage() {
         <button
           type="button"
           onClick={() => setActiveTab('santri')}
-          className={`flex items-start gap-3.5 p-4 rounded-3xl border transition cursor-pointer text-left ${
-            activeTab === 'santri'
+          className={`flex items-start gap-3.5 p-4 rounded-3xl border transition cursor-pointer text-left ${activeTab === 'santri'
               ? 'bg-white dark:bg-stone-900 border-[#146B50] shadow-md ring-2 ring-[#146B50]/20'
               : 'bg-stone-50 dark:bg-stone-800/40 border-stone-200 dark:border-stone-800 hover:bg-stone-100 opacity-75'
-          }`}
+            }`}
         >
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-              activeTab === 'santri'
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${activeTab === 'santri'
                 ? 'bg-[#146B50] text-white shadow-xs'
                 : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
-            }`}
+              }`}
           >
             <UserCheck className="w-5 h-5" />
           </div>
@@ -544,7 +540,7 @@ export default function MusyrifEditPresensiPage() {
           {/* Bar Pemilih Santri & Bulan */}
           <div className="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-              
+
               {/* Filter Bulan */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-stone-500 whitespace-nowrap flex items-center gap-1.5">
@@ -614,7 +610,7 @@ export default function MusyrifEditPresensiPage() {
           {/* Selected Student Banner & Live Stats */}
           {selectedStudent && (
             <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xs overflow-hidden">
-              
+
               {/* Header Santri */}
               <div className="p-4 sm:p-5 bg-gradient-to-r from-stone-50 to-stone-100/60 dark:from-stone-800/60 dark:to-stone-800/20 border-b border-stone-200 dark:border-stone-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
@@ -705,33 +701,30 @@ export default function MusyrifEditPresensiPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter('all')}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      statusFilter === 'all'
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'all'
                         ? 'bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900'
                         : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
-                    }`}
+                      }`}
                   >
                     Semua ({monthSessions.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setStatusFilter('alpa')}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      statusFilter === 'alpa'
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'alpa'
                         ? 'bg-rose-600 text-white'
                         : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
-                    }`}
+                      }`}
                   >
                     Alpa ({stats.alpa})
                   </button>
                   <button
                     type="button"
                     onClick={() => setStatusFilter('izin')}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      statusFilter === 'izin'
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'izin'
                         ? 'bg-amber-600 text-white'
                         : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
-                    }`}
+                      }`}
                   >
                     Izin ({stats.izin})
                   </button>
@@ -739,11 +732,10 @@ export default function MusyrifEditPresensiPage() {
                     <button
                       type="button"
                       onClick={() => setStatusFilter('modified')}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                        statusFilter === 'modified'
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${statusFilter === 'modified'
                           ? 'bg-indigo-600 text-white'
                           : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
-                      }`}
+                        }`}
                     >
                       Diubah ({stats.modifiedCount})
                     </button>
@@ -761,11 +753,10 @@ export default function MusyrifEditPresensiPage() {
               {/* Feedback Banner */}
               {feedbackMsg && (
                 <div
-                  className={`p-3 text-xs font-bold flex items-center gap-2 ${
-                    feedbackMsg.type === 'success'
+                  className={`p-3 text-xs font-bold flex items-center gap-2 ${feedbackMsg.type === 'success'
                       ? 'bg-emerald-500 text-white'
                       : 'bg-rose-500 text-white'
-                  }`}
+                    }`}
                 >
                   {feedbackMsg.type === 'success' ? (
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -822,11 +813,10 @@ export default function MusyrifEditPresensiPage() {
                             return (
                               <div
                                 key={item.sessionKey}
-                                className={`p-2.5 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                                  isModified
+                                className={`p-2.5 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${isModified
                                     ? 'bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 shadow-xs'
                                     : 'bg-white dark:bg-stone-900 border-stone-200/70 dark:border-stone-800'
-                                }`}
+                                  }`}
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -871,11 +861,10 @@ export default function MusyrifEditPresensiPage() {
                                         item.initialStatus
                                       )
                                     }
-                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
-                                      item.currentStatus === 'hadir'
+                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${item.currentStatus === 'hadir'
                                         ? 'bg-emerald-600 text-white shadow-xs'
                                         : 'text-stone-600 dark:text-stone-400 hover:text-emerald-600'
-                                    }`}
+                                      }`}
                                   >
                                     <CheckCircle2 className="w-3 h-3" />
                                     <span>Hadir</span>
@@ -890,11 +879,10 @@ export default function MusyrifEditPresensiPage() {
                                         item.initialStatus
                                       )
                                     }
-                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
-                                      item.currentStatus === 'izin'
+                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${item.currentStatus === 'izin'
                                         ? 'bg-amber-600 text-white shadow-xs'
                                         : 'text-stone-600 dark:text-stone-400 hover:text-amber-600'
-                                    }`}
+                                      }`}
                                   >
                                     <Clock className="w-3 h-3" />
                                     <span>Izin</span>
@@ -909,11 +897,10 @@ export default function MusyrifEditPresensiPage() {
                                         item.initialStatus
                                       )
                                     }
-                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
-                                      item.currentStatus === 'alpa'
+                                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${item.currentStatus === 'alpa'
                                         ? 'bg-rose-600 text-white shadow-xs'
                                         : 'text-stone-600 dark:text-stone-400 hover:text-rose-600'
-                                    }`}
+                                      }`}
                                   >
                                     <AlertCircle className="w-3 h-3" />
                                     <span>Alpa</span>
@@ -943,11 +930,10 @@ export default function MusyrifEditPresensiPage() {
                   type="button"
                   onClick={handleSaveMonthly}
                   disabled={isSubmitting || stats.modifiedCount === 0}
-                  className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white transition shadow-md active:scale-95 cursor-pointer shrink-0 ${
-                    stats.modifiedCount > 0 && !isSubmitting
+                  className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white transition shadow-md active:scale-95 cursor-pointer shrink-0 ${stats.modifiedCount > 0 && !isSubmitting
                       ? 'bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39]'
                       : 'bg-stone-400 dark:bg-stone-700 cursor-not-allowed opacity-70'
-                  }`}
+                    }`}
                 >
                   <Save className="w-4 h-4" />
                   <span>
