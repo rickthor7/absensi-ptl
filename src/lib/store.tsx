@@ -295,15 +295,9 @@ export function checkDiscrepancy(
 ): { hasDiscrepancy: boolean; reason?: string } {
   if (!musyrifStatus) return { hasDiscrepancy: false };
 
-  // 1. Santri belum absen mandiri
+  // 1. Santri belum absen mandiri: Musyrif mencatat kehadiran santri secara resmi.
+  // Ini BUKAN discrepancy/konflik, melainkan validasi absensi langsung oleh musyrif.
   if (!santriStatus || santriStatus === 'belum_absen') {
-    if (musyrifStatus === 'hadir') {
-      return {
-        hasDiscrepancy: true,
-        reason: 'Santri belum melakukan selfie absen mandiri, namun dicatat Hadir oleh musyrif.',
-      };
-    }
-    // Jika musyrif mencatat Alpa atau Izin untuk yang belum absen, ini pencatatan wajar
     return { hasDiscrepancy: false };
   }
 
@@ -434,10 +428,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 : undefined);
 
           const dateMatch = r.session_id?.match(/sess-(\d{4}-\d{2}-\d{2})/);
-          const opDate =
+          const rawOpDate =
             r.operational_date ||
             dateMatch?.[1] ||
             getWibDateStr(r.submitted_at);
+          const opDate = typeof rawOpDate === 'string' ? rawOpDate.substring(0, 10) : getWibDateStr(r.submitted_at);
 
           return {
             ...r,
@@ -450,7 +445,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           };
         });
 
-        setAttendanceRecords(mappedRecords);
+        // Merge Supabase records with local store state so locally updated records are never wiped out
+        setAttendanceRecords((prev) => {
+          const map = new Map<string, AttendanceRecord>();
+          prev.forEach((rec) => map.set(rec.id, rec));
+          mappedRecords.forEach((rec) => {
+            const existing = map.get(rec.id);
+            // If local record has musyrif_status or newer review/verification, preserve local
+            if (existing && existing.musyrif_status && !rec.musyrif_status) {
+              map.set(rec.id, { ...rec, ...existing });
+            } else {
+              map.set(rec.id, rec);
+            }
+          });
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+          );
+        });
       }
 
       // 4. Fetch Audit Logs
@@ -1887,7 +1898,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (r) =>
           r.student_id === entry.studentId &&
           r.activity_id === activityId &&
-          r.operational_date === operationalDate
+          (r.operational_date?.substring(0, 10) === operationalDate.substring(0, 10) ||
+           r.session_id?.includes(operationalDate.substring(0, 10)))
       );
 
       const student = profiles.find((p) => p.id === entry.studentId);
@@ -1902,26 +1914,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       let finalStatus: AttendanceStatus;
-      if (disc.hasDiscrepancy) {
-        finalStatus = 'perlu_tinjauan';
+      if (entry.status === 'hadir') {
+        finalStatus = 'hadir_valid';
+      } else if (entry.status === 'izin') {
+        finalStatus = 'izin_disetujui';
       } else {
-        if (entry.status === 'hadir') {
-          finalStatus = 'hadir_valid';
-        } else if (entry.status === 'izin') {
-          finalStatus = 'izin_disetujui';
-        } else {
-          finalStatus = 'alpa';
-        }
+        finalStatus = 'alpa';
       }
+
+      const fallbackSelfie = student?.avatar_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
 
       if (existing) {
         const updated: AttendanceRecord = {
           ...existing,
+          attendance_type: entry.status,
           musyrif_status: entry.status,
           santri_status: santriStatus,
           has_discrepancy: disc.hasDiscrepancy,
           discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
-          is_verified: !disc.hasDiscrepancy,
+          is_verified: true,
           status: finalStatus,
           reviewed_by: currentUser.id,
           reviewed_by_name: currentUser.full_name,
@@ -1932,6 +1943,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         recordsToUpsertInDb.push({
           id: existing.id,
           session_id: existing.session_id,
+          activity_id: activity.id,
+          operational_date: operationalDate.substring(0, 10),
           student_id: existing.student_id,
           attendance_type: entry.status,
           status: finalStatus,
@@ -1939,14 +1952,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           santri_status: santriStatus,
           has_discrepancy: disc.hasDiscrepancy,
           discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
-          is_verified: !disc.hasDiscrepancy,
+          is_verified: true,
+          photo_path: existing.photo_path || fallbackSelfie,
+          latitude: existing.latitude || activity.location_lat,
+          longitude: existing.longitude || activity.location_lng,
+          submitted_at: existing.submitted_at || nowIso,
           reviewed_by: currentUser.id,
           reviewed_at: nowIso,
-          review_note: entry.note || null,
+          review_note: entry.note || existing.review_note || null,
         });
       } else {
         const newId = `att-m-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-        const fallbackSelfie = student?.avatar_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
         const newRecord: AttendanceRecord = {
           id: newId,
           session_id: sessionId,
@@ -1956,14 +1972,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           group_name: groupName,
           activity_id: activity.id,
           activity_name: activity.name,
-          operational_date: operationalDate,
+          operational_date: operationalDate.substring(0, 10),
           attendance_type: entry.status,
           status: finalStatus,
           santri_status: 'belum_absen',
           musyrif_status: entry.status,
           has_discrepancy: disc.hasDiscrepancy,
           discrepancy_reason: disc.hasDiscrepancy ? disc.reason : undefined,
-          is_verified: !disc.hasDiscrepancy,
+          is_verified: true,
           photo_path: fallbackSelfie,
           latitude: activity.location_lat,
           longitude: activity.location_lng,
@@ -1981,13 +1997,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           id: newId,
           session_id: sessionId,
           student_id: entry.studentId,
+          activity_id: activity.id,
+          operational_date: operationalDate.substring(0, 10),
           attendance_type: entry.status,
           status: finalStatus,
           musyrif_status: entry.status,
           santri_status: 'belum_absen',
           has_discrepancy: disc.hasDiscrepancy,
           discrepancy_reason: disc.hasDiscrepancy ? disc.reason : null,
-          is_verified: !disc.hasDiscrepancy,
+          is_verified: true,
           photo_path: newRecord.photo_path,
           latitude: activity.location_lat,
           longitude: activity.location_lng,
@@ -2004,6 +2022,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
 
     setAttendanceRecords(newRecordsList);
+
+    // Langsung amankan ke localStorage agar tidak ter-reset saat navigasi / refresh
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const parsed = stored ? JSON.parse(stored) : {};
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...parsed, attendanceRecords: newRecordsList })
+      );
+    } catch (e) {
+      console.warn('LocalStorage save batch attendance error:', e);
+    }
 
     const audit: AuditLog = {
       id: `aud-${Date.now()}`,
@@ -2109,12 +2139,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         finalStatus = 'alpa';
       }
 
-      // Cari record yang sudah ada
-      const existing = attendanceRecords.find(
+      // Cari record yang sudah ada di updatedRecordsMap
+      const existing = Array.from(updatedRecordsMap.values()).find(
         (r) =>
           r.student_id === studentId &&
           r.activity_id === update.activityId &&
-          r.operational_date === update.dateStr
+          (r.operational_date?.substring(0, 10) === update.dateStr.substring(0, 10) ||
+           r.session_id?.includes(update.dateStr.substring(0, 10)))
       );
 
       const correctionEntry = {
@@ -2124,6 +2155,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         corrected_by: currentUser.full_name,
         corrected_at: nowIso,
       };
+
+      const fallbackSelfie =
+        student.avatar_url ||
+        'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
 
       if (existing) {
         const updatedRec: AttendanceRecord = {
@@ -2145,11 +2180,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           id: existing.id,
           session_id: existing.session_id,
           student_id: studentId,
+          activity_id: activity.id,
+          operational_date: update.dateStr.substring(0, 10),
           attendance_type: update.status,
           status: finalStatus,
           musyrif_status: update.status,
           is_verified: true,
           has_discrepancy: false,
+          photo_path: existing.photo_path || fallbackSelfie,
+          latitude: existing.latitude || activity.location_lat,
+          longitude: existing.longitude || activity.location_lng,
+          submitted_at: existing.submitted_at || nowIso,
           reviewed_by: currentUser.id,
           reviewed_at: nowIso,
           review_note: update.note || existing.review_note || reason || null,
@@ -2157,9 +2198,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         countModified++;
       } else {
         const newId = `att-m-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-        const fallbackSelfie =
-          student.avatar_url ||
-          'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80';
         const newRecord: AttendanceRecord = {
           id: newId,
           session_id: sessionId,
@@ -2169,7 +2207,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           group_name: student.group_name,
           activity_id: activity.id,
           activity_name: activity.name,
-          operational_date: update.dateStr,
+          operational_date: update.dateStr.substring(0, 10),
           attendance_type: update.status,
           status: finalStatus,
           santri_status: 'belum_absen',
@@ -2194,6 +2232,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           id: newId,
           session_id: sessionId,
           student_id: studentId,
+          activity_id: activity.id,
+          operational_date: update.dateStr.substring(0, 10),
           attendance_type: update.status,
           status: finalStatus,
           musyrif_status: update.status,
@@ -2216,6 +2256,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
     );
     setAttendanceRecords(newRecordsList);
+
+    // Langsung amankan ke localStorage agar tidak ter-reset saat navigasi / refresh
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const parsed = stored ? JSON.parse(stored) : {};
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...parsed, attendanceRecords: newRecordsList })
+      );
+    } catch (e) {
+      console.warn('LocalStorage save monthly student attendance error:', e);
+    }
 
     const audit: AuditLog = {
       id: `aud-${Date.now()}`,

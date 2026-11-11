@@ -101,10 +101,45 @@ export default function ManualAttendanceSheet({
     return Array.from(set);
   }, [santriList]);
 
+  // Helper to extract effective status from existing attendance record
+  const getStatusFromRecord = (rec?: AttendanceRecord): 'hadir' | 'izin' | 'alpa' => {
+    if (!rec) return 'hadir';
+    if (rec.musyrif_status === 'hadir' || rec.musyrif_status === 'izin' || rec.musyrif_status === 'alpa') {
+      return rec.musyrif_status;
+    }
+    if (
+      rec.status === 'hadir_valid' ||
+      rec.attendance_type === 'hadir' ||
+      rec.santri_status === 'hadir_valid'
+    ) {
+      return 'hadir';
+    }
+    if (
+      rec.status === 'izin_disetujui' ||
+      rec.status === 'izin_diajukan' ||
+      rec.attendance_type === 'izin' ||
+      rec.santri_status === 'izin_diajukan'
+    ) {
+      return 'izin';
+    }
+    if (
+      rec.status === 'alpa' ||
+      rec.status === 'ditolak_lokasi' ||
+      rec.status === 'izin_ditolak' ||
+      rec.attendance_type === 'alpa'
+    ) {
+      return 'alpa';
+    }
+    return 'hadir';
+  };
+
   // Existing records for selected activity & date
   const existingRecordsForSession = useMemo(() => {
     return attendanceRecords.filter(
-      (r) => r.activity_id === selectedActivityId && r.operational_date === selectedDate
+      (r) =>
+        r.activity_id === selectedActivityId &&
+        (r.operational_date?.substring(0, 10) === selectedDate.substring(0, 10) ||
+         r.session_id?.includes(selectedDate.substring(0, 10)))
     );
   }, [attendanceRecords, selectedActivityId, selectedDate]);
 
@@ -118,28 +153,15 @@ export default function ManualAttendanceSheet({
   }, [existingRecordsForSession]);
 
   // Musyrif attendance selections state: student_id -> 'hadir' | 'izin' | 'alpa'
-  // Default is 'hadir' for everyone!
-  const [selections, setSelections] = useState<Record<string, 'hadir' | 'izin' | 'alpa'>>(() => {
-    const initial: Record<string, 'hadir' | 'izin' | 'alpa'> = {};
-    santriList.forEach((s) => {
-      const existing = studentRecordMap.get(s.id);
-      if (existing?.musyrif_status) {
-        initial[s.id] = existing.musyrif_status;
-      } else {
-        // Default is HADIR as requested!
-        initial[s.id] = 'hadir';
-      }
-    });
-    return initial;
-  });
+  const [selections, setSelections] = useState<Record<string, 'hadir' | 'izin' | 'alpa'>>({});
 
-  // When activity or date changes, re-initialize selections based on existing or default 'hadir'
-  const handleActivityOrDateChange = (newActId: string, newDate: string) => {
-    setSelectedActivityId(newActId);
-    setSelectedDate(newDate);
-
+  // Sync selections dynamically whenever selectedActivityId, selectedDate, or attendanceRecords changes
+  React.useEffect(() => {
     const relevant = attendanceRecords.filter(
-      (r) => r.activity_id === newActId && r.operational_date === newDate
+      (r) =>
+        r.activity_id === selectedActivityId &&
+        (r.operational_date?.substring(0, 10) === selectedDate.substring(0, 10) ||
+         r.session_id?.includes(selectedDate.substring(0, 10)))
     );
     const recMap = new Map<string, AttendanceRecord>();
     relevant.forEach((r) => recMap.set(r.student_id, r));
@@ -147,13 +169,15 @@ export default function ManualAttendanceSheet({
     const newSelections: Record<string, 'hadir' | 'izin' | 'alpa'> = {};
     santriList.forEach((s) => {
       const rec = recMap.get(s.id);
-      if (rec?.musyrif_status) {
-        newSelections[s.id] = rec.musyrif_status;
-      } else {
-        newSelections[s.id] = 'hadir'; // DEFAULT HADIR
-      }
+      newSelections[s.id] = getStatusFromRecord(rec);
     });
     setSelections(newSelections);
+  }, [selectedActivityId, selectedDate, attendanceRecords, santriList]);
+
+  // When activity or date changes from dropdown/inputs
+  const handleActivityOrDateChange = (newActId: string, newDate: string) => {
+    setSelectedActivityId(newActId);
+    setSelectedDate(newDate);
     setFeedbackMessage(null);
   };
 

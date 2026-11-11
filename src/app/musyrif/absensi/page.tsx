@@ -188,7 +188,8 @@ export default function MusyrifEditPresensiPage() {
           (r) =>
             r.student_id === selectedStudent.id &&
             r.activity_id === act.id &&
-            r.operational_date === dateStr
+            (r.operational_date?.substring(0, 10) === dateStr.substring(0, 10) ||
+             r.session_id?.includes(dateStr.substring(0, 10)))
         );
 
         let initialStatus: TargetStatus = 'alpa';
@@ -196,14 +197,16 @@ export default function MusyrifEditPresensiPage() {
           if (
             originalRecord.musyrif_status === 'hadir' ||
             originalRecord.status === 'hadir_valid' ||
-            originalRecord.attendance_type === 'hadir'
+            originalRecord.attendance_type === 'hadir' ||
+            originalRecord.santri_status === 'hadir_valid'
           ) {
             initialStatus = 'hadir';
           } else if (
             originalRecord.musyrif_status === 'izin' ||
             originalRecord.status === 'izin_disetujui' ||
             originalRecord.status === 'izin_diajukan' ||
-            originalRecord.attendance_type === 'izin'
+            originalRecord.attendance_type === 'izin' ||
+            originalRecord.santri_status === 'izin_diajukan'
           ) {
             initialStatus = 'izin';
           } else {
