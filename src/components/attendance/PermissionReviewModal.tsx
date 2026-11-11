@@ -185,16 +185,16 @@ export default function PermissionReviewModal({
 
           <div className="flex flex-col gap-2 pt-4 border-t border-stone-200 dark:border-stone-800">
             {/* Action buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer text-center"
               >
                 Batal
               </button>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 {/* Single Reject */}
                 <button
                   type="button"
@@ -202,7 +202,7 @@ export default function PermissionReviewModal({
                     onReject(record.id, note || 'Izin ditolak oleh musyrif.', false);
                     onClose();
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer active:scale-95"
                 >
                   <XCircle className="w-3.5 h-3.5" />
                   <span>Tolak Sesi Ini</span>
@@ -215,7 +215,7 @@ export default function PermissionReviewModal({
                     onApprove(record.id, note || 'Izin disetujui oleh musyrif.', false);
                     onClose();
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition cursor-pointer border border-emerald-300 dark:border-emerald-800"
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition cursor-pointer border border-emerald-300 dark:border-emerald-800 active:scale-95"
                 >
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Setujui Sesi Ini</span>
@@ -233,7 +233,7 @@ export default function PermissionReviewModal({
                       );
                       onClose();
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold transition shadow-md cursor-pointer border border-[#D6A84F]/40 active:scale-95"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#146B50] to-[#0B3D2E] hover:from-[#198262] hover:to-[#0e4b39] text-white text-xs font-bold transition shadow-md cursor-pointer border border-[#D6A84F]/40 active:scale-95"
                   >
                     <CheckCheck className="w-4 h-4 text-[#D6A84F]" />
                     <span>Setujui SEMUA ({batchRecords.length} Sesi)</span>

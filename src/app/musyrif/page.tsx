@@ -203,11 +203,11 @@ function MiniCalendarWidget({ effectiveTime }: { effectiveTime: Date }) {
         </div>
       </div>
 
-      <div className="pt-3 border-t border-stone-100 dark:border-stone-800 mt-3 flex items-center justify-between text-[11px] text-stone-500">
-        <span>Hari ini: {formatIndonesianDate(effectiveTime)}</span>
+      <div className="pt-3 border-t border-stone-100 dark:border-stone-800 mt-3 flex items-center justify-between gap-2 text-[11px] text-stone-500">
+        <span className="truncate">Hari ini: {formatIndonesianDate(effectiveTime)}</span>
         <Link
           href="/musyrif/kegiatan"
-          className="font-bold text-[#0D7B5F] dark:text-[#E0B45C] hover:underline"
+          className="font-bold text-[#0D7B5F] dark:text-[#E0B45C] hover:underline shrink-0"
         >
           Kegiatan &rarr;
         </Link>
@@ -338,30 +338,30 @@ export default function MusyrifDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         
         {/* LEFT HERO CARD (Col 7) */}
-        <div className="lg:col-span-7 bg-[#06241B] dark:bg-[#05140F] text-white rounded-2xl border border-[#0D382A] dark:border-[#142921] p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-[#06241B] dark:bg-[#05140F] text-white rounded-2xl border border-[#0D382A] dark:border-[#142921] p-4 sm:p-6 shadow-sm flex flex-col justify-between">
           <div className="space-y-3">
             {/* Top row: Tanggal Indonesia & WIB clock */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-medium text-emerald-200 border border-white/10">
-                <Calendar className="w-3.5 h-3.5 text-[#E0B45C]" />
-                <span>{formatIndonesianDate(effectiveTime)}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-medium text-emerald-200 border border-white/10 w-fit">
+                <Calendar className="w-3.5 h-3.5 text-[#E0B45C] shrink-0" />
+                <span className="truncate">{formatIndonesianDate(effectiveTime)}</span>
               </span>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setIsGeotagModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-700/50 hover:bg-emerald-700 text-white text-[11px] font-bold border border-emerald-500/30 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-700/50 hover:bg-emerald-700 text-white text-[11px] font-bold border border-emerald-500/30 transition cursor-pointer active:scale-95"
                   title="Atur Radius & Geotag GPS Pondok"
                 >
-                  <Crosshair className="w-3.5 h-3.5 text-[#E0B45C]" />
+                  <Crosshair className="w-3.5 h-3.5 text-[#E0B45C] shrink-0" />
                   <span>Geotag GPS</span>
                 </button>
 
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
-                  <Clock className="w-3.5 h-3.5 text-[#E0B45C]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 text-[11px] font-mono font-bold text-white border border-white/10">
+                  <Clock className="w-3.5 h-3.5 text-[#E0B45C] shrink-0" />
                   <span>{formatTime24(effectiveTime)}</span>
-                  <span className="text-[9px] text-emerald-300">WIB</span>
+                  <span className="text-[9px] text-emerald-300 font-semibold">WIB</span>
                 </span>
               </div>
             </div>
@@ -371,7 +371,7 @@ export default function MusyrifDashboardPage() {
               <p className="text-xs text-emerald-300/90 font-medium">
                 {greeting},
               </p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-0.5">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white mt-0.5">
                 Ustadz {ustadzName}
               </h1>
               <p className="text-xs text-stone-300 font-medium mt-1">
@@ -393,39 +393,39 @@ export default function MusyrifDashboardPage() {
           </div>
 
           {/* 3 Metrics Row */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-5 mt-4 border-t border-white/10">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-white">{santriList.length}</div>
-              <div className="text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Santri Aktif</div>
-              <div className="text-[9px] text-stone-400">Total Binaan</div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-4 sm:pt-5 mt-4 border-t border-white/10">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="text-lg sm:text-2xl font-black text-white">{santriList.length}</div>
+              <div className="text-[9px] sm:text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Santri Aktif</div>
+              <div className="text-[8px] sm:text-[9px] text-stone-400">Total Binaan</div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-white">{hadirValidToday}</div>
-              <div className="text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Hadir</div>
-              <div className="text-[9px] text-stone-400">Hari ini</div>
+            <div className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="text-lg sm:text-2xl font-black text-white">{hadirValidToday}</div>
+              <div className="text-[9px] sm:text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Hadir</div>
+              <div className="text-[8px] sm:text-[9px] text-stone-400">Hari ini</div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-[#E0B45C]">{izinMenungguToday}</div>
-              <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Menunggu</div>
-              <div className="text-[9px] text-stone-400">Izin Diajukan</div>
+            <div className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="text-lg sm:text-2xl font-black text-[#E0B45C]">{izinMenungguToday}</div>
+              <div className="text-[9px] sm:text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Menunggu</div>
+              <div className="text-[8px] sm:text-[9px] text-stone-400">Izin Diajukan</div>
             </div>
           </div>
         </div>
 
         {/* RIGHT CARD: KONTROL & MONITORING SESI ABSENSI (Col 5) */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#0E1713] rounded-2xl border border-stone-200/80 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white dark:bg-[#0E1713] rounded-2xl border border-stone-200/80 dark:border-stone-800 p-4 sm:p-6 shadow-xs flex flex-col justify-between">
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#0D7B5F]" />
-                <h2 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Calendar className="w-4 h-4 text-[#0D7B5F] shrink-0" />
+                <h2 className="font-extrabold text-sm text-stone-900 dark:text-stone-100 truncate">
                   Kontrol Sesi Presensi
                 </h2>
               </div>
               <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 whitespace-nowrap ${
                   isWindowOpen
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                     : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
@@ -514,23 +514,23 @@ export default function MusyrifDashboardPage() {
                         {/* Action Buttons & Duration Selector */}
                         <div className="mt-2.5 pt-2 border-t border-stone-200/60 dark:border-stone-700/50 flex flex-wrap items-center justify-between gap-2">
                           {liveSession ? (
-                            <div className="flex items-center justify-between w-full">
+                            <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between w-full gap-2">
                               <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
                                 Sesi sedang aktif ({liveSession.duration_minutes} mnt)
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleCloseSession(liveSession.id)}
-                                className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
+                                className="w-full xs:w-auto px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95"
                               >
                                 <span>Tutup Sesi Sekarang</span>
                               </button>
                             </div>
                           ) : (
-                            <div className="flex items-center justify-between w-full gap-2">
-                              {/* Duration Selector Dropdown (30, 60, 90, 120 menit) */}
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-stone-500">Durasi:</span>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-2">
+                              {/* Duration Selector Dropdown */}
+                              <div className="flex items-center justify-between sm:justify-start gap-1.5">
+                                <span className="text-[10px] text-stone-500 font-medium">Durasi:</span>
                                 <select
                                   value={curDuration}
                                   onChange={(e) =>
@@ -551,7 +551,7 @@ export default function MusyrifDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenSession(act.id)}
-                                className="px-3 py-1.5 rounded-lg bg-[#0D7B5F] hover:bg-[#0A664E] text-white text-[11px] font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                                className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-[#0D7B5F] hover:bg-[#0A664E] text-white text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-xs"
                               >
                                 <span>Buka Sesi ({curDuration} mnt)</span>
                               </button>
@@ -575,16 +575,16 @@ export default function MusyrifDashboardPage() {
               href="/musyrif/absensi"
               className="flex-1 py-3 px-4 rounded-xl bg-[#0D7B5F] hover:bg-[#0A664E] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 btn-press"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>Edit Presensi Santri (Per Sesi / Santri)</span>
-              <ArrowRight className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-200 shrink-0" />
+              <span>Edit Presensi (Sesi &amp; Santri)</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </Link>
 
             <Link
               href="/musyrif/laporan"
               className="py-3 px-4 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs transition flex items-center justify-center gap-1.5"
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className="w-4 h-4 shrink-0" />
               <span>Rekap Laporan</span>
             </Link>
           </div>
@@ -600,17 +600,17 @@ export default function MusyrifDashboardPage() {
         {/* Card 1: Data Santri */}
         <Link
           href="/musyrif/santri"
-          className="clean-card clean-card-hover p-4 flex items-center justify-between group"
+          className="clean-card clean-card-hover p-3.5 sm:p-4 flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-300 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <Users className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Data Santri
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 {santriList.length} Santri Aktif
               </p>
             </div>
@@ -621,11 +621,11 @@ export default function MusyrifDashboardPage() {
         {/* Card 2: Perizinan */}
         <Link
           href="/musyrif/perizinan"
-          className="clean-card clean-card-hover p-4 flex items-center justify-between group"
+          className="clean-card clean-card-hover p-3.5 sm:p-4 flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <FileText className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -633,10 +633,10 @@ export default function MusyrifDashboardPage() {
                   Perizinan
                 </h4>
                 {izinMenungguToday > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
                 )}
               </div>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
                 {izinMenungguToday} Menunggu
               </p>
             </div>
@@ -647,17 +647,17 @@ export default function MusyrifDashboardPage() {
         {/* Card 3: Tahfidz */}
         <Link
           href="/musyrif/tahfidz"
-          className="clean-card clean-card-hover p-4 flex items-center justify-between group"
+          className="clean-card clean-card-hover p-3.5 sm:p-4 flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-300 flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#0D7B5F] dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <BookOpen className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Tahfidz
               </h4>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold truncate">
+              <p className="text-[10px] sm:text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold truncate">
                 Setoran &amp; WA
               </p>
             </div>
@@ -668,39 +668,39 @@ export default function MusyrifDashboardPage() {
         {/* Card 4: Edit Presensi */}
         <Link
           href="/musyrif/absensi"
-          className="clean-card clean-card-hover p-4 flex items-center justify-between group"
+          className="clean-card clean-card-hover p-3.5 sm:p-4 flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#0D7B5F] dark:text-teal-300 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#0D7B5F] dark:text-teal-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Edit Presensi
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                Per Kegiatan & Santri
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Per Sesi &amp; Santri
               </p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#0D7B5F] transition shrink-0 hidden sm:block" />
         </Link>
 
-        {/* Card 5: Keuangan SPP */}
+        {/* Card 5: Keuangan SPP (Spans full width across 2 cols on mobile) */}
         <Link
           href="/musyrif/keuangan"
-          className="clean-card clean-card-hover p-4 flex items-center justify-between group"
+          className="col-span-2 sm:col-span-1 clean-card clean-card-hover p-3.5 sm:p-4 flex items-center justify-between group"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <CreditCard className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <CreditCard className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 truncate">
                 Data SPP
               </h4>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                Kas &amp; Rekening
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                Kas &amp; Rekening Pondok
               </p>
             </div>
           </div>
@@ -715,7 +715,7 @@ export default function MusyrifDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         
         {/* COL 1: Ringkasan Kedisiplinan Pondok (lg:col-span-4) */}
-        <div className="lg:col-span-4 clean-card p-5 flex flex-col justify-between">
+        <div className="lg:col-span-4 clean-card p-4 sm:p-5 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
@@ -764,7 +764,7 @@ export default function MusyrifDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 pt-4 border-t border-stone-100 dark:border-stone-800 mt-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 border-t border-stone-100 dark:border-stone-800 mt-4 text-center">
             <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
               <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{totalHadirMonth}</div>
               <div className="text-[10px] text-stone-500 font-medium">Hadir</div>
@@ -785,7 +785,7 @@ export default function MusyrifDashboardPage() {
         </div>
 
         {/* COL 2: Perlu Ditinjau Segera (lg:col-span-4) */}
-        <div className="lg:col-span-4 clean-card p-5 flex flex-col justify-between">
+        <div className="lg:col-span-4 clean-card p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
@@ -813,7 +813,7 @@ export default function MusyrifDashboardPage() {
                     key={rec.id}
                     className="py-2.5 flex items-center justify-between gap-2.5"
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-bold text-xs text-stone-800 dark:text-stone-200 truncate">
                         {rec.student_name}
                       </p>
@@ -825,7 +825,7 @@ export default function MusyrifDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setReviewRecord(rec)}
-                      className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0D7B5F] hover:bg-[#0A664E] text-white transition cursor-pointer"
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#0D7B5F] hover:bg-[#0A664E] text-white transition cursor-pointer active:scale-95"
                     >
                       Tinjau
                     </button>

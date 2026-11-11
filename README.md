@@ -200,3 +200,4 @@ Aplikasi telah dilengkapi data seed siap uji untuk berbagai skenario:
 Dikembangkan dengan penuh dedikasi untuk efisiensi dan transparansi kedisiplinan **Pondok Pesantren Nurul Falah, Ketintang Surabaya**.
 
 Hak Cipta © 2026 Pondok Pesantren Nurul Falah. Seluruh hak cipta dilindungi undang-undang.
+
