@@ -82,6 +82,20 @@ export default function SantriAbsensiPage() {
     }
   }, [openActivities, initialType, todayActivities, selectedActivity]);
 
+  // Fallback instan agar wizard langsung render tanpa delay saat sesi dibuka
+  const effectiveActivity = useMemo(() => {
+    if (selectedActivity && openActivities.some((oa) => oa.activity.id === selectedActivity.id)) {
+      return selectedActivity;
+    }
+    if (openActivities.length > 0) {
+      return openActivities[0].activity;
+    }
+    if (initialType === 'izin' && todayActivities.length > 0) {
+      return selectedActivity || todayActivities[0];
+    }
+    return null;
+  }, [selectedActivity, openActivities, initialType, todayActivities]);
+
   const hasOpenSessions = openActivities.length > 0;
 
   const safeTime = getSafeDate(effectiveTime);
@@ -254,11 +268,11 @@ export default function SantriAbsensiPage() {
         </div>
       )}
 
-      {/* STATE 2: Attendance Wizard dengan key={selectedActivity.id} agar bebas bug caching state */}
-      {selectedActivity && (hasOpenSessions || initialType === 'izin') && (
+      {/* STATE 2: Attendance Wizard dengan key={effectiveActivity.id} agar bebas bug caching state */}
+      {effectiveActivity && (hasOpenSessions || initialType === 'izin') && (
         <AttendanceWizard
-          key={selectedActivity.id}
-          activity={selectedActivity}
+          key={effectiveActivity.id}
+          activity={effectiveActivity}
           initialType={initialType}
           onFinished={() => {}}
         />

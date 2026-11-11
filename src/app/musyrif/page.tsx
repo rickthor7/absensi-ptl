@@ -246,17 +246,11 @@ export default function MusyrifDashboardPage() {
   const todayStr = getWibDateStr(effectiveTime);
   const santriList = profiles.filter((p) => p.role === 'santri' && p.is_active);
 
-  // Jadwal kegiatan yang aktif hari ini + pastikan Ngaji Kitab Kuning selalu ada di daftar kontrol Musyrif
+  // Seluruh kegiatan resmi pondok yang aktif ditampilkan di kontrol Musyrif agar dapat dibuka kapan saja
   const activitiesForMusyrifControl = React.useMemo(() => {
-    const todayList = getActivitiesForDate(activities, effectiveTime);
-    const kitabAct = activities.find(
-      (a) => a.id === 'act-8' || a.code.toUpperCase().includes('KITAB') || a.name.toLowerCase().includes('kitab')
-    );
-    if (kitabAct && !todayList.some((a) => a.id === kitabAct.id)) {
-      return [...todayList, kitabAct];
-    }
-    return todayList.length > 0 ? todayList : activities.filter((a) => a.is_active);
-  }, [activities, effectiveTime]);
+    const active = activities.filter((a) => a.is_active);
+    return active.length > 0 ? active : activities;
+  }, [activities]);
 
   // Durasi default: Setoran (Tahfidz) default 120 menit, kegiatan lainnya 60 menit
   const getDefaultDurationForActivity = (act: import('@/types').Activity): number => {

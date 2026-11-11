@@ -517,7 +517,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .limit(100);
       const { data: sessData, error: sessErr } = (await Promise.race([sessPromise, timeoutPromise])) as any;
       if (!sessErr && sessData) {
-        setAttendanceSessions(sessData as AttendanceSession[]);
+        // Enforce activity_name, activity_code, duration_minutes from activities
+        const hydrated = (sessData as any[]).map((s) => {
+          const act = activities.find((a) => a.id === s.activity_id);
+          const opens = new Date(s.opens_at).getTime();
+          const closes = new Date(s.closes_at).getTime();
+          const dur = Math.round((closes - opens) / 60000) || 60;
+          return {
+            ...s,
+            activity_name: s.activity_name || act?.name || 'Kegiatan',
+            activity_code: s.activity_code || act?.code || 'KEGIATAN',
+            duration_minutes: s.duration_minutes || dur,
+          };
+        });
+        setAttendanceSessions(hydrated as AttendanceSession[]);
       }
     } catch (err) {
       console.warn('Error syncing data from Supabase:', err);
@@ -1182,7 +1195,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const finalDuration = durationMinutes || (isSetoran ? 120 : 60);
     const closesAtDate = new Date(now.getTime() + finalDuration * 60 * 1000);
     const closesAt = closesAtDate.toISOString();
-    const sessionId = `sess-${todayStr}-${activity.code.toLowerCase()}-${Date.now().toString(36)}`;
+    const sessionId = `sess-${todayStr}-${activity.id}`;
 
     const newSession: AttendanceSession = {
       id: sessionId,
@@ -1194,28 +1207,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       closes_at: closesAt,
       status: 'open',
       duration_minutes: finalDuration,
-      opened_by: currentUser.id,
-      opened_by_name: currentUser.full_name || 'Musyrif',
+      opened_by: currentUser?.id || 'musyrif-1',
+      opened_by_name: currentUser?.full_name || 'Musyrif',
     };
 
     // Update state: dukung multi-sesi kegiatan berbeda secara bersamaan
+    // Gantikan sesi untuk kegiatan & tanggal yang sama (baik open maupun closed sebelumnya)
     setAttendanceSessions((prev) => {
-      // Jika untuk kegiatan yang sama sudah ada sesi open hari ini, ganti dengan yang baru
       const filtered = prev.filter(
-        (s) => !(s.activity_id === activity.id && s.operational_date === todayStr && s.status === 'open')
+        (s) =>
+          !(
+            s.activity_id === activity.id &&
+            (s.operational_date?.substring(0, 10) === todayStr || s.operational_date === todayStr)
+          )
       );
       return [newSession, ...filtered];
     });
 
+    // PENTING: Bersihkan catatan Alpa otomatis untuk kegiatan ini hari ini agar santri bisa absen normal
+    setAttendanceRecords((prev) =>
+      prev.filter(
+        (r) =>
+          !(
+            r.activity_id === activity.id &&
+            (r.operational_date?.substring(0, 10) === todayStr || r.operational_date === todayStr) &&
+            (r.id.startsWith('att-alpa-') ||
+              r.review_note?.includes('Otomatis Alpa') ||
+              (r.status === 'alpa' && r.santri_status === 'belum_absen'))
+          )
+      )
+    );
+
     // Catat Audit Log
     const auditEntry: AuditLog = {
       id: `audit-${Date.now()}`,
-      actor_id: currentUser.id,
-      actor_name: currentUser.full_name || 'Musyrif',
+      actor_id: currentUser?.id || 'musyrif-1',
+      actor_name: currentUser?.full_name || 'Musyrif',
       action: 'BUKA_SESI_ABSENSI',
       entity_type: 'attendance_session',
       entity_id: sessionId,
-      reason: `Musyrif membuka sesi absensi "${activity.name}" durasi ${durationMinutes} menit (berakhir ${closesAtDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB).`,
+      reason: `Musyrif membuka sesi absensi "${activity.name}" durasi ${finalDuration} menit (berakhir ${closesAtDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB).`,
       created_at: now.toISOString(),
     };
     setAuditLogs((prev) => [auditEntry, ...prev]);
@@ -1224,14 +1255,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        await supabase.from('attendance_sessions').upsert({
-          id: newSession.id,
-          activity_id: newSession.activity_id,
-          operational_date: newSession.operational_date,
-          opens_at: newSession.opens_at,
-          closes_at: newSession.closes_at,
-          status: newSession.status,
-        });
+        await supabase.from('attendance_sessions').upsert(
+          {
+            id: sessionId,
+            activity_id: newSession.activity_id,
+            operational_date: newSession.operational_date,
+            opens_at: newSession.opens_at,
+            closes_at: newSession.closes_at,
+            status: 'open',
+          },
+          { onConflict: 'activity_id,operational_date' }
+        );
+
+        // Hapus record alpa otomatis di Supabase untuk sesi yang baru dibuka ini
+        await supabase
+          .from('attendance_records')
+          .delete()
+          .eq('activity_id', activity.id)
+          .eq('operational_date', todayStr)
+          .eq('status', 'alpa')
+          .eq('santri_status', 'belum_absen');
       } catch (err) {
         console.warn('Gagal sync session ke Supabase:', err);
       }
@@ -1343,10 +1386,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        await supabase.from('attendance_sessions').update({
-          status: 'closed',
-          closes_at: closedAt,
-        }).eq('id', sessionId);
+        await supabase
+          .from('attendance_sessions')
+          .update({
+            status: 'closed',
+            closes_at: closedAt,
+          })
+          .eq('activity_id', targetSession?.activity_id || '')
+          .eq('operational_date', targetSession?.operational_date || '');
 
         if (autoAlpaRecords.length > 0) {
           const rowsToUpsert = autoAlpaRecords.map((r) => ({
@@ -1438,7 +1485,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const currentActiveSession = attendanceSessions.find(
       (s) =>
         s.activity_id === activityId &&
-        s.operational_date === todayStr &&
+        (s.operational_date?.substring(0, 10) === todayStr || s.operational_date === todayStr) &&
         s.status === 'open' &&
         new Date(s.closes_at).getTime() >= effectiveTime.getTime()
     );
@@ -1452,12 +1499,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // Check if an existing record exists for this activity & date
+    // Check if an existing record exists for this activity & date (abaikan placeholder alpa otomatis)
     const existing = attendanceRecords.find(
       (r) =>
         r.student_id === currentUser.id &&
         r.activity_id === activityId &&
-        r.operational_date === todayStr
+        (r.operational_date?.substring(0, 10) === todayStr || r.operational_date === todayStr) &&
+        r.santri_status !== 'belum_absen' &&
+        !r.id.startsWith('att-alpa-') &&
+        !r.review_note?.includes('Otomatis Alpa')
     );
 
     // If santri has ALREADY submitted a selfie / self-attendance, prevent duplicate
@@ -1579,14 +1629,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     if (supabase && isSupabaseConnected) {
       try {
-        await supabase.from('attendance_sessions').upsert({
-          id: sessionId,
-          activity_id: activity.id,
-          operational_date: todayStr,
-          opens_at: `${todayStr}T${activity.start_time}:00Z`,
-          closes_at: `${todayStr}T${activity.end_time}:00Z`,
-          status: 'open',
-        });
+        await supabase.from('attendance_sessions').upsert(
+          {
+            id: sessionId,
+            activity_id: activity.id,
+            operational_date: todayStr,
+            opens_at: currentActiveSession ? currentActiveSession.opens_at : `${todayStr}T${activity.start_time}:00Z`,
+            closes_at: currentActiveSession ? currentActiveSession.closes_at : `${todayStr}T${activity.end_time}:00Z`,
+            status: 'open',
+          },
+          { onConflict: 'activity_id,operational_date' }
+        );
 
         await supabase.from('attendance_records').upsert({
           id: targetRecordId,

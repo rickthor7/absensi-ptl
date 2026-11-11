@@ -97,11 +97,15 @@ export default function AttendanceWizard({ activity, initialType, onFinished }: 
       setSelectedIzinKeys((prev) => (prev.includes(key) ? prev : [key, ...prev]));
     }
   }, [activity.id, todayStr, effectiveTime]);
+  // Cari rekam presensi mandiri santri hari ini (abaikan placeholder alpa otomatis agar santri bisa absen)
   const existingAttendance = attendanceRecords.find(
     (r) =>
       r.student_id === currentUser.id &&
       r.activity_id === activity.id &&
-      r.operational_date === todayStr
+      (r.operational_date?.substring(0, 10) === todayStr || r.operational_date === todayStr) &&
+      r.santri_status !== 'belum_absen' &&
+      !r.id.startsWith('att-alpa-') &&
+      !r.review_note?.includes('Otomatis Alpa')
   );
 
   const [isRetaking, setIsRetaking] = useState(false);
