@@ -1,70 +1,202 @@
-# Sistem Absensi Santri Berbasis Selfie dan Geotag (Production Ready)
-Pondok Pesantren Nurul Falah, Ketintang Surabaya
-
-Aplikasi web presensi santri berbasis **Next.js (App Router) + TypeScript + Supabase Database & Storage** yang memvalidasi kehadiran santri menggunakan foto selfie kamera langsung dan verifikasi koordinat lokasi GPS (geodesic distance / Haversine) secara real-time.
-
-Dibuat berdasarkan spesifikasi teknis dan desain pada:
-- [`prd.md`](./prd.md) (Product Requirement Document)
-- [`design.md`](./design.md) (Design Specification & Islamic Modern UI)
-- [`arsitektur.md`](./arsitektur.md) (System Architecture, Data Models & Security)
+# 🕌 Sistem Presensi Santri & Raport Mutaba'ah Digital
+### Pondok Pesantren Nurul Falah, Ketintang Surabaya
+> *Smart Attendance, Biometric Selfie Verification, Geofence Engine, Tahfidz Tracking & Official Mutaba'ah Report*
 
 ---
 
-## 🌟 Fitur Utama (Real & Siap Pakai)
-
-### 1. Portal Santri
-- **Beranda & Deteksi Kegiatan**: Otomatis mendeteksi jadwal kegiatan pondok yang sedang aktif berdasarkan jam operasional real-time WIB (`Asia/Jakarta`).
-- **Alur Absensi 5 Langkah**:
-  1. *Pilih Status*: Hadir atau Izin (wajib alasan udzur syar'i).
-  2. *Swafoto (Selfie) Kamera*: Pengambilan gambar langsung dari webcam/kamera perangkat dengan panduan oval guideline wajah.
-  3. *Verifikasi Geotag GPS*: Membaca koordinat latitude/longitude dan akurasi perangkat via Geolocation API. Menghitung jarak meter terhadap titik pusat pondok pesantren (-7.31254, 112.72852) dan memvalidasi radius.
-  4. *Tinjau & Konfirmasi*: Ringkasan pratinjau foto selfie, nama kegiatan, waktu kirim, dan jarak.
-  5. *Hasil & Tiket Resi*: Validasi status otomatis (`hadir_valid`, `izin_diajukan`, `perlu_tinjauan`, atau `ditolak_lokasi`) dengan animasi selebrasi. Foto tersimpan ke Supabase Storage.
-- **Kalender Absensi Bulanan**: Tampilan kalender interaktif santri dengan penanda status kehadiran harian, statistik hadir/izin, dan rincian per kegiatan.
-- **Riwayat Absensi**: Catatan kehadiran lengkap dengan filter kegiatan, pencarian, dan pratinjau foto.
-- **Profil Santri**: Identitas lengkap santri, NIS, kamar asrama, dan akumulasi tingkat kehadiran.
-
-### 2. Portal Musyrif (Pengawasan & Manajemen)
-- **Dashboard Ringkasan Real-time**:
-  - 4 Kartu Metrik: Hadir Valid Hari Ini, Izin Menunggu Review, Belum Absen, dan Kegiatan Aktif Saat Ini.
-  - *Banner Peringatan Real-Time*: Deteksi otomatis santri dengan skor kehadiran di bawah batas kelulusan (< 70%).
-  - *Panel Perlu Tindakan*: Daftar permohonan izin dan absensi bermasalah yang menunggu keputusan musyrif.
-- **Data Santri (Kesiswaan)**: Kelola data santri (tambah santri baru, ubah kamar asrama, status aktif/nonaktif, nomor kontak wali santri).
-- **Verifikasi Seluruh Absensi**: Monitoring seluruh catatan presensi santri, foto selfie, koordinat GPS, jarak geodesik, serta **Koreksi Manual** yang mencatat alasan dan jejak audit.
-- **Persetujuan Perizinan**: Tab Menunggu, Disetujui, dan Ditolak dilengkapi foto bukti, alasan udzur, dan catatan pertimbangan musyrif.
-- **Kegiatan & Jadwal Pondok**: Konfigurasi nama kegiatan, jam buka/tutup, hari aktif, titik koordinat, batas radius geofence, dan toleransi GPS, termasuk dukungan **kegiatan lintas tengah malam** (*crosses midnight*).
-- **Rekap & Laporan Bulanan**: Skor kehadiran terpadu (Hadir=1, Izin=0.5, Alpa=0), persentase kelulusan presensi, dan tombol **Ekspor CSV Lengkap**.
-- **Audit Trail**: Rekam jejak seluruh aksi koreksi manual dan peninjauan izin oleh musyrif.
-
-### 3. Autentikasi Resmi
-- **Portal Login Terpisah**: Portal Santri (menggunakan Nomor Induk Santri / Email) dan Portal Musyrif (Email dinas pesantren).
-- **Akun Resmi Tersedia**:
-  - *Musyrif*: `mansur@nurulfalah.ac.id`, `ustadz.faqih@nurulfalah.ac.id`, `admin@nurulfalah.ac.id` (Kata Sandi: `password123`)
-  - *Santri*: NIS `STR-2026-042` (Ahmad Fauzi), `STR-2026-043` (Muhammad Rizky), `STR-2026-044` (Umar Al-Faruq), dll. (Kata Sandi: `password123`)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0.0-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database_%26_Storage-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Timezone](https://img.shields.io/badge/Timezone-Asia%2FJakarta_(WIB)-146B50?style=for-the-badge)](https://en.wikipedia.org/wiki/Time_in_Indonesia)
+[![Production Ready](https://img.shields.io/badge/Status-Production--Ready-success?style=for-the-badge)](https://github.com/rickthor7/absensi-ptl)
 
 ---
 
-## 🛠️ Stack Teknologi
+## 📌 Ringkasan Eksekutif
 
-- **Frontend & Framework**: Next.js 16 (App Router), React 19, TypeScript
-- **Styling**: Tailwind CSS v4, Lucide Icons, Modern Islamic Emerald & Gold Theme
-- **Geolokasi**: Rumus Geodesik / Haversine Distance (`src/lib/geo.ts`)
-- **Backend & Database**: Supabase PostgreSQL dengan PostGIS, Supabase Storage (`attendance-photos`), dan Row Level Security (RLS)
+**Sistem Presensi Santri & Raport Mutaba'ah Digital** adalah platform web terpadu yang dirancang khusus untuk memenuhi standar kedisiplinan dan pencatatan kepesantrenan modern. 
+
+Platform ini menggabungkan **verifikasi swafoto kamera langsung (selfie live-capture)**, **validasi geolokasi GPS berbasis formula Geodesik Haversine**, modul **Raport Mutaba'ah Bulanan Resmi** (cetak PDF Kop Resmi & ekspor CSV), **pencatatan setoran Tahfidz Al-Qur'an terhubung WhatsApp Wali Santri**, serta **pembukuan kas SPP & Keuangan pesantren**.
+
+Seluruh sistem beroperasi dalam standar **Waktu Indonesia Barat (WIB / UTC+7)** dengan format waktu 24 jam (`HH:mm WIB`) untuk menjamin kepastian jadwal ibadah dan kegiatan pondok.
 
 ---
 
-## 🚀 Menjalankan Aplikasi
+## 🌟 Fitur Utama Sistem
 
-1. **Jalankan development server**:
-   ```bash
-   npm run dev
-   ```
+### 📱 1. Portal Santri (Presensi Mandiri)
+- **Deteksi Kegiatan Cerdas Real-Time**: Mengidentifikasi kegiatan aktif saat ini secara otomatis sesuai jadwal hari dan jam operasional pondok.
+- **Wizard Presensi 5 Langkah**:
+  1. **Pilihan Status Sebaris**: Opsi Hadir vs Izin yang responsif dan ergonomis di smartphone.
+  2. **Swafoto Langsung (Live Camera)**: Panduan oval guideline wajah, anti-fake, dan konversi resolusi optimal.
+  3. **Verifikasi Geotagging GPS**: Menghitung jarak geodesik meter terhadap titik episentrum pondok (`-7.31254, 112.72852`) dengan toleransi radius geofence.
+  4. **Pengajuan Izin Bebas Radius**: Santri yang sedang udzur syar'i (sakit/pulang) dapat mengajukan izin dari lokasi mana pun tanpa terkena batasan radius, dengan seleksi kegiatan yang terikat ketat pada jadwal aktif hari tersebut.
+  5. **Tiket Resi Presensi**: Penerbitan resi status langsung (`hadir_valid`, `izin_diajukan`, `perlu_tinjauan`, `ditolak_lokasi`) yang tersimpan ke cloud.
+- **Kalender Interaktif**: Kalender kehadiran bulanan dengan indikator dot berwarna, statistik persentase kehadiran, dan rincian catatan tiap sesi.
+- **Riwayat & Retake**: Rekam jejak presensi lengkap dengan foto selfie, rincian GPS, dan opsi retake mandiri pada hari yang sama.
+- **Penyimpanan Sesi / Cookies Login**: Sesi login otomatis tersimpan di perangkat santri sehingga tidak perlu login ulang berulang kali.
 
-2. **Akses di browser**:
-   Buka [http://localhost:3000](http://localhost:3000)
+---
 
-3. **Sinkronisasi Database Supabase (Opsional jika ingin reset total)**:
-   - Buka SQL Editor di project Supabase Anda:
-     [https://supabase.com/dashboard/project/tzwtncikrblqynupkjng/sql/new](https://supabase.com/dashboard/project/tzwtncikrblqynupkjng/sql/new)
-   - Buka file [`supabase/setup_complete.sql`](./supabase/setup_complete.sql), copy dan paste ke SQL Editor, lalu klik tombol **RUN**.
-   - Skrip tersebut otomatis menyiapkan tabel profiles, activities, attendance_records, sessions, audit_logs, storage bucket, dan akun resmi santri & musyrif.
+### 🛡️ 2. Portal Musyrif (Pengawasan & Manajemen Pondok)
+- **Dashboard Analitik Eksekutif**:
+  - Monitoring metrik harian (Hadir Valid, Izin Menunggu, Belum Absen, Sesi Aktif).
+  - **Early Warning System (<70%)**: Peringatan dini otomatis untuk santri dengan tingkat kehadiran di bawah ambang batas kelulusan.
+- **Editor Absensi Santri 1 Bulan Penuh**:
+  - Memilih santri dan bulan berjalan/lampau untuk melihat seluruh sesi kalender dalam 1 layar.
+  - Kontrol 3-Way Segmented (`Hadir`, `Izin`, `Alpa`) per kegiatan harian.
+  - Fitur 1-Klik Massal: *Tandai Semua Sesi Bulan Ini Hadir* atau *Hadirkan Semua Sesi Hari Ini*.
+  - Dilengkapi input alasan dan audit trail resmi pondok.
+- **Absensi Manual Batch per Kegiatan**: Absensi serentak seluruh santri di satu sesi dengan deteksi ketidaksamaan (*discrepancy resolution*).
+- **Pusat Persetujuan Izin**: Tinjau permohonan izin santri dilengkapi foto bukti, alasan syar'i, dan persetujuan/penolakan berdasar pertimbangan musyrif.
+- **Manajemen Database Santri**: Tambah santri baru, kelola kamar asrama/kelompok, aktif/nonaktifkan akun, ubah kata sandi, dan unduh data.
+
+---
+
+### 📜 3. Raport Mutaba'ah Resmi & Ekspor Laporan
+- **Standar Format Spreadsheet Pondok**:
+  - Menampilkan 7 pilar kegiatan resmi: `LAIL`, `SUBUH`, `TAHFIDZ_PAGI`, `NGAJI_KITAB`, `MAGHRIB`, `ISYA`, dan `TAHFIDZ_MALAM`.
+  - Sistem penilaian terstandarisasi: **Hadir = 1.0 poin**, **Izin = 0.5 poin**, **Alpa = 0 poin**.
+  - Sinkronisasi penuh dengan data Kalender & Riwayat (status seragam, pencegahan Alpa prematur untuk kegiatan hari ini yang belum dimulai).
+- **Cetak Raport PDF Ber-Kop Resmi**: Desain cetak siap pakai dengan kop surat Pondok Pesantren Nurul Falah, tanda tangan Musyrif Pembina, dan Wali Santri.
+- **Ekspor Dokumen Excel / CSV**: Unduh rekap bulanan seluruh santri lengkap dalam format spreadsheet.
+
+---
+
+### 📖 4. Validasi Tahfidz & Notifikasi WhatsApp Wali
+- **Pencatatan Setoran Ziyadah & Muroja'ah**: Catat juz, nomor halaman awal–akhir, surat, dan kelancaran setoran.
+- **Predikat Kelancaran**: Kategori penilaian *Mutqin* (Sangat Lancar), *Jayyid* (Baik), *Maqbul* (Cukup), dan *Ulangi*.
+- **Integrasi WhatsApp 1-Klik**: Musyrif dapat langsung mengirim ringkasan capaian setoran tahfidz ke nomor WhatsApp orang tua/wali santri.
+
+---
+
+### 💳 5. Pembukuan Kas & Pembayaran SPP
+- **Pembayaran SPP Santri**: Pilihan pembayaran bulanan dengan upload bukti transfer bank.
+- **Verifikasi Bendahara**: Konfirmasi bukti bayar santri dengan status *Lunas* atau *Pending*.
+- **Penerimaan Tunai / Manual**: Musyrif dapat menginput pembayaran tunai langsung di pondok pesantren.
+- **Buku Kas Operasional**: Catatan mutasi debit/kredit pengeluaran dan pemasukan pondok pesantren secara transparan.
+
+---
+
+## 📐 Arsitektur Validasi Geofencing
+
+Jarak santri ke titik pusat pondok dihitung secara real-time pada browser dan diverifikasi di server menggunakan **Formula Geodesik Haversine**:
+
+$$\Delta\sigma = 2 \arcsin \left( \sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)} \right)$$
+
+$$d = R \cdot \Delta\sigma$$
+
+*Keterangan:*
+- $\phi_1, \phi_2$: Latitude posisi santri dan koordinat pusat pondok.
+- $\Delta\lambda$: Selisih longitude.
+- $R$: Radius bumi rata-rata ($6.371.000\text{ meter}$).
+- Status `hadir_valid` hanya diterbitkan jika $d \le \text{radius kegiatan} + \text{toleransi GPS}$.
+
+---
+
+## 🏗️ Struktur Proyek
+
+```plaintext
+ABSENSI-SANTRI/
+├── src/
+│   ├── app/                          # Next.js 16 App Router
+│   │   ├── login/                    # Login Santri & Musyrif
+│   │   ├── santri/                   # Portal Santri
+│   │   │   ├── absensi/              # Wizard Presensi 5-Langkah
+│   │   │   ├── kalender/             # Kalender Kehadiran Bulanan
+│   │   │   ├── riwayat/              # Riwayat Presensi & Retake
+│   │   │   ├── profil/               # Biodata & Kartu Santri
+│   │   │   └── spp/                  # Pembayaran SPP Santri
+│   │   ├── musyrif/                  # Portal Musyrif / Admin
+│   │   │   ├── absensi/              # Monitoring & Verifikasi Manual
+│   │   │   ├── laporan/              # Rekap Bulanan & Raport Mutaba'ah
+│   │   │   ├── perizinan/            # Approval Izin Santri
+│   │   │   ├── santri/               # Manajemen Kesiswaan Santri
+│   │   │   ├── tahfidz/              # Validasi Setoran Tahfidz & WA
+│   │   │   ├── kegiatan/             # Jadwal & Geofence Kegiatan
+│   │   │   ├── keuangan/             # Pembukuan Kas & SPP
+│   │   │   └── audit/                # Audit Logs & Riwayat Koreksi
+│   ├── components/                   # Komponen Modular React
+│   │   ├── attendance/               # Wizard, Selfie, Geotag, Editor Bulanan
+│   │   ├── reports/                  # RaportSantriModal (Kop Resmi & Print)
+│   │   ├── tahfidz/                  # Modal Setoran & WhatsApp Dispatcher
+│   │   ├── calendar/                 # AttendanceCalendar Widget
+│   │   └── layout/                   # Navbar, MobileNav, AppShell
+│   ├── lib/                          # Core Business Logic & State
+│   │   ├── store.tsx                 # Centralized React Context Store & DB Sync
+│   │   ├── schedule.ts               # Evaluator Jadwal WIB (Asia/Jakarta)
+│   │   ├── scoring.ts                # Perhitungan Skor Kehadiran & Nilai
+│   │   ├── geo.ts                    # Geodesic Haversine Calculation
+│   │   ├── cookies.ts                # Session Cookie Persistence
+│   │   ├── supabase.ts               # Supabase Client & Connection Checker
+│   │   └── constants.ts              # Master Data & Initial Seed Records
+│   └── types/                        # TypeScript Type Definitions
+├── supabase/
+│   ├── setup_complete.sql            # Master DDL Schema, RLS, Storage Bucket
+│   └── migrations/                   # Skrip Migrasi SQL Tambahan
+└── README.md                         # Dokumentasi Resmi Proyek
+```
+
+---
+
+## ⚡ Panduan Instalasi & Menjalankan Aplikasi
+
+### 1. Prasyarat
+- **Node.js**: Versi 18.18+ atau 20+
+- **NPM** atau **Yarn** / **PNPM**
+- Browser dengan akses izin Kamera & Lokasi (GPS)
+
+### 2. Kloning Repositori
+```bash
+git clone https://github.com/rickthor7/absensi-ptl.git
+cd absensi-ptl
+```
+
+### 3. Instal Dependensi
+```bash
+npm install
+```
+
+### 4. Konfigurasi Environment Variables
+Buat file `.env.local` pada direktori root:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://tzwtncikrblqynupkjng.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+```
+*(Catatan: Aplikasi telah dilengkapi offline fallback store sehingga tetap dapat dijalankan dan diuji secara penuh tanpa ketergantungan koneksi Supabase).*
+
+### 5. Jalankan Development Server
+```bash
+npm run dev
+```
+Buka browser di [http://localhost:3000](http://localhost:3000).
+
+### 6. Build untuk Lingkungan Produksi
+```bash
+npm run build
+npm run start
+```
+
+---
+
+## 👥 Akun Demo Siap Pakai
+
+Aplikasi telah dilengkapi data seed siap uji untuk berbagai skenario:
+
+| Role | Username / NIS / Email | Kata Sandi | Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Musyrif (Admin)** | `mansur@nurulfalah.ac.id` | `password123` | Ustadz Mansur (Kepala Musyrif) |
+| **Musyrif (Ustadz)** | `ustadz.faqih@nurulfalah.ac.id` | `password123` | Ustadz Faqih (Penguji Tahfidz) |
+| **Santri** | `STR-2023-001` / `dliya` | `password123` | M. Dliyaaul Haq Shidqey |
+| **Santri** | `STR-2023-002` / `akbar` | `password123` | M. Akbar Galeh Maulana |
+| **Santri** | `STR-2023-003` / `sakhowi` | `password123` | M. Sakhowi Al Wahidi |
+
+---
+
+## 📜 Lisensi & Pengembang
+
+Dikembangkan dengan penuh dedikasi untuk efisiensi dan transparansi kedisiplinan **Pondok Pesantren Nurul Falah, Ketintang Surabaya**.
+
+Hak Cipta © 2026 Pondok Pesantren Nurul Falah. Seluruh hak cipta dilindungi undang-undang.
