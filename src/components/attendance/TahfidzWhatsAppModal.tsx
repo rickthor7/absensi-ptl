@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { AttendanceRecord } from '@/types';
+import { AttendanceRecord, Profile } from '@/types';
 import { formatIndonesianDate } from '@/lib/schedule';
 import {
   X,
@@ -24,6 +24,7 @@ interface TahfidzWhatsAppModalProps {
   ustadzName: string;
   dateStr: string;
   records: AttendanceRecord[];
+  santriList?: Profile[];
 }
 
 export default function TahfidzWhatsAppModal({
@@ -33,17 +34,49 @@ export default function TahfidzWhatsAppModal({
   ustadzName,
   dateStr,
   records,
+  santriList,
 }: TahfidzWhatsAppModalProps) {
   const [copied, setCopied] = useState(false);
 
-  // Filter only records that have tahfidz data
+  // Set of valid student IDs for this specific class
+  const classStudentIdSet = useMemo(() => {
+    return santriList ? new Set(santriList.map((s) => s.id)) : null;
+  }, [santriList]);
+
+  // Filter only records that have tahfidz data and belong strictly to this class
+  // Deduplicate by student_id, keeping the latest record
   const validSetoranList = useMemo(() => {
-    return records.filter((r) => r.tahfidz_juz !== undefined && r.tahfidz_juz !== null);
-  }, [records]);
+    const map = new Map<string, AttendanceRecord>();
+    records.forEach((r) => {
+      // Must belong to this class if santriList is provided
+      if (classStudentIdSet && !classStudentIdSet.has(r.student_id)) return;
+      if (r.tahfidz_juz !== undefined && r.tahfidz_juz !== null) {
+        const existing = map.get(r.student_id);
+        if (
+          !existing ||
+          new Date(r.submitted_at).getTime() >= new Date(existing.submitted_at).getTime()
+        ) {
+          map.set(r.student_id, r);
+        }
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.student_name.localeCompare(b.student_name));
+  }, [records, classStudentIdSet]);
+
+  // Santri in this class who haven't submitted yet
+  const unsubmittedSantri = useMemo(() => {
+    if (!santriList || santriList.length === 0) return [];
+    const submittedIds = new Set(validSetoranList.map((r) => r.student_id));
+    return santriList
+      .filter((s) => !submittedIds.has(s.id))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  }, [santriList, validSetoranList]);
+
+  const totalClassSantri = santriList ? santriList.length : validSetoranList.length;
 
   // Generate standardized text format matching user requirement
-  // Format: [Nama Panjang] - [Jenis Setoran] - [Data Setoran]
-  // Contoh: M Thoriq Dhiya Ul Haq - Murojaah - Juz 10 halaman 2
+  // Format: [Nama Panjang] - [Jenis Setoran] - [Data Setoran] ([Lancar/Perlu Diulang])
+  // Contoh: M Thoriq Dhiya Ul Haq - Murojaah - Juz 10 halaman 2 (Lancar)
   const defaultShareText = useMemo(() => {
     const dateObj = new Date(dateStr);
     const formattedDate = formatIndonesianDate(isNaN(dateObj.getTime()) ? new Date() : dateObj);
@@ -54,7 +87,13 @@ export default function TahfidzWhatsAppModal({
       if (r.tahfidz_halaman_end && r.tahfidz_halaman_end !== r.tahfidz_halaman) {
         pageData = `Juz ${r.tahfidz_juz} halaman ${r.tahfidz_halaman}-${r.tahfidz_halaman_end}`;
       }
-      return `${idx + 1}. ${r.student_name} - ${modeLabel} - ${pageData}`;
+      const evalTag =
+        r.tahfidz_status === 'perlu_diulang'
+          ? ' (Perlu Diulang)'
+          : r.tahfidz_status === 'lancar'
+            ? ' (Lancar)'
+            : '';
+      return `${idx + 1}. ${r.student_name} - ${modeLabel} - ${pageData}${evalTag}`;
     });
 
     const listText =
@@ -62,21 +101,31 @@ export default function TahfidzWhatsAppModal({
         ? items.join('\n')
         : '_Belum ada santri yang tervalidasi setoran pada sesi ini._';
 
+    let unsubmittedSection = '';
+    if (unsubmittedSantri.length > 0) {
+      const unsubmittedItems = unsubmittedSantri.map(
+        (s, idx) => `${idx + 1}. ${s.full_name}`
+      );
+      unsubmittedSection = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n*DAFTAR SANTRI BELUM SETOR (${unsubmittedSantri.length}):*\n${unsubmittedItems.join('\n')}`;
+    }
+
     return `*LAPORAN SETORAN TAHFIDZ SANTRI*
 *Pondok Pesantren Nurul Falah Ketintang, Surabaya*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 📅 *Hari/Tanggal:* ${formattedDate}
 📖 *Kelas:* ${classNameTitle}
 👳‍♂️ *Penyimak:* ${ustadzName}
-👥 *Total Santri Setor:* ${validSetoranList.length} Santri
+👥 *Total Santri Kelas:* ${totalClassSantri} Santri
+✅ *Sudah Setor:* ${validSetoranList.length} Santri
+⏳ *Belum Setor:* ${unsubmittedSantri.length} Santri
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 *DAFTAR SANTRI YANG SUDAH SETOR:*
 
-${listText}
+${listText}${unsubmittedSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 _Alhamdulillah, sesi setoran tahfidz telah selesai dan tervalidasi._`;
-  }, [validSetoranList, dateStr, classNameTitle, ustadzName]);
+  }, [validSetoranList, unsubmittedSantri, totalClassSantri, dateStr, classNameTitle, ustadzName]);
 
   const [shareText, setShareText] = useState(defaultShareText);
 
@@ -144,16 +193,16 @@ _Alhamdulillah, sesi setoran tahfidz telah selesai dan tervalidasi._`;
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
           
           {/* Quick Info Strip */}
-          <div className="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
             <div className="text-center">
               <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-semibold">
-                Sesi
+                Sesi &amp; Kelas
               </span>
               <span className="font-extrabold text-stone-900 dark:text-stone-100 truncate block">
                 {classNameTitle}
               </span>
             </div>
-            <div className="text-center border-x border-emerald-200/60 dark:border-emerald-800/60 px-1">
+            <div className="text-center sm:border-l border-emerald-200/60 dark:border-emerald-800/60 px-1">
               <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-semibold">
                 Penyimak
               </span>
@@ -161,12 +210,20 @@ _Alhamdulillah, sesi setoran tahfidz telah selesai dan tervalidasi._`;
                 {ustadzName}
               </span>
             </div>
-            <div className="text-center">
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-emerald-200/60 dark:border-emerald-800/60 pt-1.5 sm:pt-0">
               <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-semibold">
-                Total Setor
+                Total Santri Kelas
+              </span>
+              <span className="font-extrabold text-stone-900 dark:text-stone-100 block">
+                {totalClassSantri} Santri
+              </span>
+            </div>
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-emerald-200/60 dark:border-emerald-800/60 pt-1.5 sm:pt-0">
+              <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-semibold">
+                Sudah Setor (ACC)
               </span>
               <span className="font-extrabold text-[#146B50] dark:text-[#D6A84F] block">
-                {validSetoranList.length} Santri
+                {validSetoranList.length} / {totalClassSantri}
               </span>
             </div>
           </div>

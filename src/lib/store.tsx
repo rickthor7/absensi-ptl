@@ -153,6 +153,11 @@ interface StoreContextType {
   ) => Promise<{ success: boolean; message: string }>;
   validateTahfidzSetoran: (params: {
     recordId: string;
+    studentId?: string;
+    activityId?: string;
+    sessionId?: string;
+    operationalDate?: string;
+    tahfidzClass?: string;
     mode?: import('@/types').TahfidzMode;
     juz?: number;
     halaman?: number;
@@ -1564,11 +1569,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (isTahfidzActivity) {
       if (activity.code === 'SETORAN_PAGI') {
-        const cls = resolvedTahfidzClass || (currentUser.class_tahfidz_pagi === 'A' ? 'tahfidz_pagi_a' : 'tahfidz_pagi_b');
+        const studentPagiClass = (currentUser.class_tahfidz_pagi || '').trim().toUpperCase();
+        const cls = resolvedTahfidzClass || (studentPagiClass === 'A' ? 'tahfidz_pagi_a' : 'tahfidz_pagi_b');
         resolvedTahfidzClass = cls;
         resolvedTahfidzUstadzName = cls === 'tahfidz_pagi_a' ? 'Ust. Firdaus' : 'Ustadz Suparlan';
       } else {
-        const cls = resolvedTahfidzClass || (currentUser.class_tahfidz_malam === 'A' ? 'tahfidz_malam_a' : 'tahfidz_malam_b');
+        const studentMalamClass = (currentUser.class_tahfidz_malam || '').trim().toUpperCase();
+        const cls = resolvedTahfidzClass || (studentMalamClass === 'A' ? 'tahfidz_malam_a' : 'tahfidz_malam_b');
         resolvedTahfidzClass = cls;
         resolvedTahfidzUstadzName = cls === 'tahfidz_malam_a' ? 'Ust. Salman' : 'Ust. Zuhdi';
       }
@@ -2528,6 +2535,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Validasi Setoran Tahfidz oleh Musyrif
   const validateTahfidzSetoran = async ({
     recordId,
+    studentId,
+    activityId,
+    sessionId,
+    operationalDate,
+    tahfidzClass,
     mode,
     juz,
     halaman,
@@ -2536,6 +2548,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     note,
   }: {
     recordId: string;
+    studentId?: string;
+    activityId?: string;
+    sessionId?: string;
+    operationalDate?: string;
+    tahfidzClass?: string;
     mode?: import('@/types').TahfidzMode;
     juz?: number;
     halaman?: number;
@@ -2544,11 +2561,92 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     note?: string;
   }) => {
     const record = attendanceRecords.find((r) => r.id === recordId);
+    const nowIso = effectiveTime.toISOString();
+
     if (!record) {
-      return { success: false, message: 'Catatan presensi tidak ditemukan.' };
+      // Find student if musyrif creates manual setoran for santri without an existing record
+      const targetStudentId =
+        studentId || (recordId.startsWith('draft-tahfidz-') ? recordId.split('-').pop() : undefined);
+      const student = profiles.find((p) => p.id === targetStudentId);
+      if (!student) {
+        return { success: false, message: 'Catatan presensi atau data santri tidak ditemukan.' };
+      }
+
+      const targetOperationalDate = operationalDate || getWibDateStr(nowIso);
+      const targetMode = mode || 'ziyadah';
+      const targetJuz = juz !== undefined ? juz : 30;
+      const targetHalaman = halaman !== undefined ? halaman : 1;
+      const targetHalamanEnd = halamanEnd !== undefined ? halamanEnd : targetHalaman;
+      const newStatus: AttendanceStatus =
+        status === 'lancar' || status === 'perlu_diulang'
+          ? 'hadir_valid'
+          : status === 'tidak_lancar'
+            ? 'alpa'
+            : 'hadir_valid';
+
+      const newRecId = `rec-tahfidz-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const newRecord: AttendanceRecord = {
+        id: newRecId,
+        student_id: student.id,
+        student_name: student.full_name,
+        activity_id: activityId || 'act-3',
+        activity_name: activityId === 'act-7' ? 'Setoran Malam' : 'Setoran Pagi',
+        session_id: sessionId || (activityId === 'act-7' ? 'ses-setoran-malam' : 'ses-setoran-pagi'),
+        operational_date: targetOperationalDate,
+        submitted_at: nowIso,
+        status: newStatus,
+        attendance_type: 'hadir',
+        photo_path: student.avatar_url || '',
+        latitude: 0,
+        longitude: 0,
+        gps_accuracy_m: 0,
+        location_captured_at: nowIso,
+        distance_from_site_m: 0,
+        is_verified: status === 'lancar' || status === 'perlu_diulang',
+        tahfidz_mode: targetMode,
+        tahfidz_juz: targetJuz,
+        tahfidz_halaman: targetHalaman,
+        tahfidz_halaman_end: targetHalamanEnd,
+        tahfidz_class: tahfidzClass,
+        tahfidz_ustadz_name: currentUser.full_name,
+        tahfidz_status: status,
+        tahfidz_validated_by: currentUser.id,
+        tahfidz_validated_by_name: currentUser.full_name,
+        tahfidz_validated_at: nowIso,
+        tahfidz_validation_note: note,
+      };
+
+      setAttendanceRecords((prev) => [newRecord, ...prev]);
+
+      const audit: AuditLog = {
+        id: `aud-${Date.now()}`,
+        actor_id: currentUser.id,
+        actor_name: currentUser.full_name,
+        action: 'MANUAL_TAHFIDZ_ENTRY',
+        entity_type: 'attendance_record',
+        entity_id: newRecId,
+        after_data: newRecord as unknown as Record<string, unknown>,
+        reason: note || `Input setoran tahfidz manual untuk ${student.full_name}`,
+        created_at: nowIso,
+      };
+      setAuditLogs((prev) => [audit, ...prev]);
+
+      const supabase = getSupabase();
+      if (supabase && isSupabaseConnected) {
+        try {
+          await supabase.from('attendance_records').insert(newRecord);
+          await supabase.from('audit_logs').insert(audit);
+        } catch (err) {
+          console.warn('Failed to insert Supabase tahfidz record:', err);
+        }
+      }
+
+      return {
+        success: true,
+        message: `Setoran santri ${student.full_name} berhasil dicatat & divalidasi (${status === 'lancar' ? 'Lancar' : status === 'perlu_diulang' ? 'Perlu Diulang' : 'Tidak Lancar'}).`,
+      };
     }
 
-    const nowIso = effectiveTime.toISOString();
     const targetMode = mode || record.tahfidz_mode || 'ziyadah';
     const targetJuz = juz !== undefined ? juz : record.tahfidz_juz;
     const targetHalaman = halaman !== undefined ? halaman : record.tahfidz_halaman;

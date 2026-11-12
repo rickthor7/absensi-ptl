@@ -26,6 +26,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Send,
+  Plus,
 } from 'lucide-react';
 
 export default function MusyrifTahfidzPage() {
@@ -73,54 +74,53 @@ export default function MusyrifTahfidzPage() {
     // 1. Santri explicitly assigned to this class letter in profiles
     const assigned = profiles.filter((p) => {
       if (p.role !== 'santri') return false;
-      if (activeClassConfig.session === 'pagi') {
-        return p.class_tahfidz_pagi === activeClassConfig.classLetter;
-      } else {
-        return p.class_tahfidz_malam === activeClassConfig.classLetter;
-      }
+      const letter =
+        activeClassConfig.session === 'pagi'
+          ? (p.class_tahfidz_pagi || '').trim().toUpperCase()
+          : (p.class_tahfidz_malam || '').trim().toUpperCase();
+      return letter === activeClassConfig.classLetter;
     });
 
-    // 2. Santri with attendance records for this class or activity today
-    const actCode = activeClassConfig.activityCode.toLowerCase();
-    const recordStudentIds = attendanceRecords
-      .filter((r) => {
-        const matchesClass = r.tahfidz_class === activeClassId;
-        const matchesAct =
-          (currentActivity && r.activity_id === currentActivity.id) ||
-          (r.session_id && r.session_id.toLowerCase().includes(actCode));
-        const rDate = r.operational_date || getWibDateStr(r.submitted_at);
-        return (matchesClass || matchesAct) && rDate === selectedDate;
-      })
-      .map((r) => r.student_id);
+    if (assigned.length > 0) {
+      return assigned.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    }
 
-    // 3. Fallback: if no santri has halaqoh set in profiles yet, distribute evenly so page isn't empty
+    // Fallback: only if no santri has halaqoh set in profiles yet, distribute evenly so page isn't empty
     const allSantri = profiles.filter((p) => p.role === 'santri');
-    const hasAnyAssignments = profiles.some((p) =>
-      activeClassConfig.session === 'pagi' ? !!p.class_tahfidz_pagi : !!p.class_tahfidz_malam
-    );
+    const hasAnyAssignments = profiles.some((p) => {
+      const val =
+        activeClassConfig.session === 'pagi'
+          ? (p.class_tahfidz_pagi || '').trim()
+          : (p.class_tahfidz_malam || '').trim();
+      return val && val !== '-';
+    });
 
-    let baseList = assigned;
     if (!hasAnyAssignments && allSantri.length > 0) {
       const isClassA = activeClassConfig.classLetter === 'A';
       const half = Math.ceil(allSantri.length / 2);
-      baseList = isClassA ? allSantri.slice(0, half) : allSantri.slice(half);
+      const splitList = isClassA ? allSantri.slice(0, half) : allSantri.slice(half);
+      return splitList.sort((a, b) => a.full_name.localeCompare(b.full_name));
     }
 
-    // Merge in any santri who recorded attendance for this class
-    const mergedMap = new Map<string, Profile>();
-    baseList.forEach((s) => mergedMap.set(s.id, s));
-    recordStudentIds.forEach((sId) => {
-      const found = profiles.find((p) => p.id === sId);
-      if (found) mergedMap.set(found.id, found);
-    });
-
-    return Array.from(mergedMap.values());
-  }, [profiles, activeClassConfig, attendanceRecords, currentActivity, selectedDate, activeClassId]);
+    return assigned;
+  }, [profiles, activeClassConfig]);
 
   // Attendance records for this class and date
   const classAttendanceRecords = useMemo(() => {
     const actCode = activeClassConfig.activityCode.toLowerCase();
+    const classStudentIds = new Set(santriList.map((s) => s.id));
+
     return attendanceRecords.filter((r) => {
+      // Must be a santri belonging strictly to this class
+      if (!classStudentIds.has(r.student_id)) return false;
+
+      // Must match selected operational date
+      const rDate = r.operational_date || getWibDateStr(r.submitted_at);
+      if (rDate !== selectedDate) return false;
+
+      // If record specifies a tahfidz_class that belongs to another class, exclude it
+      if (r.tahfidz_class && r.tahfidz_class !== activeClassId) return false;
+
       const matchesActivity =
         (currentActivity && r.activity_id === currentActivity.id) ||
         (r.session_id && r.session_id.toLowerCase().includes(actCode)) ||
@@ -133,21 +133,16 @@ export default function MusyrifTahfidzPage() {
             r.session_id?.toLowerCase().includes('setoran_malam') ||
             r.activity_id === 'act-7'));
 
-      const rDate = r.operational_date || getWibDateStr(r.submitted_at);
-      const matchesDate = rDate === selectedDate;
-      if (!matchesActivity || !matchesDate) return false;
-
-      return (
-        r.tahfidz_class === activeClassId ||
-        santriList.some((s) => s.id === r.student_id)
-      );
+      return matchesActivity;
     });
   }, [attendanceRecords, currentActivity, activeClassConfig, selectedDate, activeClassId, santriList]);
 
   // Map each santri to their attendance record (if any)
   const santriSetoranData = useMemo(() => {
     return santriList.map((santri) => {
-      const record = classAttendanceRecords.find((r) => r.student_id === santri.id);
+      const studentRecords = classAttendanceRecords.filter((r) => r.student_id === santri.id);
+      const record =
+        studentRecords.length > 0 ? studentRecords[studentRecords.length - 1] : undefined;
       return {
         santri,
         record,
@@ -214,6 +209,37 @@ export default function MusyrifTahfidzPage() {
     setTimeout(() => setActionSuccessMsg(null), 3500);
   };
 
+  // Open input setoran modal for santri without attendance record yet
+  const handleOpenNewSetoran = (santri: Profile) => {
+    const draftRecord: AttendanceRecord = {
+      id: `draft-tahfidz-${Date.now()}-${santri.id}`,
+      student_id: santri.id,
+      student_name: santri.full_name,
+      activity_id: currentActivity?.id || (activeClassConfig.session === 'pagi' ? 'act-3' : 'act-7'),
+      activity_name: activeClassConfig.activityName,
+      session_id: activeClassConfig.session === 'pagi' ? 'ses-setoran-pagi' : 'ses-setoran-malam',
+      operational_date: selectedDate,
+      submitted_at: `${selectedDate}T06:00:00+07:00`,
+      status: 'hadir_valid',
+      attendance_type: 'hadir',
+      photo_path: santri.avatar_url || '',
+      latitude: 0,
+      longitude: 0,
+      gps_accuracy_m: 0,
+      location_captured_at: `${selectedDate}T06:00:00+07:00`,
+      distance_from_site_m: 0,
+      is_verified: true,
+      tahfidz_mode: 'ziyadah',
+      tahfidz_juz: 30,
+      tahfidz_halaman: 1,
+      tahfidz_halaman_end: 1,
+      tahfidz_class: activeClassId,
+      tahfidz_ustadz_name: activeClassConfig.ustadzName,
+      tahfidz_status: 'lancar',
+    };
+    setValidatingRecord(draftRecord);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -261,6 +287,14 @@ export default function MusyrifTahfidzPage() {
           const isActive = cls.id === activeClassId;
           const isMyClass =
             cls.ustadzId === currentUser?.id || cls.ustadzNickname === currentUser?.nickname;
+          const enrolledCount = profiles.filter((p) => {
+            if (p.role !== 'santri') return false;
+            const ltr =
+              cls.session === 'pagi'
+                ? (p.class_tahfidz_pagi || '').trim().toUpperCase()
+                : (p.class_tahfidz_malam || '').trim().toUpperCase();
+            return ltr === cls.classLetter;
+          }).length;
 
           return (
             <button
@@ -282,11 +316,22 @@ export default function MusyrifTahfidzPage() {
                 >
                   {cls.session === 'pagi' ? 'Pagi (Subuh)' : 'Malam (Isya)'}
                 </span>
-                {isMyClass && (
-                  <span className="text-[10px] font-extrabold bg-[#D6A84F] text-stone-900 px-2 py-0.5 rounded-full shadow-sm">
-                    Kelas Anda
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                      isActive
+                        ? 'bg-emerald-800/80 text-emerald-100 border border-emerald-600'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500'
+                    }`}
+                  >
+                    {enrolledCount} Santri
                   </span>
-                )}
+                  {isMyClass && (
+                    <span className="text-[10px] font-extrabold bg-[#D6A84F] text-stone-900 px-2 py-0.5 rounded-full shadow-sm">
+                      Kelas Anda
+                    </span>
+                  )}
+                </div>
               </div>
               <h3 className="font-extrabold text-sm sm:text-base">{cls.name}</h3>
               <p
@@ -538,6 +583,17 @@ export default function MusyrifTahfidzPage() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
+                      {!record && (
+                        <button
+                          onClick={() => handleOpenNewSetoran(santri)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#146B50] hover:bg-[#0E5B44] text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                          title="Input setoran santri secara langsung"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Input Setoran</span>
+                        </button>
+                      )}
+
                       {isMenunggu && record && (
                         <button
                           onClick={() => handleFastAcc(record)}
@@ -585,6 +641,7 @@ export default function MusyrifTahfidzPage() {
           ustadzName={activeClassConfig.ustadzName}
           dateStr={selectedDate}
           records={classAttendanceRecords}
+          santriList={santriList}
         />
       )}
 
@@ -594,8 +651,20 @@ export default function MusyrifTahfidzPage() {
           record={validatingRecord}
           onClose={() => setValidatingRecord(null)}
           onValidate={async (params) => {
-            await validateTahfidzSetoran({
+            const isDraft = params.recordId.startsWith('draft-tahfidz-');
+            const studentId = isDraft ? params.recordId.split('-').pop() : undefined;
+            const res = await validateTahfidzSetoran({
               recordId: params.recordId,
+              studentId,
+              activityId:
+                currentActivity?.id ||
+                (activeClassConfig.session === 'pagi' ? 'act-3' : 'act-7'),
+              sessionId:
+                activeClassConfig.session === 'pagi'
+                  ? 'ses-setoran-pagi'
+                  : 'ses-setoran-malam',
+              operationalDate: selectedDate,
+              tahfidzClass: activeClassId,
               mode: params.mode,
               juz: params.juz,
               halaman: params.halaman,
@@ -604,7 +673,9 @@ export default function MusyrifTahfidzPage() {
               note: params.note,
             });
             setValidatingRecord(null);
-            setActionSuccessMsg(`Status setoran santri berhasil diperbarui.`);
+            setActionSuccessMsg(
+              res.message || 'Status setoran santri berhasil diperbarui.'
+            );
             setTimeout(() => setActionSuccessMsg(null), 3500);
           }}
         />
