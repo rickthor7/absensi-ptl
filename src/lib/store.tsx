@@ -609,8 +609,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         cookieUser && cookieUser.id && cookieUser.id !== 'guest'
           ? cookieUser
           : parsedStored && parsedStored.id && parsedStored.id !== 'guest'
-          ? parsedStored
-          : null;
+            ? parsedStored
+            : null;
 
       if (initialUser && initialUser.id) {
         setCurrentUserState(initialUser);
@@ -2038,7 +2038,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           r.student_id === entry.studentId &&
           r.activity_id === activityId &&
           (r.operational_date?.substring(0, 10) === operationalDate.substring(0, 10) ||
-           r.session_id?.includes(operationalDate.substring(0, 10)))
+            r.session_id?.includes(operationalDate.substring(0, 10)))
       );
 
       const student = profiles.find((p) => p.id === entry.studentId);
@@ -2284,7 +2284,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           r.student_id === studentId &&
           r.activity_id === update.activityId &&
           (r.operational_date?.substring(0, 10) === update.dateStr.substring(0, 10) ||
-           r.session_id?.includes(update.dateStr.substring(0, 10)))
+            r.session_id?.includes(update.dateStr.substring(0, 10)))
       );
 
       const correctionEntry = {

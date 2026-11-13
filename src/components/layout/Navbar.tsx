@@ -30,6 +30,7 @@ import {
   CreditCard,
   BookOpen,
   CheckSquare,
+  Edit3,
 } from 'lucide-react';
 import AccountSecurityModal from './AccountSecurityModal';
 import { formatIndonesianDate, formatTime24 } from '@/lib/schedule';
@@ -53,6 +54,7 @@ export default function Navbar() {
     theme,
     toggleTheme,
     sppPayments,
+    attendanceRecords,
   } = useStore();
 
   const pathname = usePathname();
@@ -117,14 +119,20 @@ export default function Navbar() {
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
+  const pendingIzinCount = (attendanceRecords || []).filter(
+    (r) => r.status === 'izin_diajukan'
+  ).length;
+
   const musyrifNav: NavItem[] = [
-    { href: '/musyrif', label: 'Ringkasan', icon: Compass },
-    { href: '/musyrif/absensi', label: 'Edit Presensi', icon: CheckSquare },
+    { href: '/musyrif', label: 'Beranda', icon: Compass },
+    { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
+    { href: '/musyrif/absensi', label: 'Data Absensi', icon: CheckCircle2 },
+    { href: '/musyrif/kegiatan', label: 'Jadwal Kegiatan', icon: Settings },
+    { href: '/musyrif/edit-presensi', label: 'Edit Presensi', icon: CheckSquare },
+    { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
+    { href: '/musyrif/edit-setoran', label: 'Edit Setoran', icon: Edit3 },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
-    { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText },
-    { href: '/musyrif/tahfidz', label: 'Tahfidz', icon: BookOpen },
-    { href: '/musyrif/kegiatan', label: 'Kegiatan', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
   ];
@@ -158,17 +166,15 @@ export default function Navbar() {
                   </span>
                   {/* Live / Lokal chip */}
                   <span
-                    className={`hidden sm:flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
-                      isSupabaseConnected
-                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                        : 'bg-white/5 text-stone-400 border-white/10'
-                    }`}
+                    className={`hidden sm:flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${isSupabaseConnected
+                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      : 'bg-white/5 text-stone-400 border-white/10'
+                      }`}
                     title={supabaseStatusMessage}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        isSupabaseConnected ? 'bg-emerald-400' : 'bg-stone-500'
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSupabaseConnected ? 'bg-emerald-400' : 'bg-stone-500'
+                        }`}
                     />
                     {isSupabaseConnected ? 'Live' : 'Lokal'}
                   </span>
@@ -191,13 +197,12 @@ export default function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                        item.highlight
-                          ? 'bg-[#0D7B5F] text-white font-bold shadow-xs'
-                          : isActive
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${item.highlight
+                        ? 'bg-[#0D7B5F] text-white font-bold shadow-xs'
+                        : isActive
                           ? 'bg-white/10 text-white font-semibold'
                           : 'text-stone-300 hover:text-white hover:bg-white/5'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
                       <span>{item.label}</span>
@@ -214,11 +219,10 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
                 <Link
                   href="/"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                    pathname === '/'
-                      ? 'bg-white/10 text-white font-bold'
-                      : 'text-stone-300 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${pathname === '/'
+                    ? 'bg-white/10 text-white font-bold'
+                    : 'text-stone-300 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
                   <span>Beranda</span>
@@ -262,11 +266,10 @@ export default function Navbar() {
                     aria-label="User menu"
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-offset-1 ring-offset-[#082F23] transition-all duration-200 group-hover:ring-[#D4A24C]/60 ${
-                        isMusyrif
-                          ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23] ring-[#D4A24C]/30'
-                          : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white ring-emerald-500/30'
-                      }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-offset-1 ring-offset-[#082F23] transition-all duration-200 group-hover:ring-[#D4A24C]/60 ${isMusyrif
+                        ? 'bg-gradient-to-br from-[#D4A24C] to-[#B8872E] text-[#082F23] ring-[#D4A24C]/30'
+                        : 'bg-gradient-to-br from-[#0D7B5F] to-[#096B52] text-white ring-emerald-500/30'
+                        }`}
                     >
                       {currentUser.full_name.charAt(0).toUpperCase()}
                     </div>
@@ -290,11 +293,10 @@ export default function Navbar() {
                       {/* Header */}
                       <div className="p-4 bg-stone-50 dark:bg-[#14221C] border-b border-stone-200/80 dark:border-stone-800 flex items-center gap-3">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${
-                            isMusyrif
-                              ? 'bg-[#E0B45C] text-[#06241B]'
-                              : 'bg-[#0D7B5F] text-white'
-                          }`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${isMusyrif
+                            ? 'bg-[#E0B45C] text-[#06241B]'
+                            : 'bg-[#0D7B5F] text-white'
+                            }`}
                         >
                           {currentUser.full_name.charAt(0).toUpperCase()}
                         </div>
@@ -394,13 +396,12 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  item.highlight
-                    ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm'
-                    : isActive
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${item.highlight
+                  ? 'bg-gradient-to-r from-[#D4A24C] to-[#E8C36E] text-[#082F23] font-bold shadow-sm'
+                  : isActive
                     ? 'bg-[#0D7B5F] text-white font-semibold'
                     : 'text-emerald-200/70 hover:bg-white/5 hover:text-white'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 <span>{item.label}</span>

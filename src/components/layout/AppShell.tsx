@@ -35,6 +35,7 @@ import {
   Lock,
   BookOpen,
   CheckSquare,
+  Edit3,
 } from 'lucide-react';
 
 interface ShellNavItem {
@@ -138,15 +139,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/santri/profil', label: 'Profil', icon: User },
   ];
 
-  // Musyrif navigation items
+  // Musyrif navigation items matching user's exact ordered list
   const musyrifNavItems: ShellNavItem[] = [
     { href: '/musyrif', label: 'Beranda', icon: Compass },
-    { href: '/musyrif/absensi', label: 'Edit Presensi', icon: CheckSquare },
-    { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
     { href: '/musyrif/perizinan', label: 'Perizinan', icon: FileText, badge: pendingIzinCount },
+    { href: '/musyrif/absensi', label: 'Data Absensi', icon: CheckCircle2 },
+    { href: '/musyrif/kegiatan', label: 'Jadwal Kegiatan', icon: Settings },
+    { href: '/musyrif/edit-presensi', label: 'Edit Presensi', icon: CheckSquare },
+    { href: '/musyrif/tahfidz', label: 'Setoran Tahfidz', icon: BookOpen },
+    { href: '/musyrif/edit-setoran', label: 'Edit Setoran', icon: Edit3 },
     { href: '/musyrif/santri', label: 'Data Santri', icon: Users },
     { href: '/musyrif/keuangan', label: 'Data SPP', icon: CreditCard, badge: pendingSppCount },
-    { href: '/musyrif/kegiatan', label: 'Jadwal Kegiatan', icon: Settings },
     { href: '/musyrif/laporan', label: 'Laporan', icon: BarChart3 },
     { href: '/musyrif/audit', label: 'Audit Log', icon: Shield },
     { href: '/santri/profil', label: 'Profil', icon: User },
@@ -163,8 +166,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Quick search filtered list
   const searchItems = [
     ...navItems.map((item) => ({ title: item.label, href: item.href, category: 'Menu' })),
-    { title: 'Edit Presensi per Kegiatan & Santri', href: '/musyrif/absensi', category: 'Presensi' },
+    { title: 'Data Absensi & Log Kehadiran', href: '/musyrif/absensi', category: 'Presensi' },
+    { title: 'Edit Presensi per Kegiatan & Santri', href: '/musyrif/edit-presensi', category: 'Presensi' },
     { title: 'Setoran Tahfidz & Rekap WA', href: '/musyrif/tahfidz', category: 'Tahfidz' },
+    { title: 'Edit Data Setoran Santri', href: '/musyrif/edit-setoran', category: 'Tahfidz' },
     { title: 'Presensi Kamera & GPS (Santri)', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Ajukan Izin Presensi', href: '/santri/absensi', category: 'Aksi' },
     { title: 'Pembayaran SPP Online', href: isMusyrif ? '/musyrif/keuangan' : '/santri/spp', category: 'Keuangan' },

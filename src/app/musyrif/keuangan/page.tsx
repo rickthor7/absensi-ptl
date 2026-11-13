@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import { SppPayment } from '@/types';
 import { getSppAmountForStudent } from '@/lib/constants';
-import { getWibDateStr } from '@/lib/schedule';
+import { getWibDateStr, formatIndonesianDate } from '@/lib/schedule';
 import {
   CheckCircle2,
   Clock,
@@ -23,12 +23,34 @@ import {
   ArrowLeft,
   DollarSign,
   ShieldCheck,
+  Printer,
+  Download,
+  Edit3,
+  FileText,
+  RotateCcw,
 } from 'lucide-react';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
+
+function terbilangRupiah(nominal: number): string {
+  const angka = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+  function convert(n: number): string {
+    if (n < 12) return angka[n];
+    if (n < 20) return convert(n - 10) + ' Belas';
+    if (n < 100) return convert(Math.floor(n / 10)) + ' Puluh ' + convert(n % 10);
+    if (n < 200) return 'Seratus ' + convert(n - 100);
+    if (n < 1000) return convert(Math.floor(n / 100)) + ' Ratus ' + convert(n % 100);
+    if (n < 2000) return 'Seribu ' + convert(n - 1000);
+    if (n < 1000000) return convert(Math.floor(n / 1000)) + ' Ribu ' + convert(n % 1000);
+    if (n < 1000000000) return convert(Math.floor(n / 1000000)) + ' Juta ' + convert(n % 1000000);
+    return '';
+  }
+  const result = convert(nominal).trim().replace(/\s+/g, ' ');
+  return result ? `${result} Rupiah` : 'Nol Rupiah';
+}
 
 export default function MusyrifKeuanganPage() {
   const {
@@ -62,6 +84,10 @@ export default function MusyrifKeuanganPage() {
   const [cashAmount, setCashAmount] = useState<number>(sppSettings.monthly_amount);
   const [cashNotes, setCashNotes] = useState<string>('');
   const [cashSuccess, setCashSuccess] = useState<string>('');
+
+  // Printable States (PDF)
+  const [isPrintReportModalOpen, setIsPrintReportModalOpen] = useState(false);
+  const [receiptPayment, setReceiptPayment] = useState<SppPayment | null>(null);
 
   // Settings State
   const [settingsMonthlyAmount, setSettingsMonthlyAmount] = useState<number>(sppSettings.monthly_amount);
@@ -142,23 +168,54 @@ export default function MusyrifKeuanganPage() {
     setTimeout(() => setSettingsSaved(false), 2500);
   };
 
-  // Handle Review (Accept / Reject)
+  // Handle Review (Accept / Reject / Pending)
   const handleApprove = async (paymentId: string) => {
     await reviewSppPayment(paymentId, 'verified');
-    setSelectedPayment(null);
+    if (selectedPayment && selectedPayment.id === paymentId) {
+      setSelectedPayment((prev) => (prev ? { ...prev, status: 'verified' } : null));
+    }
   };
 
   const handleOpenReject = (payment: SppPayment) => {
     setSelectedPayment(payment);
-    setRejectReason('');
+    setRejectReason(payment.rejection_reason || '');
     setIsRejectModalOpen(true);
   };
 
   const handleConfirmReject = async () => {
     if (!selectedPayment) return;
-    await reviewSppPayment(selectedPayment.id, 'rejected', rejectReason || 'Bukti transfer tidak valid');
+    const reason = rejectReason.trim() || 'Bukti transfer tidak valid atau tidak sesuai tarif';
+    await reviewSppPayment(selectedPayment.id, 'rejected', reason);
     setIsRejectModalOpen(false);
-    setSelectedPayment(null);
+    setSelectedPayment((prev) =>
+      prev ? { ...prev, status: 'rejected', rejection_reason: reason } : null
+    );
+  };
+
+  const handleSetPending = async (paymentId: string) => {
+    await reviewSppPayment(paymentId, 'pending');
+    if (selectedPayment && selectedPayment.id === paymentId) {
+      setSelectedPayment((prev) => (prev ? { ...prev, status: 'pending' } : null));
+    }
+  };
+
+  const handleQuickAccStudent = async (student: (typeof santriList)[0], month: number, year: number) => {
+    const existing = sppPayments.find(
+      (p) => p.student_id === student.id && p.month === month && p.year === year
+    );
+    if (existing) {
+      await reviewSppPayment(existing.id, 'verified');
+    } else {
+      const amount = getSppAmountForStudent(student, sppSettings);
+      await addManualSppPayment({
+        studentId: student.id,
+        month,
+        year,
+        amount,
+        paymentDate: getWibDateStr(effectiveTime),
+        notes: 'ACC langsung lunas oleh musyrif',
+      });
+    }
   };
 
   // Handle Manual Cash SPP
@@ -224,6 +281,14 @@ export default function MusyrifKeuanganPage() {
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
+              onClick={() => setIsPrintReportModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-[#0F1E18] text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-[#0D7B5F]" />
+              <span>🖨️ Cetak Rekap SPP (PDF)</span>
+            </button>
+
+            <button
               onClick={() => {
                 setCashMonth(currentMonthNum);
                 setCashYear(currentYearNum);
@@ -236,7 +301,7 @@ export default function MusyrifKeuanganPage() {
                 }
                 setIsCashModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Catat Bayar Tunai (Cash)</span>
@@ -500,24 +565,56 @@ export default function MusyrifKeuanganPage() {
                           <>
                             <button
                               onClick={() => handleOpenReject(payment)}
-                              className="flex-1 py-1.5 px-3 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 text-xs font-bold transition-colors"
+                              className="flex-1 py-1.5 px-3 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer"
                             >
                               Tolak
                             </button>
                             <button
                               onClick={() => handleApprove(payment.id)}
-                              className="flex-1 py-1.5 px-3 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-sm transition-all"
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
                             >
                               ACC / Sah
                             </button>
                           </>
+                        ) : payment.status === 'verified' ? (
+                          <>
+                            <button
+                              onClick={() => setReceiptPayment(payment)}
+                              className="flex-1 py-1.5 px-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700 text-[#0D7B5F] dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                              title="Cetak Kuitansi Resmi PDF"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Kuitansi</span>
+                            </button>
+                            <button
+                              onClick={() => handleOpenReject(payment)}
+                              className="py-1.5 px-2.5 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer"
+                              title="Tolak / Batalkan ACC"
+                            >
+                              Tolak
+                            </button>
+                            <button
+                              onClick={() => setSelectedPayment(payment)}
+                              className="py-1.5 px-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-xs font-semibold hover:bg-stone-50 cursor-pointer"
+                            >
+                              Rincian
+                            </button>
+                          </>
                         ) : (
-                          <button
-                            onClick={() => setSelectedPayment(payment)}
-                            className="w-full py-1.5 px-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-xs font-semibold hover:bg-stone-50"
-                          >
-                            Lihat Rincian
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleApprove(payment.id)}
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                            >
+                              ACC / Sahkan
+                            </button>
+                            <button
+                              onClick={() => setSelectedPayment(payment)}
+                              className="py-1.5 px-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-xs font-semibold hover:bg-stone-50 cursor-pointer"
+                            >
+                              Rincian
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -584,6 +681,14 @@ export default function MusyrifKeuanganPage() {
                   </select>
 
                   <button
+                    onClick={() => setIsPrintReportModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-[#152922] text-stone-700 dark:text-stone-200 text-xs font-bold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-[#0D7B5F]" />
+                    <span>Cetak Rekap PDF</span>
+                  </button>
+
+                  <button
                     onClick={() => {
                       setCashMonth(matriksMonth);
                       setCashYear(matriksYear);
@@ -596,7 +701,7 @@ export default function MusyrifKeuanganPage() {
                       }
                       setIsCashModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0D7B5F] text-white text-xs font-bold hover:bg-[#0b6b52] transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0D7B5F] text-white text-xs font-bold hover:bg-[#0b6b52] transition-colors cursor-pointer"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Catat Bayar Tunai</span>
@@ -730,9 +835,17 @@ export default function MusyrifKeuanganPage() {
                               )}
                             </td>
                             <td className="py-3 px-3 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
                                 {(!payment || payment.status === 'rejected') && (
                                   <>
+                                    <button
+                                      onClick={() => handleQuickAccStudent(student, matriksMonth, matriksYear)}
+                                      className="px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                                      title="ACC langsung lunas"
+                                    >
+                                      ACC Lunas
+                                    </button>
+
                                     <button
                                       onClick={() => {
                                         setCashStudentId(student.id);
@@ -741,15 +854,15 @@ export default function MusyrifKeuanganPage() {
                                         setCashAmount(getSppAmountForStudent(student, sppSettings));
                                         setIsCashModalOpen(true);
                                       }}
-                                      className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#0D7B5F] text-white hover:bg-[#0b6b52] transition-colors"
+                                      className="px-2 py-1 rounded-md text-[10px] font-bold bg-[#0D7B5F] text-white hover:bg-[#0b6b52] transition cursor-pointer"
                                     >
-                                      Terima Tunai
+                                      Tunai
                                     </button>
 
                                     <button
                                       onClick={() => handleCopyWaReminder(student)}
                                       title="Salin Pesan Pengingat WhatsApp"
-                                      className="p-1 rounded-md border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:text-emerald-600 transition-colors"
+                                      className="p-1 rounded-md border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:text-emerald-600 transition-colors cursor-pointer"
                                     >
                                       {copiedWaStudentId === student.id ? (
                                         <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -761,12 +874,42 @@ export default function MusyrifKeuanganPage() {
                                 )}
 
                                 {payment && (
-                                  <button
-                                    onClick={() => setSelectedPayment(payment)}
-                                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
-                                  >
-                                    Lihat Bukti
-                                  </button>
+                                  <>
+                                    {payment.status === 'verified' ? (
+                                      <button
+                                        onClick={() => handleOpenReject(payment)}
+                                        className="px-2 py-1 rounded-md text-[10px] font-bold border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                                        title="Ubah status jadi Ditolak"
+                                      >
+                                        Tolak
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleApprove(payment.id)}
+                                        className="px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                                        title="ACC dan sahkan pembayaran"
+                                      >
+                                        ACC
+                                      </button>
+                                    )}
+
+                                    {payment.status === 'verified' && (
+                                      <button
+                                        onClick={() => setReceiptPayment(payment)}
+                                        className="p-1 rounded-md border border-emerald-300 dark:border-emerald-700 text-[#0D7B5F] dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+                                        title="Cetak Kuitansi Resmi PDF"
+                                      >
+                                        <Printer className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+
+                                    <button
+                                      onClick={() => setSelectedPayment(payment)}
+                                      className="px-2 py-1 rounded-md text-[10px] font-semibold border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
+                                    >
+                                      Bukti
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -953,34 +1096,71 @@ export default function MusyrifKeuanganPage() {
               </div>
             )}
 
-            <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
-              <span className="text-xs text-stone-500">
+            <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="text-xs text-stone-500">
                 Tgl Bayar: <span className="font-semibold text-stone-800 dark:text-stone-200">{selectedPayment.payment_date}</span>
-              </span>
+                {selectedPayment.status === 'verified' && (
+                  <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+                    LUNAS / SAH
+                  </span>
+                )}
+                {selectedPayment.status === 'rejected' && (
+                  <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300">
+                    DITOLAK
+                  </span>
+                )}
+                {selectedPayment.status === 'pending' && (
+                  <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+                    MENUNGGU ACC
+                  </span>
+                )}
+              </div>
 
-              {selectedPayment.status === 'pending' ? (
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedPayment.status === 'verified' && (
                   <button
-                    onClick={() => handleOpenReject(selectedPayment)}
-                    className="px-3.5 py-2 rounded-xl border border-rose-300 text-rose-700 dark:text-rose-400 hover:bg-rose-50 text-xs font-bold"
+                    onClick={() => setReceiptPayment(selectedPayment)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
                   >
-                    Tolak
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Cetak Kuitansi</span>
                   </button>
+                )}
+
+                {selectedPayment.status !== 'verified' && (
                   <button
                     onClick={() => handleApprove(selectedPayment.id)}
-                    className="px-4 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md"
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
                   >
-                    Setujui / Sah
+                    ACC / Sahkan
                   </button>
-                </div>
-              ) : (
+                )}
+
+                {selectedPayment.status !== 'rejected' && (
+                  <button
+                    onClick={() => handleOpenReject(selectedPayment)}
+                    className="px-3 py-1.5 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer"
+                  >
+                    Tolak / Reject
+                  </button>
+                )}
+
+                {selectedPayment.status !== 'pending' && (
+                  <button
+                    onClick={() => handleSetPending(selectedPayment.id)}
+                    className="px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-xs font-bold transition cursor-pointer"
+                  >
+                    Set Pending
+                  </button>
+                )}
+
                 <button
                   onClick={() => setSelectedPayment(null)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-xs font-bold"
+                  className="px-3.5 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-xs font-bold hover:bg-stone-200 cursor-pointer"
                 >
                   Tutup
                 </button>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -1167,6 +1347,328 @@ export default function MusyrifKeuanganPage() {
         </div>
       )}
 
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL CETAK REKAP SPP BULANAN (PDF)
+         ══════════════════════════════════════════════════════════════ */}
+      {isPrintReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-fade-in">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4 max-h-[92vh] overflow-y-auto">
+            {/* Modal Controls (Hidden in print) */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
+              <div className="flex items-center gap-2">
+                <Printer className="w-5 h-5 text-[#0D7B5F]" />
+                <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">
+                  Pratinjau Cetak Rekapitulasi SPP Santri (PDF)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md transition active:scale-95 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak / Simpan PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPrintReportModalOpen(false)}
+                  className="p-2 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Content */}
+            <div id="printable-spp-report" className="bg-white text-black p-6 sm:p-8 rounded-2xl border border-stone-300 text-xs space-y-6">
+              {/* Kop Surat Resmi */}
+              <div className="flex items-center gap-4 pb-4 border-b-2 border-black">
+                <img src="/icon.jpg" alt="Logo" className="w-16 h-16 object-cover rounded-xl" />
+                <div className="flex-1 text-center pr-16">
+                  <h2 className="text-lg font-black uppercase tracking-wider text-emerald-900">
+                    Pondok Pesantren Nurul Falah
+                  </h2>
+                  <p className="text-[11px] text-stone-700 font-medium">
+                    Jl. Ketintang Timur PTT II No. 1, Gayungan, Kota Surabaya, Jawa Timur 60231
+                  </p>
+                  <p className="text-[10px] text-stone-500">
+                    Website: absenptl.web.id • Email: info@pesantrennulfalah.id
+                  </p>
+                </div>
+              </div>
+
+              {/* Title & Metadata */}
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-sm uppercase tracking-wider underline">
+                  Laporan Rekapitulasi Pembayaran SPP Santri
+                </h3>
+                <p className="text-xs font-semibold text-stone-700">
+                  Periode: Bulan {MONTH_NAMES[matriksMonth - 1]} {matriksYear}
+                </p>
+                <p className="text-[11px] text-stone-500">
+                  Filter Kamar/Kelompok: {matriksGroupFilter === 'all' ? 'Semua Kamar' : matriksGroupFilter}
+                </p>
+              </div>
+
+              {/* Ringkasan Angka */}
+              {(() => {
+                const filteredSantri = santriList.filter((s) =>
+                  matriksGroupFilter === 'all' ? true : s.group_name === matriksGroupFilter
+                );
+                const lunas = filteredSantri.filter((s) =>
+                  sppPayments.some(
+                    (p) =>
+                      p.student_id === s.id &&
+                      p.month === matriksMonth &&
+                      p.year === matriksYear &&
+                      p.status === 'verified'
+                  )
+                );
+                const totalNominalLunas = sppPayments
+                  .filter(
+                    (p) =>
+                      p.month === matriksMonth &&
+                      p.year === matriksYear &&
+                      p.status === 'verified' &&
+                      filteredSantri.some((s) => s.id === p.student_id)
+                  )
+                  .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+                return (
+                  <div className="grid grid-cols-4 gap-2 text-center p-3 border border-stone-300 rounded-xl bg-stone-50">
+                    <div>
+                      <div className="text-[10px] text-stone-500 uppercase font-bold">Total Santri</div>
+                      <div className="font-extrabold text-sm">{filteredSantri.length} Santri</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-stone-500 uppercase font-bold">Lunas</div>
+                      <div className="font-extrabold text-sm text-emerald-700">{lunas.length} Santri</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-stone-500 uppercase font-bold">Belum Lunas</div>
+                      <div className="font-extrabold text-sm text-rose-700">
+                        {filteredSantri.length - lunas.length} Santri
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-stone-500 uppercase font-bold">Total Kas Masuk</div>
+                      <div className="font-extrabold text-sm text-emerald-800">
+                        {formatRupiah(totalNominalLunas)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Tabel Santri */}
+              <table className="w-full text-left border-collapse border border-stone-300 text-[11px]">
+                <thead>
+                  <tr className="bg-stone-100 font-bold border-b border-stone-300 text-stone-800">
+                    <th className="p-2 border-r border-stone-300 text-center w-8">No</th>
+                    <th className="p-2 border-r border-stone-300">NIS</th>
+                    <th className="p-2 border-r border-stone-300">Nama Santri</th>
+                    <th className="p-2 border-r border-stone-300">Kamar / Kelompok</th>
+                    <th className="p-2 border-r border-stone-300">Tagihan</th>
+                    <th className="p-2 border-r border-stone-300 text-center">Status</th>
+                    <th className="p-2 border-r border-stone-300">Tgl Bayar</th>
+                    <th className="p-2 text-right">Nominal Masuk</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-200">
+                  {santriList
+                    .filter((s) => (matriksGroupFilter === 'all' ? true : s.group_name === matriksGroupFilter))
+                    .map((s, idx) => {
+                      const payment = sppPayments.find(
+                        (p) => p.student_id === s.id && p.month === matriksMonth && p.year === matriksYear
+                      );
+                      const isLunas = payment?.status === 'verified';
+                      const tagihan = getSppAmountForStudent(s, sppSettings);
+
+                      return (
+                        <tr key={s.id} className={idx % 2 === 1 ? 'bg-stone-50/60' : ''}>
+                          <td className="p-2 border-r border-stone-300 text-center font-mono">{idx + 1}</td>
+                          <td className="p-2 border-r border-stone-300 font-mono">{s.student_number || '-'}</td>
+                          <td className="p-2 border-r border-stone-300 font-bold">{s.full_name}</td>
+                          <td className="p-2 border-r border-stone-300">{s.group_name || '-'}</td>
+                          <td className="p-2 border-r border-stone-300 font-mono">{formatRupiah(tagihan)}</td>
+                          <td className="p-2 border-r border-stone-300 text-center font-bold">
+                            {isLunas ? (
+                              <span className="text-emerald-700">LUNAS</span>
+                            ) : payment?.status === 'pending' ? (
+                              <span className="text-amber-700">PENDING</span>
+                            ) : (
+                              <span className="text-rose-700">BELUM</span>
+                            )}
+                          </td>
+                          <td className="p-2 border-r border-stone-300">{payment?.payment_date || '-'}</td>
+                          <td className="p-2 text-right font-mono font-bold">
+                            {isLunas ? formatRupiah(payment.amount) : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+
+              {/* Kolom Tanda Tangan */}
+              <div className="pt-8 flex justify-between items-end text-xs">
+                <div>
+                  <p className="text-stone-500 text-[10px]">
+                    Dicetak pada: {formatIndonesianDate(new Date())}
+                  </p>
+                </div>
+                <div className="text-center space-y-12">
+                  <div>
+                    <p>Surabaya, {formatIndonesianDate(new Date())}</p>
+                    <p className="font-bold">Musyrif / Bendahara Pondok</p>
+                  </div>
+                  <div>
+                    <p className="font-extrabold underline">{currentUser.full_name}</p>
+                    <p className="text-[10px] text-stone-500">Pondok Pesantren Nurul Falah</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL CETAK KUITANSI PEMBAYARAN SPP (PDF)
+         ══════════════════════════════════════════════════════════════ */}
+      {receiptPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-fade-in">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4 my-auto">
+            {/* Header controls (hidden on print) */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
+              <div className="flex items-center gap-2">
+                <Printer className="w-5 h-5 text-[#0D7B5F]" />
+                <h3 className="font-extrabold text-sm sm:text-base text-stone-900 dark:text-stone-100">
+                  Kuitansi Pembayaran SPP Resmi (PDF)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0D7B5F] hover:bg-[#0b6b52] text-white text-xs font-bold shadow-md transition active:scale-95 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak / Simpan PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiptPayment(null)}
+                  className="p-2 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Receipt Card */}
+            <div id="printable-spp-receipt" className="bg-white text-stone-900 p-6 sm:p-8 rounded-2xl border-2 border-stone-300 text-xs space-y-5">
+              {/* Header Kop */}
+              <div className="flex items-center justify-between pb-4 border-b-2 border-emerald-900">
+                <div className="flex items-center gap-3">
+                  <img src="/icon.jpg" alt="Logo" className="w-12 h-12 object-cover rounded-xl" />
+                  <div>
+                    <h2 className="font-black text-sm uppercase text-emerald-900">
+                      Pondok Pesantren Nurul Falah
+                    </h2>
+                    <p className="text-[10px] text-stone-600">
+                      Ketintang Timur PTT II No. 1, Surabaya • Telp: (031) 8281234
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block px-3 py-1 rounded-md bg-emerald-100 text-emerald-800 font-mono font-black text-xs border border-emerald-300">
+                    KUITANSI RESMI
+                  </span>
+                  <div className="text-[10px] text-stone-400 font-mono mt-1">
+                    No: KW/SPP/{receiptPayment.year}/{receiptPayment.month}/{receiptPayment.id.slice(-6).toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Receipt Body */}
+              <div className="space-y-3 py-2 text-xs">
+                <div className="grid grid-cols-4 gap-2">
+                  <span className="text-stone-500 font-medium">Telah terima dari</span>
+                  <span className="col-span-3 font-extrabold text-stone-900">: {receiptPayment.student_name}</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <span className="text-stone-500 font-medium">Nomor Induk / Kamar</span>
+                  <span className="col-span-3 font-mono text-stone-800">
+                    : {receiptPayment.student_number || '-'} • {receiptPayment.group_name || 'Asrama Nurul Falah'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <span className="text-stone-500 font-medium">Uang Sejumlah</span>
+                  <span className="col-span-3 font-bold text-emerald-900 italic bg-stone-50 p-2 rounded-lg border border-stone-200">
+                    : &quot;{terbilangRupiah(receiptPayment.amount)}&quot;
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <span className="text-stone-500 font-medium">Untuk Pembayaran</span>
+                  <span className="col-span-3 font-semibold text-stone-800">
+                    : Iuran SPP Santri Bulan {MONTH_NAMES[receiptPayment.month - 1]} {receiptPayment.year}
+                  </span>
+                </div>
+              </div>
+
+              {/* Nominal & Signature Footer */}
+              <div className="pt-4 border-t border-stone-200 flex items-center justify-between">
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <span className="text-[10px] text-stone-500 block uppercase font-bold">Terbilang Nominal</span>
+                  <span className="text-lg font-black text-[#0D7B5F] font-mono">
+                    {formatRupiah(receiptPayment.amount)}
+                  </span>
+                </div>
+
+                <div className="text-center space-y-10">
+                  <p className="text-[11px] text-stone-600">
+                    Surabaya, {receiptPayment.payment_date}
+                  </p>
+                  <div>
+                    <p className="font-bold underline text-xs">
+                      {receiptPayment.reviewed_by_name || currentUser.full_name}
+                    </p>
+                    <p className="text-[10px] text-emerald-700 font-extrabold tracking-wider">LUNAS / SAH</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Global Print Media CSS ── */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-spp-report, #printable-spp-report *,
+          #printable-spp-receipt, #printable-spp-receipt * {
+            visibility: visible;
+          }
+          #printable-spp-report, #printable-spp-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+            background: white !important;
+            color: black !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
