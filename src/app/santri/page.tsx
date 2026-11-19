@@ -309,43 +309,86 @@ export default function SantriDashboardPage() {
               <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-[#E0B45C] font-bold text-[11px] border border-amber-500/30">
                 Angkatan {currentUser.generation || '2026'}
               </span>
-
-              <span
-                className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${
-                  isSafe
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                }`}
-              >
-                {isSafe ? `Kehadiran Aman (${scorePercentage}%)` : `Peringatan Kehadiran (${scorePercentage}%)`}
-              </span>
             </div>
           </div>
 
-          {/* 4 Metrics Grid: Ringkasan Kehadiran (Hadir, Izin, Alpa, Total Kegiatan) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-5 mt-4 border-t border-white/10">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-white">{hadirCount}</div>
-              <div className="text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Hadir</div>
-              <div className="text-[9px] text-stone-400">Sesi Sah</div>
+          {/* ── KOTAK RINGKASAN KEHADIRAN (STRUKTUR LENGKAP DIPINDAH KE SINI) ── */}
+          <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
+            {/* Header: Judul + Tombol Lihat Raport */}
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#E0B45C]" />
+                <span>Ringkasan Kehadiran</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsRaportOpen(true)}
+                className="text-xs font-bold text-[#E0B45C] hover:text-amber-300 hover:underline flex items-center gap-1 transition cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Lihat Raport</span>
+              </button>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-white">{izinCount}</div>
-              <div className="text-[10px] uppercase font-bold text-amber-300 mt-0.5">Izin</div>
-              <div className="text-[9px] text-stone-400">Disetujui</div>
+            {/* Donut Ring & Target Info */}
+            <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10">
+              <div className="relative shrink-0 flex items-center justify-center">
+                <DonutRing
+                  value={scorePercentage}
+                  size={68}
+                  strokeWidth={6}
+                  color="#E0B45C"
+                  trackColor="rgba(255,255,255,0.15)"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-black text-white">
+                    {scorePercentage}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-white">
+                    Target Kehadiran Bulanan
+                  </p>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                      isSafe
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                    }`}
+                  >
+                    {isSafe ? 'Memenuhi Syarat (≥ 70%)' : 'Kurang dari 70%'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-300 leading-relaxed">
+                  Dihitung dari {totalKegiatan} sesi mutabaah aktif pondok bulan ini.
+                </p>
+              </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-rose-300">{alpaCount}</div>
-              <div className="text-[10px] uppercase font-bold text-rose-400 mt-0.5">Alpa</div>
-              <div className="text-[9px] text-stone-400">Terlewat</div>
-            </div>
+            {/* 4 Metrik: Hadir, Izin, Alpa, Total Kegiatan */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-base sm:text-lg font-black text-white">{hadirCount}</div>
+                <div className="text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Hadir</div>
+              </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-[#E0B45C]">{totalKegiatan}</div>
-              <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Total Kegiatan</div>
-              <div className="text-[9px] text-stone-400">Sesi Aktif</div>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-base sm:text-lg font-black text-white">{izinCount}</div>
+                <div className="text-[10px] uppercase font-bold text-amber-300 mt-0.5">Izin</div>
+              </div>
+
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-base sm:text-lg font-black text-rose-300">{alpaCount}</div>
+                <div className="text-[10px] uppercase font-bold text-rose-400 mt-0.5">Alpa</div>
+              </div>
+
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-base sm:text-lg font-black text-[#E0B45C]">{totalKegiatan}</div>
+                <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Total Kegiatan</div>
+              </div>
             </div>
           </div>
         </div>
@@ -546,78 +589,12 @@ export default function SantriDashboardPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* ── ROW 3: DETAILED SUMMARY GRID ── */}
+      {/* ── ROW 3: RIWAYAT & MINI KALENDER ── */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         
-        {/* COL 1: Ringkasan Kehadiran Donut (lg:col-span-4) */}
-        <div className="lg:col-span-4 clean-card p-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-              <h3 className="font-extrabold text-sm text-stone-900 dark:text-stone-100">
-                Ringkasan Kehadiran
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsRaportOpen(true)}
-                className="text-xs font-bold text-[#0D7B5F] dark:text-[#E0B45C] hover:underline"
-              >
-                Lihat Raport
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 pt-1">
-              <div className="relative shrink-0 flex items-center justify-center">
-                <DonutRing value={scorePercentage} size={76} strokeWidth={6.5} color="#0D7B5F" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-black text-stone-900 dark:text-white">
-                    {scorePercentage}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5 min-w-0">
-                <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                  Target Kehadiran Bulanan
-                </p>
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                    isSafe
-                      ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                      : 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                  }`}
-                >
-                  {isSafe ? 'Status: Memenuhi Syarat' : 'Status: Kurang dari 70%'}
-                </span>
-                <p className="text-[11px] text-stone-400">
-                  Dihitung dari sesi mutabaah aktif pondok bulan ini ({totalKegiatan} sesi).
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 pt-4 border-t border-stone-100 dark:border-stone-800 mt-4 text-center">
-            <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
-              <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{hadirCount}</div>
-              <div className="text-[10px] text-stone-500 font-medium">Hadir</div>
-            </div>
-            <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
-              <div className="text-sm font-bold text-amber-700 dark:text-amber-400">{izinCount}</div>
-              <div className="text-[10px] text-stone-500 font-medium">Izin</div>
-            </div>
-            <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
-              <div className="text-sm font-bold text-rose-700 dark:text-rose-400">{alpaCount}</div>
-              <div className="text-[10px] text-stone-500 font-medium">Alpa</div>
-            </div>
-            <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
-              <div className="text-sm font-bold text-teal-700 dark:text-[#E0B45C]">{totalKegiatan}</div>
-              <div className="text-[10px] text-stone-500 font-medium">Total Sesi</div>
-            </div>
-          </div>
-        </div>
-
-        {/* COL 2: Riwayat Terkini (lg:col-span-4) */}
-        <div className="lg:col-span-4 clean-card p-5 flex flex-col justify-between">
+        {/* COL 1: Riwayat Terkini (lg:col-span-7) */}
+        <div className="lg:col-span-7 clean-card p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
@@ -678,8 +655,8 @@ export default function SantriDashboardPage() {
           </div>
         </div>
 
-        {/* COL 3: Mini Kalender (lg:col-span-4) */}
-        <div className="lg:col-span-4">
+        {/* COL 2: Mini Kalender (lg:col-span-5) */}
+        <div className="lg:col-span-5">
           <MiniCalendarWidget effectiveTime={effectiveTime} />
         </div>
 
