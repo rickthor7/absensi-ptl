@@ -70,6 +70,12 @@ export function isActivitySessionActive(
   allAttendanceRecords: AttendanceRecord[],
   attendanceSessions: AttendanceSession[] = []
 ): boolean {
+  // Pengecualian data awal: Tanggal 11, 12, 13 tidak dihitung kegiatan (dianggap kosong/libur)
+  const dayStr = dateStr.substring(8, 10);
+  if (dayStr === '11' || dayStr === '12' || dayStr === '13') {
+    return false;
+  }
+
   // 1. Cek sesi yang dibuka oleh musyrif
   const hasMusyrifSession = attendanceSessions.some((s) => {
     if (s.activity_id !== activityId) return false;
@@ -220,9 +226,12 @@ export function calculateStudentAttendanceSummary({
   const scorePercentage =
     totalKegiatan > 0 ? Math.round((totalPoin / totalKegiatan) * 1000) / 10 : 100;
 
-  const reviewCount = studentRecords.filter(
-    (r) => r.status === 'izin_diajukan' || r.status === 'perlu_tinjauan'
-  ).length;
+  const reviewCount = studentRecords.filter((r) => {
+    const rDate = r.operational_date?.substring(0, 10) || getWibDateStr(r.submitted_at);
+    const rDay = rDate.substring(8, 10);
+    if (rDay === '11' || rDay === '12' || rDay === '13') return false;
+    return r.status === 'izin_diajukan' || r.status === 'perlu_tinjauan';
+  }).length;
 
   return {
     hadirCount,

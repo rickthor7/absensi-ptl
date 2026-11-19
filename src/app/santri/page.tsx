@@ -244,7 +244,13 @@ export default function SantriDashboardPage() {
   const monthFilter = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
 
   const studentRecords = useMemo(() => {
-    return attendanceRecords.filter((r) => r.student_id === currentUser.id);
+    return attendanceRecords.filter((r) => {
+      if (r.student_id !== currentUser.id) return false;
+      const rDate = r.operational_date?.substring(0, 10);
+      const rDay = rDate?.substring(8, 10);
+      if (rDay === '11' || rDay === '12' || rDay === '13') return false;
+      return true;
+    });
   }, [attendanceRecords, currentUser.id]);
 
   // Evaluasi ringkasan presensi bulan berjalan dengan formula terpusat (hanya sesi aktif)

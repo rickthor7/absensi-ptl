@@ -179,9 +179,14 @@ export default function RaportSantriModal({
     const wibParts = getWibTimeParts(effectiveTime);
     const currentWibMinutes = wibParts.hours * 60 + wibParts.minutes;
 
-    const studentRecords = attendanceRecords.filter(
-      (r) => r.student_id === currentStudent.id && r.operational_date.startsWith(selectedMonthKey)
-    );
+    const studentRecords = attendanceRecords.filter((r) => {
+      if (r.student_id !== currentStudent.id || !r.operational_date.startsWith(selectedMonthKey)) {
+        return false;
+      }
+      const rDay = r.operational_date.substring(8, 10);
+      if (rDay === '11' || rDay === '12' || rDay === '13') return false;
+      return true;
+    });
 
     const days: Array<{
       dateStr: string;

@@ -42,9 +42,15 @@ export default function AttendanceCalendar() {
   const currentWibTime = getWibTimeParts(effectiveTime);
   const currentMinutesWib = currentWibTime.hours * 60 + currentWibTime.minutes;
 
-  // Filter records for current student
+  // Filter records for current student (kecualikan tgl 11, 12, 13 data awal)
   const studentRecords = useMemo(() => {
-    return attendanceRecords.filter((r) => r.student_id === currentUser.id);
+    return attendanceRecords.filter((r) => {
+      if (r.student_id !== currentUser.id) return false;
+      const rDate = r.operational_date?.substring(0, 10);
+      const rDay = rDate?.substring(8, 10);
+      if (rDay === '11' || rDay === '12' || rDay === '13') return false;
+      return true;
+    });
   }, [attendanceRecords, currentUser.id]);
 
   // Month navigation

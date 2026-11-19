@@ -36,8 +36,14 @@ export default function SantriRiwayatPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter records for this student only
-  const studentRecords = attendanceRecords.filter((r) => r.student_id === currentUser.id);
+  // Filter records for this student only (kecualikan tgl 11, 12, 13 data awal)
+  const studentRecords = attendanceRecords.filter((r) => {
+    if (r.student_id !== currentUser.id) return false;
+    const rDate = r.operational_date?.substring(0, 10);
+    const rDay = rDate?.substring(8, 10);
+    if (rDay === '11' || rDay === '12' || rDay === '13') return false;
+    return true;
+  });
 
   const filteredRecords = studentRecords.filter((r) => {
     if (filterActivity !== 'all' && r.activity_id !== filterActivity) return false;
