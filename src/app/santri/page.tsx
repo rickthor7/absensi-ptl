@@ -54,30 +54,30 @@ function getPercentageTheme(percentage: number): {
   badgeBorder: string;
   statusLabel: string;
 } {
-  if (percentage >= 85) {
+  if (percentage >= 70) {
     return {
-      ringColor: '#10B981', // Hijau Emerald (Sangat Baik)
+      ringColor: '#10B981', // Hijau Emerald (70% ke atas)
       badgeBg: 'bg-emerald-500/20',
       badgeText: 'text-emerald-300',
       badgeBorder: 'border-emerald-500/30',
-      statusLabel: 'Sangat Baik (≥ 85%)',
+      statusLabel: 'Aman (≥ 70%)',
     };
   }
-  if (percentage >= 70) {
+  if (percentage >= 60) {
     return {
-      ringColor: '#F59E0B', // Kuning Emas / Amber (Memenuhi Syarat)
+      ringColor: '#F59E0B', // Kuning Emas / Amber (60% s/d <70%)
       badgeBg: 'bg-amber-500/20',
       badgeText: 'text-amber-300',
       badgeBorder: 'border-amber-500/30',
-      statusLabel: 'Memenuhi Syarat (≥ 70%)',
+      statusLabel: 'Waspada (60% - 69%)',
     };
   }
   return {
-    ringColor: '#EF4444', // Merah Rose (Peringatan di bawah target)
+    ringColor: '#EF4444', // Merah Rose (< 60%)
     badgeBg: 'bg-rose-500/20',
     badgeText: 'text-rose-300',
     badgeBorder: 'border-rose-500/30',
-    statusLabel: 'Peringatan (< 70%)',
+    statusLabel: 'Peringatan (< 60%)',
   };
 }
 
@@ -354,24 +354,8 @@ export default function SantriDashboardPage() {
             </div>
           </div>
 
-          {/* ── KOTAK RINGKASAN KEHADIRAN (STRUKTUR LENGKAP DIPINDAH KE SINI) ── */}
+          {/* ── SEKSI RINGKASAN PERSENTASE & METRIK ── */}
           <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
-            {/* Header: Judul + Tombol Lihat Raport */}
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#E0B45C]" />
-                <span>Ringkasan Kehadiran</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsRaportOpen(true)}
-                className="text-xs font-bold text-[#E0B45C] hover:text-amber-300 hover:underline flex items-center gap-1 transition cursor-pointer"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Lihat Raport</span>
-              </button>
-            </div>
-
             {/* Donut Ring & Target Info */}
             <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10">
               <div className="relative shrink-0 flex items-center justify-center">
@@ -430,6 +414,18 @@ export default function SantriDashboardPage() {
                 <div className="text-base sm:text-lg font-black text-[#E0B45C]">{totalKegiatan}</div>
                 <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Total Kegiatan</div>
               </div>
+            </div>
+
+            {/* Tombol Lihat Raport di bawah Total Kegiatan */}
+            <div className="pt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsRaportOpen(true)}
+                className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-[#E0B45C] hover:text-amber-200 flex items-center gap-1.5 transition cursor-pointer active:scale-98"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#E0B45C]" />
+                <span>Lihat Raport Lengkap &rarr;</span>
+              </button>
             </div>
           </div>
         </div>

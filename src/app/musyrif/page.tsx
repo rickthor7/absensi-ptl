@@ -44,9 +44,9 @@ import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 /* ─── Warna Dinamis Lingkaran Sesuai Persentase ─── */
 function getProgressRingColor(val: number): string {
-  if (val >= 85) return '#10B981'; // Hijau / Emerald
-  if (val >= 70) return '#F59E0B'; // Kuning / Amber
-  return '#EF4444'; // Merah / Rose
+  if (val >= 70) return '#10B981'; // Hijau (70% ke atas)
+  if (val >= 60) return '#F59E0B'; // Kuning (60% ke atas)
+  return '#EF4444'; // Merah (< 60%)
 }
 
 /* ─── Circular Donut Ring Progress ─── */
