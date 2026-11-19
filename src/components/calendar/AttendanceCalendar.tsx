@@ -12,6 +12,7 @@ import {
   timeStringToMinutes,
   formatIndonesianDate,
 } from '@/lib/schedule';
+import { isActivitySessionActive, calculateStudentAttendanceSummary } from '@/lib/scoring';
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export default function AttendanceCalendar() {
-  const { currentUser, attendanceRecords, effectiveTime, activities } = useStore();
+  const { currentUser, attendanceRecords, effectiveTime, activities, attendanceSessions } = useStore();
 
   const [currentYear, setCurrentYear] = useState(effectiveTime.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(effectiveTime.getMonth()); // 0-indexed
@@ -91,100 +92,28 @@ export default function AttendanceCalendar() {
     return studentRecords.filter((r) => r.operational_date?.startsWith(monthPrefix));
   }, [studentRecords, monthPrefix]);
 
-  // Evaluasi seluruh sesi terjadwal lampau di bulan ini untuk menghitung Alpa otomatis
-  const monthlyStats = useMemo(() => {
-    let validCount = 0;
-    let izinCount = 0;
-    let alpaCount = 0;
-    let reviewCount = 0;
-
-    // Batas hari yang sudah lewat
-    let maxDayToCheck = 0;
-    const currentMonthWib = todayStr.substring(0, 7);
-    if (monthPrefix < currentMonthWib) {
-      maxDayToCheck = daysInMonth;
-    } else if (monthPrefix === currentMonthWib) {
-      maxDayToCheck = parseInt(todayStr.substring(8, 10), 10);
-    } else {
-      maxDayToCheck = 0;
-    }
-
-    const matchedRecordIds = new Set<string>();
-
-    for (let d = 1; d <= maxDayToCheck; d++) {
-      const dateStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
-      const scheduled = getActivitiesForDate(activities, dateStr);
-
-      for (const act of scheduled) {
-        const isPastDay = dateStr < todayStr;
-        const isPastToday =
-          dateStr === todayStr &&
-          timeStringToMinutes(act.end_time) <= currentMinutesWib;
-
-        if (!isPastDay && !isPastToday) continue;
-
-        const rec = monthRecords.find(
-          (r) =>
-            r.activity_id === act.id &&
-            (r.operational_date?.substring(0, 10) === dateStr ||
-             r.session_id?.includes(dateStr))
-        );
-
-        if (rec) {
-          matchedRecordIds.add(rec.id);
-          const isHadir =
-            rec.musyrif_status === 'hadir' ||
-            rec.status === 'hadir_valid' ||
-            (rec.attendance_type === 'hadir' &&
-              rec.status !== 'ditolak_lokasi' &&
-              rec.status !== 'alpa' &&
-              rec.status !== 'izin_ditolak');
-
-          const isIzin =
-            rec.musyrif_status === 'izin' ||
-            rec.status === 'izin_disetujui' ||
-            rec.status === 'izin_diajukan' ||
-            rec.attendance_type === 'izin';
-
-          if (isHadir) validCount++;
-          else if (isIzin) izinCount++;
-          else alpaCount++;
-
-          if (rec.status === 'perlu_tinjauan') reviewCount++;
-        } else {
-          // Tidak absen pada sesi lampau -> OTOMATIS ALPA
-          alpaCount++;
-        }
-      }
-    }
-
-    // Hitung record sisa yang belum dicocokkan (misal sesi hari ini yang sudah absen sebelum batas waktu)
-    monthRecords.forEach((rec) => {
-      if (matchedRecordIds.has(rec.id)) return;
-
-      const isHadir =
-        rec.musyrif_status === 'hadir' ||
-        rec.status === 'hadir_valid' ||
-        (rec.attendance_type === 'hadir' &&
-          rec.status !== 'ditolak_lokasi' &&
-          rec.status !== 'alpa' &&
-          rec.status !== 'izin_ditolak');
-
-      const isIzin =
-        rec.musyrif_status === 'izin' ||
-        rec.status === 'izin_disetujui' ||
-        rec.status === 'izin_diajukan' ||
-        rec.attendance_type === 'izin';
-
-      if (isHadir) validCount++;
-      else if (isIzin) izinCount++;
-      else alpaCount++;
-
-      if (rec.status === 'perlu_tinjauan') reviewCount++;
+  // Evaluasi seluruh sesi terjadwal aktif di bulan ini dengan fungsi scoring terpusat
+  const monthlySummary = useMemo(() => {
+    return calculateStudentAttendanceSummary({
+      studentId: currentUser.id,
+      monthFilter: monthPrefix,
+      activities,
+      attendanceRecords,
+      attendanceSessions,
+      effectiveTimeOverride: effectiveTime,
     });
+  }, [currentUser.id, monthPrefix, activities, attendanceRecords, attendanceSessions, effectiveTime]);
 
-    return { validCount, izinCount, alpaCount, reviewCount };
-  }, [activities, currentMinutesWib, daysInMonth, monthPrefix, monthRecords, todayStr]);
+  const monthlyStats = useMemo(() => {
+    return {
+      validCount: monthlySummary.hadirCount,
+      izinCount: monthlySummary.izinCount,
+      alpaCount: monthlySummary.alpaCount,
+      reviewCount: monthlySummary.reviewCount,
+      totalKegiatan: monthlySummary.totalKegiatan,
+      scorePercentage: monthlySummary.scorePercentage,
+    };
+  }, [monthlySummary]);
 
   // Evaluasi rincian untuk tanggal terpilih
   const selectedDayItems = useMemo(() => {
@@ -204,7 +133,9 @@ export default function AttendanceCalendar() {
         isPastDay ||
         (isToday && timeStringToMinutes(act.end_time) <= currentMinutesWib);
 
-      let effectiveStatus: 'hadir' | 'izin' | 'alpa' | 'upcoming';
+      const isActive = isActivitySessionActive(act.id, selectedDateStr, attendanceRecords, attendanceSessions);
+
+      let effectiveStatus: 'hadir' | 'izin' | 'alpa' | 'upcoming' | 'libur';
       if (rec) {
         if (
           rec.musyrif_status === 'hadir' ||
@@ -221,23 +152,28 @@ export default function AttendanceCalendar() {
           rec.status === 'izin_diajukan' ||
           rec.attendance_type === 'izin'
         ) {
-          effectiveStatus = 'izin';
+          effectiveStatus = isActive ? 'izin' : 'libur';
         } else {
-          effectiveStatus = 'alpa';
+          effectiveStatus = isActive ? 'alpa' : 'libur';
         }
       } else {
         // Tidak ada record
-        effectiveStatus = isPastSession ? 'alpa' : 'upcoming';
+        if (!isActive) {
+          effectiveStatus = isPastSession ? 'libur' : 'upcoming';
+        } else {
+          effectiveStatus = isPastSession ? 'alpa' : 'upcoming';
+        }
       }
 
       return {
         activity: act,
         record: rec,
         isPastSession,
+        isActive,
         effectiveStatus,
       };
     });
-  }, [activities, currentMinutesWib, selectedDateStr, studentRecords, todayStr]);
+  }, [activities, attendanceRecords, attendanceSessions, currentMinutesWib, selectedDateStr, studentRecords, todayStr]);
 
   return (
     <div className="space-y-5">
@@ -323,15 +259,15 @@ export default function AttendanceCalendar() {
         </div>
 
         <div className="p-4 rounded-3xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800 text-rose-900 dark:text-rose-200 shadow-xs">
-          <span className="text-[11px] font-bold block text-rose-700 dark:text-rose-400">Alpa (Tidak Absen)</span>
+          <span className="text-[11px] font-bold block text-rose-700 dark:text-rose-400">Alpa (Terlewat)</span>
           <div className="text-2xl font-extrabold mt-0.5">{monthlyStats.alpaCount}</div>
-          <span className="text-[10px] text-rose-600/80">Otomatis Terakumulasi</span>
+          <span className="text-[10px] text-rose-600/80">Sesi Aktif Terlewat</span>
         </div>
 
-        <div className="p-4 rounded-3xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-800 text-sky-900 dark:text-sky-200 shadow-xs">
-          <span className="text-[11px] font-bold block text-sky-700 dark:text-sky-400">Perlu Review</span>
-          <div className="text-2xl font-extrabold mt-0.5">{monthlyStats.reviewCount}</div>
-          <span className="text-[10px] text-sky-600/80">Menunggu Musyrif</span>
+        <div className="p-4 rounded-3xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800 text-teal-900 dark:text-teal-200 shadow-xs">
+          <span className="text-[11px] font-bold block text-teal-700 dark:text-teal-400">Total Kegiatan</span>
+          <div className="text-2xl font-extrabold mt-0.5">{monthlyStats.totalKegiatan}</div>
+          <span className="text-[10px] text-teal-600/80">Sesi Aktif ({monthlyStats.scorePercentage}% Kehadiran)</span>
         </div>
       </div>
 
@@ -395,9 +331,12 @@ export default function AttendanceCalendar() {
                     {dayNum}
                   </span>
 
-                  {/* Dot Indicators: Hadir (Hijau), Izin (Kuning), Alpa / Tidak Absen (Merah) */}
+                  {/* Dot Indicators: Hadir (Hijau), Izin (Kuning), Alpa / Tidak Absen (Merah) - Hanya sesi aktif */}
                   <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap justify-center max-w-full pb-0.5">
                     {scheduled.map((act) => {
+                      const isActive = isActivitySessionActive(act.id, dateStr, attendanceRecords, attendanceSessions);
+                      if (!isActive) return null;
+
                       const rec = dayRecords.find((r) => r.activity_id === act.id);
                       const isPastSession =
                         isPastDay ||
@@ -414,14 +353,13 @@ export default function AttendanceCalendar() {
                         );
                       }
 
-                      // Tidak ada record presensi
+                      // Tidak ada record presensi pada sesi aktif yang telah lewat
                       if (isPastSession) {
-                        // OTOMATIS ALPA KARENA TIDAK ABSEN
                         return (
                           <span
                             key={`alpa-${act.id}`}
                             className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500 shadow-xs"
-                            title={`${act.name}: Alpa (Tidak Absen)`}
+                            title={`${act.name}: Alpa (Sesi Aktif Terlewat)`}
                           />
                         );
                       }
@@ -549,6 +487,34 @@ export default function AttendanceCalendar() {
                         <strong>Catatan Musyrif:</strong> {record.review_note}
                       </div>
                     )}
+                  </div>
+                );
+              }
+
+              // Jika sesi libur / tidak dibuka oleh Musyrif
+              if (effectiveStatus === 'libur') {
+                return (
+                  <div
+                    key={`libur-${activity.id}`}
+                    className="p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-[#162B22]/20 space-y-2 opacity-80"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-sm text-stone-700 dark:text-stone-300">
+                          {activity.name}
+                        </h4>
+                        <p className="text-[11px] text-stone-400">
+                          Jadwal: {activity.start_time} - {activity.end_time} WIB
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700">
+                        Libur / Tidak Dibuka
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-stone-400">
+                      Sesi presensi ini tidak dibuka oleh Musyrif atau santri diliburkan pada tanggal ini. Tidak dihitung ke persentase alpa.
+                    </p>
                   </div>
                 );
               }

@@ -310,7 +310,9 @@ export default function MusyrifDashboardPage() {
     profiles,
     activities,
     attendanceRecords,
-    currentMonthKey
+    currentMonthKey,
+    effectiveTime,
+    attendanceSessions
   );
 
   const totalHadirMonth = monthlyStats.studentScores.reduce((acc, s) => acc + s.hadirCount, 0);

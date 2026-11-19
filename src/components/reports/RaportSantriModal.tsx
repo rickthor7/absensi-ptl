@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/lib/store';
-import { StudentMonthlyScore } from '@/lib/scoring';
+import { StudentMonthlyScore, isActivitySessionActive } from '@/lib/scoring';
 import { Activity, Profile, AttendanceRecord } from '@/types';
 import { getWibDateStr, getWibTimeParts, timeStringToMinutes } from '@/lib/schedule';
 import {
@@ -66,6 +66,7 @@ export default function RaportSantriModal({
     profiles,
     activities: storeActivities,
     attendanceRecords,
+    attendanceSessions,
     effectiveTime,
     currentUser,
   } = useStore();
@@ -217,12 +218,30 @@ export default function RaportSantriModal({
             a.active_days.map(Number).includes(Number(isoDay))
         );
 
+        if (!act) {
+          cells[col.key] = '';
+          return;
+        }
+
+        // Sesi hanya dianggap AKTIF jika dibuka musyrif ATAU ada santri hadir valid di tanggal ini
+        const isActiveSession = isActivitySessionActive(
+          act.id,
+          dateStr,
+          attendanceRecords,
+          attendanceSessions
+        );
+
+        // Jika sesi tidak dibuka / libur (tidak ada santri hadir dan musyrif tidak membuka sesi):
+        // Tidak dihitung sebagai kegiatan aktif dan santri TIDAK dikenakan Alpa!
+        if (!isActiveSession) {
+          cells[col.key] = '';
+          return;
+        }
+
         // Cari catatan presensi santri yang cocok untuk kolom ini pada tanggal ini:
-        // 1. Berdasarkan operational_date yang sama
-        // 2. Cocok activity_id langsung ATAU activity_id terdaftar dalam activityCodes kolom ini
         const rec = studentRecords.find((r) => {
           if (r.operational_date !== dateStr) return false;
-          if (act && r.activity_id === act.id) return true;
+          if (r.activity_id === act.id) return true;
           const rAct = activityById.get(r.activity_id);
           if (rAct && col.activityCodes.includes(rAct.code)) return true;
           if (col.activityCodes.some((c) => r.session_id?.toLowerCase().includes(c.toLowerCase()))) return true;
@@ -256,28 +275,21 @@ export default function RaportSantriModal({
             colAlpa[col.key]++;
           }
         } else {
-          // Jika tidak ada kegiatan yang terjadwal dan tidak ada presensi
-          if (!act) {
-            cells[col.key] = '';
-            return;
-          }
-
+          // Sesi aktif tetapi santri tidak hadir dan tidak izin:
           // Jika tanggal lampau: Alpa
           if (dateStr < todayStr) {
             cells[col.key] = 'A';
             colAlpa[col.key]++;
           } else if (dateStr === todayStr) {
-            // Jika tanggal hari ini: Hanya tandai Alpa jika jendela kegiatan sudah berakhir
+            // Jika hari ini: hanya tandai Alpa jika waktu kegiatan sudah lewat
             const endMinutes = act.end_time ? timeStringToMinutes(act.end_time) : 1440;
             if (currentWibMinutes >= endMinutes) {
               cells[col.key] = 'A';
               colAlpa[col.key]++;
             } else {
-              // Kegiatan hari ini belum selesai/sedang berlangsung, belum Alpa
               cells[col.key] = '';
             }
           } else {
-            // Tanggal yang akan datang di masa depan
             cells[col.key] = '';
           }
         }
@@ -299,7 +311,7 @@ export default function RaportSantriModal({
     const poinIzin = totalIzin * 0.5;
     const totalPoin = poinHadir + poinIzin;
     const totalKegiatan = totalHadir + totalIzin + totalAlpa;
-    const percentage = totalKegiatan > 0 ? (totalPoin / totalKegiatan) * 100 : 0;
+    const percentage = totalKegiatan > 0 ? (totalPoin / totalKegiatan) * 100 : 100;
 
     return {
       days,
@@ -319,7 +331,7 @@ export default function RaportSantriModal({
         percentage,
       },
     };
-  }, [selectedMonthKey, currentStudent, columns, allActivities, attendanceRecords, effectiveTime]);
+  }, [selectedMonthKey, currentStudent, columns, allActivities, attendanceRecords, attendanceSessions, effectiveTime]);
 
   const monthLabel = useMemo(() => {
     if (!selectedMonthKey) return '';
@@ -345,8 +357,9 @@ export default function RaportSantriModal({
 
     const lines = [
       'LAPORAN MUTABAAH YAUMIYAH PER BULAN',
+      'PONDOK PESANTREN NURUL FALAH KETINTANG SURABAYA',
       '',
-      `Nama Santri,${currentStudent.full_name}`,
+      `Nama Santri,"${currentStudent.full_name}"`,
       `Bulan,${monthLabel}`,
       `NIS,${currentStudent.student_number || '-'}`,
       `Kamar / Asrama,${currentStudent.group_name || '-'}`,
@@ -358,12 +371,15 @@ export default function RaportSantriModal({
       izinRow.join(','),
       alpaRow.join(','),
       '',
-      'POIN KEAKTIFAN,HADIR,' + monthData.totals.hadir + ',' + monthData.totals.poinHadir,
-      ',IZIN,' + monthData.totals.izin + ',' + monthData.totals.poinIzin + ',' + monthData.totals.poin,
-      ',ALPA,' + monthData.totals.alpa + ',0',
-      '',
-      `TOTAL KEGIATAN,${monthData.totals.totalKegiatan}`,
-      `PERSENTASE KEAKTIFAN,${monthData.totals.percentage.toFixed(2).replace('.', ',')}%`,
+      'REKAPITULASI POIN & KEAKTIFAN SANTRI',
+      'Kategori,Jumlah,Poin',
+      `HADIR,${monthData.totals.hadir},${monthData.totals.poinHadir}`,
+      `IZIN,${monthData.totals.izin},${monthData.totals.poinIzin}`,
+      `ALPA,${monthData.totals.alpa},0`,
+      `TOTAL SKOR POIN,,${monthData.totals.poin}`,
+      `TOTAL KEGIATAN AKTIF,,${monthData.totals.totalKegiatan}`,
+      `PERSENTASE KEAKTIFAN,,${monthData.totals.percentage.toFixed(1).replace('.', ',')}%`,
+      `STATUS KELULUSAN,,${monthData.totals.percentage >= 70 ? 'AMAN (>= 70%)' : 'PERINGATAN (< 70%)'}`,
     ];
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + lines.join('\n');

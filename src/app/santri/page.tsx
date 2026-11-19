@@ -33,6 +33,7 @@ import {
   FileQuestion,
 } from 'lucide-react';
 import { STATUS_META } from '@/lib/constants';
+import { calculateStudentAttendanceSummary } from '@/lib/scoring';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
 /* ─── Greeting Helper ─── */
@@ -240,40 +241,26 @@ export default function SantriDashboardPage() {
 
   const currentMonth = effectiveTime.getMonth();
   const currentYear = effectiveTime.getFullYear();
+  const monthFilter = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
 
   const studentRecords = useMemo(() => {
     return attendanceRecords.filter((r) => r.student_id === currentUser.id);
   }, [attendanceRecords, currentUser.id]);
 
-  const currentMonthRecords = useMemo(() => {
-    return studentRecords.filter((r) => {
-      const d = new Date(r.operational_date || r.submitted_at);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  // Evaluasi ringkasan presensi bulan berjalan dengan formula terpusat (hanya sesi aktif)
+  const monthlySummary = useMemo(() => {
+    return calculateStudentAttendanceSummary({
+      studentId: currentUser.id,
+      monthFilter,
+      activities,
+      attendanceRecords,
+      attendanceSessions,
+      effectiveTimeOverride: effectiveTime,
     });
-  }, [studentRecords, currentMonth, currentYear]);
+  }, [currentUser.id, monthFilter, activities, attendanceRecords, attendanceSessions, effectiveTime]);
 
-  const hadirCount = currentMonthRecords.filter((r) => r.status === 'hadir_valid').length;
-  const izinCount = currentMonthRecords.filter((r) => r.status === 'izin_disetujui').length;
-  const alpaCount = currentMonthRecords.filter((r) => r.status === 'alpa').length;
-  const reviewCount = currentMonthRecords.filter(
-    (r) => r.status === 'izin_diajukan' || r.status === 'perlu_tinjauan'
-  ).length;
-
-  const totalAssessed = hadirCount + izinCount + alpaCount;
-  const attendanceRate = totalAssessed > 0 ? Math.round((hadirCount / totalAssessed) * 100) : 100;
-  const isSafe = attendanceRate >= 70;
-
-  const streak = useMemo(() => {
-    let s = 0;
-    const sorted = [...studentRecords].sort(
-      (a, b) => new Date(b.operational_date).getTime() - new Date(a.operational_date).getTime()
-    );
-    for (const rec of sorted) {
-      if (rec.status === 'hadir_valid') s++;
-      else break;
-    }
-    return s;
-  }, [studentRecords]);
+  const { hadirCount, izinCount, alpaCount, reviewCount, totalKegiatan, scorePercentage } = monthlySummary;
+  const isSafe = scorePercentage >= 70;
 
   return (
     <div className="space-y-6 pb-12">
@@ -330,17 +317,17 @@ export default function SantriDashboardPage() {
                     : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                 }`}
               >
-                {isSafe ? 'Kehadiran Aman (≥ 70%)' : 'Peringatan Kehadiran'}
+                {isSafe ? `Kehadiran Aman (${scorePercentage}%)` : `Peringatan Kehadiran (${scorePercentage}%)`}
               </span>
             </div>
           </div>
 
-          {/* 3 Metrics Row */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-5 mt-4 border-t border-white/10">
+          {/* 4 Metrics Grid: Ringkasan Kehadiran (Hadir, Izin, Alpa, Total Kegiatan) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-5 mt-4 border-t border-white/10">
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
               <div className="text-xl sm:text-2xl font-black text-white">{hadirCount}</div>
               <div className="text-[10px] uppercase font-bold text-emerald-300 mt-0.5">Hadir</div>
-              <div className="text-[9px] text-stone-400">Bulan ini</div>
+              <div className="text-[9px] text-stone-400">Sesi Sah</div>
             </div>
 
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
@@ -350,9 +337,15 @@ export default function SantriDashboardPage() {
             </div>
 
             <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div className="text-xl sm:text-2xl font-black text-[#E0B45C]">{streak}</div>
-              <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Streak</div>
-              <div className="text-[9px] text-stone-400">Hari Hadir</div>
+              <div className="text-xl sm:text-2xl font-black text-rose-300">{alpaCount}</div>
+              <div className="text-[10px] uppercase font-bold text-rose-400 mt-0.5">Alpa</div>
+              <div className="text-[9px] text-stone-400">Terlewat</div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="text-xl sm:text-2xl font-black text-[#E0B45C]">{totalKegiatan}</div>
+              <div className="text-[10px] uppercase font-bold text-[#E0B45C] mt-0.5">Total Kegiatan</div>
+              <div className="text-[9px] text-stone-400">Sesi Aktif</div>
             </div>
           </div>
         </div>
@@ -575,10 +568,10 @@ export default function SantriDashboardPage() {
 
             <div className="flex items-center gap-4 pt-1">
               <div className="relative shrink-0 flex items-center justify-center">
-                <DonutRing value={attendanceRate} size={76} strokeWidth={6.5} color="#0D7B5F" />
+                <DonutRing value={scorePercentage} size={76} strokeWidth={6.5} color="#0D7B5F" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-sm font-black text-stone-900 dark:text-white">
-                    {attendanceRate}%
+                    {scorePercentage}%
                   </span>
                 </div>
               </div>
@@ -597,7 +590,7 @@ export default function SantriDashboardPage() {
                   {isSafe ? 'Status: Memenuhi Syarat' : 'Status: Kurang dari 70%'}
                 </span>
                 <p className="text-[11px] text-stone-400">
-                  Berdasarkan seluruh sesi mutabaah wajib pondok bulan ini.
+                  Dihitung dari sesi mutabaah aktif pondok bulan ini ({totalKegiatan} sesi).
                 </p>
               </div>
             </div>
@@ -617,8 +610,8 @@ export default function SantriDashboardPage() {
               <div className="text-[10px] text-stone-500 font-medium">Alpa</div>
             </div>
             <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40">
-              <div className="text-sm font-bold text-sky-700 dark:text-sky-400">{reviewCount}</div>
-              <div className="text-[10px] text-stone-500 font-medium">Review</div>
+              <div className="text-sm font-bold text-teal-700 dark:text-[#E0B45C]">{totalKegiatan}</div>
+              <div className="text-[10px] text-stone-500 font-medium">Total Sesi</div>
             </div>
           </div>
         </div>

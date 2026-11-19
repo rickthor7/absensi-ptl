@@ -31,7 +31,7 @@ import MonthlyAttendanceEditorModal from '@/components/attendance/MonthlyAttenda
 import { Profile } from '@/types';
 
 export default function MusyrifLaporanPage() {
-  const { attendanceRecords, activities, profiles, effectiveTime, currentUser } = useStore();
+  const { attendanceRecords, activities, profiles, effectiveTime, currentUser, attendanceSessions } = useStore();
 
   const defaultMonth = getWibDateStr(effectiveTime).substring(0, 7); // e.g. "2026-11"
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
@@ -51,12 +51,14 @@ export default function MusyrifLaporanPage() {
     { value: '2026-08', label: 'Agustus 2026' },
   ];
 
-  // Calculate monthly stats using the formula: Hadir=1, Izin=0.5, Alpa=0
+  // Calculate monthly stats using the formula: Hadir=1, Izin=0.5, Alpa=0 (hanya sesi aktif)
   const monthlyStats = calculateMonthlyScores(
     profiles,
     activities,
     attendanceRecords,
-    selectedMonth
+    selectedMonth,
+    effectiveTime,
+    attendanceSessions
   );
 
   const santriList = profiles.filter((p) => p.role === 'santri');
