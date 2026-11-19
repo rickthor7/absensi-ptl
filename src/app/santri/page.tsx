@@ -46,12 +46,47 @@ function getGreeting(date: Date): string {
   return 'Selamat Malam';
 }
 
+/* ─── Warna Dinamis Lingkaran Sesuai Persentase ─── */
+function getPercentageTheme(percentage: number): {
+  ringColor: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  statusLabel: string;
+} {
+  if (percentage >= 85) {
+    return {
+      ringColor: '#10B981', // Hijau Emerald (Sangat Baik)
+      badgeBg: 'bg-emerald-500/20',
+      badgeText: 'text-emerald-300',
+      badgeBorder: 'border-emerald-500/30',
+      statusLabel: 'Sangat Baik (≥ 85%)',
+    };
+  }
+  if (percentage >= 70) {
+    return {
+      ringColor: '#F59E0B', // Kuning Emas / Amber (Memenuhi Syarat)
+      badgeBg: 'bg-amber-500/20',
+      badgeText: 'text-amber-300',
+      badgeBorder: 'border-amber-500/30',
+      statusLabel: 'Memenuhi Syarat (≥ 70%)',
+    };
+  }
+  return {
+    ringColor: '#EF4444', // Merah Rose (Peringatan di bawah target)
+    badgeBg: 'bg-rose-500/20',
+    badgeText: 'text-rose-300',
+    badgeBorder: 'border-rose-500/30',
+    statusLabel: 'Peringatan (< 70%)',
+  };
+}
+
 /* ─── Circular Donut Ring Progress ─── */
 function DonutRing({
   value,
   size = 76,
   strokeWidth = 6.5,
-  color = '#0D7B5F',
+  color,
   trackColor = '#E2E8E4',
 }: {
   value: number;
@@ -60,6 +95,7 @@ function DonutRing({
   color?: string;
   trackColor?: string;
 }) {
+  const dynamicColor = color || getPercentageTheme(value).ringColor;
   const r = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (Math.min(100, Math.max(0, value)) / 100) * circ;
@@ -79,12 +115,12 @@ function DonutRing({
         cy={size / 2}
         r={r}
         fill="none"
-        stroke={color}
+        stroke={dynamicColor}
         strokeWidth={strokeWidth}
         strokeDasharray={circ}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out, stroke 0.5s ease' }}
       />
     </svg>
   );
@@ -266,7 +302,7 @@ export default function SantriDashboardPage() {
   }, [currentUser.id, monthFilter, activities, attendanceRecords, attendanceSessions, effectiveTime]);
 
   const { hadirCount, izinCount, alpaCount, reviewCount, totalKegiatan, scorePercentage } = monthlySummary;
-  const isSafe = scorePercentage >= 70;
+  const percentTheme = useMemo(() => getPercentageTheme(scorePercentage), [scorePercentage]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -343,11 +379,14 @@ export default function SantriDashboardPage() {
                   value={scorePercentage}
                   size={68}
                   strokeWidth={6}
-                  color="#E0B45C"
+                  color={percentTheme.ringColor}
                   trackColor="rgba(255,255,255,0.15)"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-black text-white">
+                  <span
+                    className="text-sm font-black transition-colors"
+                    style={{ color: percentTheme.ringColor }}
+                  >
                     {scorePercentage}%
                   </span>
                 </div>
@@ -359,13 +398,9 @@ export default function SantriDashboardPage() {
                     Target Kehadiran Bulanan
                   </p>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                      isSafe
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                        : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                    }`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${percentTheme.badgeBg} ${percentTheme.badgeText} ${percentTheme.badgeBorder}`}
                   >
-                    {isSafe ? 'Memenuhi Syarat (≥ 70%)' : 'Kurang dari 70%'}
+                    {percentTheme.statusLabel}
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-300 leading-relaxed">

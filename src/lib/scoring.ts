@@ -163,15 +163,11 @@ export function calculateStudentAttendanceSummary({
     const scheduledActs = getActivitiesForDate(activities, dateStr);
 
     for (const act of scheduledActs) {
-      const isPastDay = dateStr < currentWibStr;
-      const isPastToday =
-        dateStr === currentWibStr && timeStringToMinutes(act.end_time) <= currentMinutesWib;
+      // Sesi kegiatan langsung dihitung jika aktif (dibuka oleh musyrif atau ada santri hadir)
+      const isActive = isActivitySessionActive(act.id, dateStr, attendanceRecords, attendanceSessions);
+      if (!isActive) continue;
 
-      if (!isPastDay && !isPastToday) continue;
-
-      if (isActivitySessionActive(act.id, dateStr, attendanceRecords, attendanceSessions)) {
-        activeSessions.push({ dateStr, activity: act });
-      }
+      activeSessions.push({ dateStr, activity: act });
     }
   }
 
@@ -318,16 +314,11 @@ export function calculateMonthlyScores(
     const scheduledActs = getActivitiesForDate(activities, dateStr);
 
     for (const act of scheduledActs) {
-      const isPastDay = dateStr < currentWibStr;
-      const isPastToday =
-        dateStr === currentWibStr && timeStringToMinutes(act.end_time) <= currentMinutesWib;
+      // Sesi langsung dihitung ke rekap bulanan jika aktif (dibuka musyrif atau ada santri hadir)
+      const isActive = isActivitySessionActive(act.id, dateStr, attendanceRecords, attendanceSessions);
+      if (!isActive) continue;
 
-      if (!isPastDay && !isPastToday) continue;
-
-      // Hanya masukkan sesi yang AKTIF
-      if (isActivitySessionActive(act.id, dateStr, attendanceRecords, attendanceSessions)) {
-        pastSessionsInMonth.push({ dateStr, activity: act });
-      }
+      pastSessionsInMonth.push({ dateStr, activity: act });
     }
   }
 

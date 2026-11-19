@@ -286,14 +286,9 @@ export default function RaportSantriModal({
             cells[col.key] = 'A';
             colAlpa[col.key]++;
           } else if (dateStr === todayStr) {
-            // Jika hari ini: hanya tandai Alpa jika waktu kegiatan sudah lewat
-            const endMinutes = act.end_time ? timeStringToMinutes(act.end_time) : 1440;
-            if (currentWibMinutes >= endMinutes) {
-              cells[col.key] = 'A';
-              colAlpa[col.key]++;
-            } else {
-              cells[col.key] = '';
-            }
+            // Jika hari ini dan sesi aktif (sudah dibuka musyrif): langsung hitung alpa jika santri belum absen
+            cells[col.key] = 'A';
+            colAlpa[col.key]++;
           } else {
             cells[col.key] = '';
           }

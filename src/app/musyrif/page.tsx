@@ -42,12 +42,19 @@ import {
 import GeotagLocationModal from '@/components/schedule/GeotagLocationModal';
 import RaportSantriModal from '@/components/reports/RaportSantriModal';
 
+/* ─── Warna Dinamis Lingkaran Sesuai Persentase ─── */
+function getProgressRingColor(val: number): string {
+  if (val >= 85) return '#10B981'; // Hijau / Emerald
+  if (val >= 70) return '#F59E0B'; // Kuning / Amber
+  return '#EF4444'; // Merah / Rose
+}
+
 /* ─── Circular Donut Ring Progress ─── */
 function DonutRing({
   value,
   size = 76,
   strokeWidth = 6.5,
-  color = '#0D7B5F',
+  color,
   trackColor = '#E2E8E4',
 }: {
   value: number;
@@ -56,6 +63,7 @@ function DonutRing({
   color?: string;
   trackColor?: string;
 }) {
+  const dynamicColor = color || getProgressRingColor(value);
   const r = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (Math.min(100, Math.max(0, value)) / 100) * circ;
@@ -75,12 +83,12 @@ function DonutRing({
         cy={size / 2}
         r={r}
         fill="none"
-        stroke={color}
+        stroke={dynamicColor}
         strokeWidth={strokeWidth}
         strokeDasharray={circ}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out, stroke 0.5s ease' }}
       />
     </svg>
   );
@@ -731,10 +739,12 @@ export default function MusyrifDashboardPage() {
                   value={monthlyStats.averageScorePercentage}
                   size={76}
                   strokeWidth={6.5}
-                  color="#0D7B5F"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-black text-stone-900 dark:text-white">
+                  <span
+                    className="text-sm font-black"
+                    style={{ color: getProgressRingColor(monthlyStats.averageScorePercentage) }}
+                  >
                     {monthlyStats.averageScorePercentage}%
                   </span>
                 </div>
